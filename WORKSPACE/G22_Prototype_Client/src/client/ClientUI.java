@@ -42,7 +42,7 @@ public interface ClientUI {
     void displayOrders(List<Order> orders);
     
     
-    void setStatus(String status);
+
 
 }
 

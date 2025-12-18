@@ -12,10 +12,24 @@ import java.io.IOException;
 import java.time.LocalDate;
 import java.util.List;
 
+/**
+ * ClientFrameController
+ *
+ * This class is the JavaFX controller for the Client GUI.
+ * It acts as the "view controller" that:
+ *  - Reads user actions from the GUI
+ *  - Sends requests to the Client 
+ *  - Updates the interface with server responses
+ *
+ * It implements ClientUI  meaning the server can communicate
+ * with the GUI through displayMessage() and displayOrders().
+ *
+ * @version 1.0
+ */
 public class ClientFrameController implements ClientUI {
 
-    private Client client;   // Connection to server
-
+    private Client client;   //Client object that handles clients activity 
+    //UI COMPONENTS linked from FXML
     @FXML private TextField ipField;
     @FXML private TextField portField;
     @FXML private Label statusLabel;
@@ -35,9 +49,8 @@ public class ClientFrameController implements ClientUI {
     @FXML private TextArea messageArea;
 
 
-    // ==========================================================
-    // Initialization
-    // ==========================================================
+    /** Initialization
+    Called automatically when the GUI loads*/
     @FXML
     public void initialize() {
 
@@ -48,6 +61,11 @@ public class ClientFrameController implements ClientUI {
         } catch (Exception ignored) {}
 
         // Setup table columns
+        /**        setCellValueFactory(...)  tell the column how to extract the value.
+
+        new PropertyValueFactory<>("orderNumber") Look inside each Order object, 
+        Call getOrderNumber() and Puts that value in the column cell
+        */
         colNumber.setCellValueFactory(new PropertyValueFactory<>("orderNumber"));
         colDate.setCellValueFactory(new PropertyValueFactory<>("orderDate"));
         colGuests.setCellValueFactory(new PropertyValueFactory<>("numberOfGuests"));
@@ -55,7 +73,7 @@ public class ClientFrameController implements ClientUI {
         colSub.setCellValueFactory(new PropertyValueFactory<>("subscriberId"));
         colPlaced.setCellValueFactory(new PropertyValueFactory<>("dateOfPlacing"));
 
-        statusLabel.setText("DISCONNECTED");
+        statusLabel.setText("DISCONNECTED");//default client status
     }
 
     // ==========================================================
@@ -67,6 +85,7 @@ public class ClientFrameController implements ClientUI {
             String ip = ipField.getText().trim();
             int port = Integer.parseInt(portField.getText().trim());
 
+            //creats client and connects
             client = new Client(ip, port, this);
             client.openConnection();
 
@@ -119,9 +138,8 @@ public class ClientFrameController implements ClientUI {
         client.requestAllOrders();
     }
 
-    // ==========================================================
     // UPDATE ORDER
-    // ==========================================================
+    // Sends a request to update a specific order
     @FXML
     public void onUpdate() {
         if (client == null || !client.isConnected()) {
@@ -141,17 +159,14 @@ public class ClientFrameController implements ClientUI {
         }
     }
 
-    // ==========================================================
-    // IMPLEMENTING ClientUI (Called from Server events)
-    // ==========================================================
-
+    //Shows a text message in the GUI log area 
     @Override
     public void displayMessage(String msg) {
         Platform.runLater(() ->
             messageArea.appendText("[SERVER] " + msg + "\n")
         );
     }
-
+    // Replaces table contents with the list of orders from the server 
     @Override
     public void displayOrders(List<Order> orders) {
         Platform.runLater(() -> {
@@ -160,11 +175,7 @@ public class ClientFrameController implements ClientUI {
         });
     }
 
-    @Override
-    public void setStatus(String status) {
-        Platform.runLater(() -> statusLabel.setText(status));
-    }
-    
+
 
 	
 }

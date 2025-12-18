@@ -106,12 +106,6 @@ public class ClientFrameController implements ClientUI {
         try {
             if (client != null && client.isConnected()) {
 
-                // First notify server cleanly
-                client.sendToServer("CLIENT_EXITING");
-
-                Thread.sleep(50); // tiny delay to allow clean close
-                // thread sleep was used here to allow the socket of the client to close prepertly
-                // Now close socket
                 client.closeConnection();
             }
 

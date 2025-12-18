@@ -70,11 +70,6 @@ public class Server extends AbstractServer {
                 ui.display("Client attempted request but DB not configured.");
                 return;
             }
-            if (msg.equals("CLIENT_EXITING")) {
-                // clean disconnect
-                clientDisconnected(client);
-                return;
-            }
 
             // if Wrong message type
             if (!(msg instanceof OrderRequest)) {
@@ -139,6 +134,10 @@ public class Server extends AbstractServer {
 
         String host = client.getInetAddress().getHostName();
         String ip = client.getInetAddress().getHostAddress();
+        
+        //saves host and ip in the client object
+        client.setInfo("host", host);
+        client.setInfo("ip", ip);
 
         ui.updateClientStatus(String.valueOf(clientCounter),host,ip,"CONNECTED");
     }
@@ -151,10 +150,9 @@ public class Server extends AbstractServer {
         Integer id = (Integer) client.getInfo("id");
         if (id == null) return;
 
-        String host = client.getInetAddress().getHostName();
-        String ip = client.getInetAddress().getHostAddress();
 
-        ui.updateClientStatus(String.valueOf(id),host,ip,"DISCONNECTED");
+
+        ui.updateClientStatus(String.valueOf(id),(String) client.getInfo("host"),(String) client.getInfo("ip"),"DISCONNECTED");
     }
 
 	
@@ -182,10 +180,9 @@ public class Server extends AbstractServer {
 	    Integer id = (Integer) client.getInfo("id");
 	    if (id == null) return;
 
-	    String host = client.getInetAddress().getHostName();
-	    String ip = client.getInetAddress().getHostAddress();
+	    
 
-	    ui.updateClientStatus(String.valueOf(id),host,ip,"DISCONNECTED");
+	    ui.updateClientStatus(String.valueOf(id),(String) client.getInfo("host"),(String) client.getInfo("ip"),"DISCONNECTED");
 	}
 
 

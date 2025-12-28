@@ -1,7 +1,9 @@
-package common.entity;
+package common.dto;
 
 import java.io.Serializable;
 import java.time.LocalDate;
+
+import common.enums.ReservationOperation;
 
 /**
  * A message sent from the client to the server containing
@@ -18,9 +20,10 @@ public class ReservationRequest implements Serializable{
 	
     private ReservationOperation operation;
 	
-    private int ReservationNumber;
-    private LocalDate newReservationDate;
-    private int newNumberOfGuests;
+    private int reservationId;
+    private LocalDate reservationDate;
+    private int numberOfGuests;
+    private int customerId; 
     
     /*identify the request as an instance of Reservation request class and saves the GET_ALL_RESERVATIONS operation
      * as a field in the class
@@ -39,17 +42,30 @@ public class ReservationRequest implements Serializable{
     	
 		ReservationRequest req = new ReservationRequest();
 		req.operation = ReservationOperation.UPDATE_RESERVATION_FIELDS;
-		req.ReservationNumber = ReservationNumber;
-		req.newReservationDate = newDate;
-		req.newNumberOfGuests = newGuests;
+		req.reservationId = ReservationNumber;
+		req.reservationDate = newDate;
+		req.numberOfGuests = newGuests;
 		return req;
+    }
+    
+    /*identify the request as an instance of Reservation request class and saves the CREATE_RESERVATION_FIELDS operation
+    as a field in the class*/
+    public static ReservationRequest createCreateReservationRequest(
+            int customerId, LocalDate date, int guests) {
+
+        ReservationRequest req = new ReservationRequest();
+        req.operation = ReservationOperation.CREATE_RESERVATION;
+        req.customerId = customerId;
+        req.reservationDate = date;
+        req.numberOfGuests = guests;
+        return req;
     }
     
    // private ReservationRequest() {}
     //Getters for the class fields
     public ReservationOperation getOperation() { return operation; }
-    public int getReservationNumber() { return ReservationNumber; }
-    public LocalDate getNewReservationDate() { return newReservationDate; }
-    public int getNewNumberOfGuests() { return newNumberOfGuests; }
-    
+    public int getReservationId() { return reservationId; }
+    public LocalDate getReservationDate() { return reservationDate; }
+    public int getNumberOfGuests() { return numberOfGuests; }
+    public int getCustomerId() { return customerId; }
 }

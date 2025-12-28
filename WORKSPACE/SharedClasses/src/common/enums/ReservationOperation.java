@@ -1,4 +1,4 @@
-package common.entity;
+package common.enums;
 
 import java.io.Serializable;
 
@@ -7,5 +7,6 @@ import java.io.Serializable;
 
 public enum ReservationOperation implements Serializable  {
     GET_ALL_RESERVATIONS,
-    UPDATE_RESERVATION_FIELDS
+    UPDATE_RESERVATION_FIELDS,
+    CREATE_RESERVATION
 }

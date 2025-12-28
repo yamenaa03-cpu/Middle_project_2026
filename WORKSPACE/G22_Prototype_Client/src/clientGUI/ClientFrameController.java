@@ -96,6 +96,7 @@ public class ClientFrameController implements ClientUI {
         } catch (Exception e) {
             messageArea.appendText("Connection failed: " + e.getMessage() + "\n");
         }
+        
     }
 
     // ==========================================================

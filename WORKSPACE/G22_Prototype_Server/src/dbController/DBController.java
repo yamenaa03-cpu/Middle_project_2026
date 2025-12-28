@@ -1,9 +1,10 @@
-package serverDbController;
+package dbController;
 
 import java.sql.Connection;
 import java.sql.Date;
 import java.sql.DriverManager;
 import java.sql.PreparedStatement;
+import java.sql.Statement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.time.LocalDate;
@@ -18,7 +19,7 @@ import common.entity.Reservation;
  * @author Yamen_abu_ahmad
  * @version 1.0
  */
-public class ServerController {
+public class DBController {
 
 //	private static final String URL = "jdbc:mysql://127.0.0.1:3306/bestrodb?user=root";
 //	private static final String USER = "root";
@@ -31,7 +32,7 @@ public class ServerController {
     private String password;
 
     //constructor for ServerController
-    public ServerController(String dbName, String dbUser, String dbPassword) {
+    public DBController(String dbName, String dbUser, String dbPassword) {
         this.url = "jdbc:mysql://127.0.0.1:3306/" + dbName + "?serverTimezone=UTC";
         this.user = dbUser;
         this.password = dbPassword;
@@ -55,15 +56,15 @@ public class ServerController {
 		// !! check if it is possible to change to Hashmap for faster results !!
 		List<Reservation> result = new ArrayList<>();// array list to insert the Reservations in it 
 
-		String sql = "SELECT reservation_number, reservation_date, number_of_guests, "
-				+ "confirmation_code, subscriber_id, date_of_placing_reservation " + "FROM `reservation`";
+		String sql = "SELECT reservation_id, reservation_date, number_of_guests, "
+				+ "confirmation_code, subscriber_id, created_at " + "FROM `reservation`";
 
 		try (Connection conn = getConnection();
 				PreparedStatement ps = conn.prepareStatement(sql);
 				ResultSet rs = ps.executeQuery()) {
 			//get data from DataBase
 			while (rs.next()) {
-				int reservationNumber = rs.getInt("reservation_number");
+				int reservationNumber = rs.getInt("reservation_id");
 
 				Date reservationDateSql = rs.getDate("reservation_date");
 				LocalDate reservationDate;
@@ -77,7 +78,7 @@ public class ServerController {
 				int conf = rs.getInt("confirmation_code");
 				int subId = rs.getInt("subscriber_id");
 
-				Date placingSql = rs.getDate("date_of_placing_reservation");
+				Date placingSql = rs.getDate("created_at");
 				LocalDate placing;
 				if (placingSql != null) {
 					placing = placingSql.toLocalDate();
@@ -97,16 +98,11 @@ public class ServerController {
 
 	public boolean updateReservationFields(int reservationNumber, LocalDate newDate, int newGuests) throws SQLException {
 
-		String sql = "UPDATE `Reservation` " + "SET reservation_date = ?, number_of_guests = ? " + "WHERE reservation_number = ?";
+		String sql = "UPDATE reservation " + "SET reservation_date = ?, number_of_guests = ? " + "WHERE reservation_id = ?";
 
 		try (Connection conn = getConnection(); PreparedStatement ps = conn.prepareStatement(sql)) {
 
-			if (newDate != null) {
-				ps.setDate(1, Date.valueOf(newDate));
-			} else {
-				ps.setNull(1, java.sql.Types.DATE);// if the value of the new date is null
-			}
-
+			ps.setDate(1, Date.valueOf(newDate));
 			ps.setInt(2, newGuests);
 			ps.setInt(3, reservationNumber);
 
@@ -115,4 +111,44 @@ public class ServerController {
 		}
 	}
 
+	public int insertReservation(int customerId, LocalDate reservationDate, int numberOfGuests) throws SQLException {
+
+	    String sql =
+	        "INSERT INTO reservation (reservation_date, number_of_guests, confirmation_code, subscriber_id, created_at) " +
+	        "VALUES (?, ?, ?, ?, ?)";
+
+	    LocalDate createdAt = LocalDate.now();
+
+	    for (int attempt = 1; attempt <= 5; attempt++) {
+
+	        int confirmationCode = (int)(Math.random() * 900000) + 100000; // 6 digits
+
+	        try (Connection conn = getConnection(); PreparedStatement ps = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
+
+	            ps.setDate(1, Date.valueOf(reservationDate));
+	            ps.setInt(2, numberOfGuests);
+	            ps.setInt(3, confirmationCode);
+	            ps.setInt(4, customerId);
+	            ps.setDate(5, Date.valueOf(createdAt));
+
+	            int inserted = ps.executeUpdate();
+	            if (inserted != 1) return -1;
+
+	            // generated key = reservation_id (AUTO_INCREMENT)
+	            try (ResultSet keys = ps.getGeneratedKeys()) {
+	                if (keys.next()) return keys.getInt(1);
+	            }
+
+	            return -1;
+	        } catch (SQLException e) {
+	            // MySQL duplicate entry error (UNIQUE violation)
+	            if (e.getErrorCode() == 1062) {
+	                continue; // try another confirmationCode
+	            }
+	            throw e;
+	        }
+	    }
+
+	    return -1; // very rare: failed after retries
+	}
 }

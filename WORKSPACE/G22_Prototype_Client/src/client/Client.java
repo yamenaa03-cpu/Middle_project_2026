@@ -6,10 +6,9 @@ import java.io.IOException;
 import java.time.LocalDate;
 import java.util.List;
 
+import common.dto.ReservationRequest;
+import common.dto.ReservationResponse;
 import common.entity.Reservation;
-import common.entity.ReservationResponse;
-import common.entity.ReservationRequest;
-import common.entity.ReservationOperation;
 /**
  * The Client class extends the OCSF AbstractClient framework.
  * It is responsible for:
@@ -59,19 +58,32 @@ public class Client extends AbstractClient {
         ReservationRequest req = ReservationRequest.createGetAllReservationsRequest();
         sendRequest(req);
     }
+    
     /**
      * Sends a request (to the sever) to update an Reservation in the database.
      *
-     * @param reservationNumber The reservation ID to update
+     * @param reservationId The reservation ID to update
      * @param newDate     The new date to set
      * @param newGuests   The new guest count
      */
     
-    public void requestUpdateReservation(int reservationNumber, LocalDate newDate, int newGuests) {
-        ReservationRequest req = ReservationRequest.createUpdateReservationRequest(reservationNumber, newDate, newGuests);
+    public void requestUpdateReservation(int reservationId, LocalDate newDate, int newGuests) {
+        ReservationRequest req = ReservationRequest.createUpdateReservationRequest(reservationId, newDate, newGuests);
         sendRequest(req);
     }
     
+    /**
+     * Sends a request (to the sever) to update an Reservation in the database.
+     *
+     * @param reservationId The reservation ID to update
+     * @param newDate     The new date to set
+     * @param newGuests   The new guest count
+     */
+    
+    public void requestCreateReservation(int customerId, LocalDate date, int guests) {
+        ReservationRequest req = ReservationRequest.createCreateReservationRequest(customerId, date, guests);
+        sendRequest(req);
+    }
     /**
      * sends a request object to the server.
      * catches any Exception while doing so

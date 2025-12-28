@@ -1,5 +1,6 @@
 package serverGUI;
 
+import dbController.DBController;
 import javafx.application.Platform;
 import javafx.beans.property.SimpleStringProperty;
 import javafx.collections.FXCollections;
@@ -8,7 +9,6 @@ import javafx.fxml.FXML;
 import javafx.scene.control.*;
 import server.Server;
 import server.ServerUI;
-import serverDbController.ServerController;
 import server.ClientStatusInfo;
 
 public class ServerFrameController implements ServerUI {

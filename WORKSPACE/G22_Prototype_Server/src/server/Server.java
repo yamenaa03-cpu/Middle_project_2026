@@ -7,14 +7,15 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
+import common.dto.ReservationRequest;
+import common.dto.ReservationResponse;
 import common.entity.Reservation;
-import common.entity.ReservationOperation;
-import common.entity.ReservationRequest;
-import common.entity.ReservationResponse;
+import common.enums.ReservationOperation;
+import dbController.DBController;
 import ocsf.server.AbstractServer;
 import ocsf.server.ConnectionToClient;
-import serverDbController.ServerController;
 import serverGUI.ServerFrameController;
+import controllers.ReservationController;
 /**
  * Main class that extends AbstractServer OCSF server class that handles client communication,
  * interacts with the database controller,
@@ -29,7 +30,7 @@ public class Server extends AbstractServer {
 	  
 	    private ServerUI ui; // server user interface
 	    
-	    private ServerController db;//Data Base
+	    private DBController db;//Data Base
 	   
 	    private String dbName;//DB name
 	    
@@ -38,6 +39,8 @@ public class Server extends AbstractServer {
 	    private String dbPassword;//DB password
 	    
 	    private int clientCounter = 0;//to give special id to each client
+	    
+	    private ReservationController reservationController;
 
 
 	    
@@ -88,21 +91,37 @@ public class Server extends AbstractServer {
                 case GET_ALL_RESERVATIONS:
                     resp = new ReservationResponse(true,
                             "Reservations loaded.",
-                            db.getAllReservations());
+                            reservationController.getAllReservations());
                     break;
 
                 case UPDATE_RESERVATION_FIELDS:
-                    boolean ok = db.updateReservationFields(
-                            req.getReservationNumber(),
-                            req.getNewReservationDate(),
-                            req.getNewNumberOfGuests()
+                    boolean ok = reservationController.updateReservation(
+                            req.getReservationId(),
+                            req.getReservationDate(),
+                            req.getNumberOfGuests()
                     );
 
                     resp = new ReservationResponse(
                             ok,
                             ok ? "Reservation updated." : "Reservation not found.",
-                            db.getAllReservations()
-                    );//checks if the Reservation was updated correctly and returns a response according to the result
+                            reservationController.getAllReservations()
+                    );
+                    //checks if the Reservation was updated correctly and returns a response according to the result
+                    break;
+                    
+                case CREATE_RESERVATION:
+                    Integer newId = reservationController.createReservation(
+                            req.getCustomerId(),
+                            req.getReservationDate(),
+                            req.getNumberOfGuests()
+                    );
+
+                    boolean created = newId != null;
+                    resp = new ReservationResponse(
+                            created,
+                            created ? ("Reservation created. ID=" + newId) : "Failed to create reservation.",
+                            reservationController.getAllReservations()
+                    );
                     break;
 
                 default:
@@ -167,7 +186,8 @@ public class Server extends AbstractServer {
 	    System.out.println("Server started on port: " + getPort());
 
 	    try {
-	        db = new ServerController(dbName, dbUser, dbPassword);
+	        db = new DBController(dbName, dbUser, dbPassword);
+	        reservationController = new ReservationController(db);
 	        ui.display("Database connection initialized.");
 	    } catch (Exception e) {
 	        ui.display("Database initialization failed: " + e.getMessage());

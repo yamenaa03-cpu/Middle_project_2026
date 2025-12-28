@@ -16,31 +16,31 @@
 /*!40111 SET @OLD_SQL_NOTES=@@SQL_NOTES, SQL_NOTES=0 */;
 
 --
--- Table structure for table `order`
+-- Table structure for table `reservation`
 --
 
-DROP TABLE IF EXISTS `order`;
+DROP TABLE IF EXISTS `reservation`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!50503 SET character_set_client = utf8mb4 */;
-CREATE TABLE `order` (
-  `order_number` int NOT NULL,
-  `order_date` date DEFAULT NULL,
+CREATE TABLE `reservation` (
+  `reservation_number` int NOT NULL,
+  `reservation_date` date DEFAULT NULL,
   `number_of_guests` int DEFAULT NULL,
   `confirmation_code` int DEFAULT NULL,
   `subscriber_id` int DEFAULT NULL,
-  `date_of_placing_order` date DEFAULT NULL,
-  PRIMARY KEY (`order_number`)
+  `date_of_placing_reservation` date DEFAULT NULL,
+  PRIMARY KEY (`reservation_number`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
--- Dumping data for table `order`
+-- Dumping data for table `reservation`
 --
 
-LOCK TABLES `order` WRITE;
-/*!40000 ALTER TABLE `order` DISABLE KEYS */;
-INSERT INTO `order` VALUES (1,'2025-09-09',3,9876,1001,'2025-03-01'),(2,'2025-08-07',7,5432,1002,'2025-03-05'),(3,'2025-03-22',3,6655,1003,'2025-03-08'),(4,'2030-01-01',15,7234,1004,'2025-03-09');
-/*!40000 ALTER TABLE `order` ENABLE KEYS */;
+LOCK TABLES `reservation` WRITE;
+/*!40000 ALTER TABLE `reservation` DISABLE KEYS */;
+INSERT INTO `reservation` VALUES (1,'2025-09-09',3,9876,1001,'2025-03-01'),(2,'2025-08-07',7,5432,1002,'2025-03-05'),(3,'2025-03-22',3,6655,1003,'2025-03-08'),(4,'2040-01-01',400,7234,1004,'2025-03-09');
+/*!40000 ALTER TABLE `reservation` ENABLE KEYS */;
 UNLOCK TABLES;
 /*!40103 SET TIME_ZONE=@OLD_TIME_ZONE */;
 
@@ -52,4 +52,4 @@ UNLOCK TABLES;
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
--- Dump completed on 2025-12-08 15:10:35
+-- Dump completed on 2025-12-28 19:50:32

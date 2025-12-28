@@ -2,7 +2,7 @@ package clientGUI;
 
 import client.Client;
 import client.ClientUI;
-import common.Order;
+import common.entity.Reservation;
 import javafx.application.Platform;
 import javafx.fxml.FXML;
 import javafx.scene.control.*;
@@ -22,7 +22,7 @@ import java.util.List;
  *  - Updates the interface with server responses
  *
  * It implements ClientUI  meaning the server can communicate
- * with the GUI through displayMessage() and displayOrders().
+ * with the GUI through displayMessage() and displayReservations().
  *
  * @version 1.0
  */
@@ -34,15 +34,15 @@ public class ClientFrameController implements ClientUI {
     @FXML private TextField portField;
     @FXML private Label statusLabel;
 
-    @FXML private TableView<Order> ordersTable;
-    @FXML private TableColumn<Order, Integer> colNumber;
-    @FXML private TableColumn<Order, String> colDate;
-    @FXML private TableColumn<Order, Integer> colGuests;
-    @FXML private TableColumn<Order, Integer> colConf;
-    @FXML private TableColumn<Order, Integer> colSub;
-    @FXML private TableColumn<Order, String> colPlaced;
+    @FXML private TableView<Reservation> reservationsTable;
+    @FXML private TableColumn<Reservation, Integer> colNumber;
+    @FXML private TableColumn<Reservation, LocalDate> colDate;
+    @FXML private TableColumn<Reservation, Integer> colGuests;
+    @FXML private TableColumn<Reservation, Integer> colConf;
+    @FXML private TableColumn<Reservation, Integer> colSub;
+    @FXML private TableColumn<Reservation, LocalDate> colPlaced;
 
-    @FXML private TextField updateOrderField;
+    @FXML private TextField updateReservationField;
     @FXML private TextField updateDateField;
     @FXML private TextField updateGuestsField;
 
@@ -63,15 +63,16 @@ public class ClientFrameController implements ClientUI {
         // Setup table columns
         /**        setCellValueFactory(...)  tell the column how to extract the value.
 
-        new PropertyValueFactory<>("orderNumber") Look inside each Order object, 
-        Call getOrderNumber() and Puts that value in the column cell
+        new PropertyValueFactory<>("reservationNumber") Look inside each Reservation object, 
+        Call getReservationNumber() and Puts that value in the column cell
         */
-        colNumber.setCellValueFactory(new PropertyValueFactory<>("orderNumber"));
-        colDate.setCellValueFactory(new PropertyValueFactory<>("orderDate"));
+        colNumber.setCellValueFactory(new PropertyValueFactory<>("reservationId"));
+        colDate.setCellValueFactory(new PropertyValueFactory<>("reservationDate"));
         colGuests.setCellValueFactory(new PropertyValueFactory<>("numberOfGuests"));
         colConf.setCellValueFactory(new PropertyValueFactory<>("confirmationCode"));
-        colSub.setCellValueFactory(new PropertyValueFactory<>("subscriberId"));
-        colPlaced.setCellValueFactory(new PropertyValueFactory<>("dateOfPlacing"));
+        colSub.setCellValueFactory(new PropertyValueFactory<>("customerId"));
+        colPlaced.setCellValueFactory(new PropertyValueFactory<>("createdAt"));
+
 
         statusLabel.setText("DISCONNECTED");//default client status
     }
@@ -120,20 +121,20 @@ public class ClientFrameController implements ClientUI {
 
 
     // ==========================================================
-    // LOAD ORDERS
+    // LOAD RSERVATIONS
     // ==========================================================
     @FXML
-    public void onLoadOrders() {
+    public void onLoadReservations() {
         if (client == null || !client.isConnected()) {
             messageArea.appendText("Not connected to server.\n");
             return;
         }
 
-        client.requestAllOrders();
+        client.requestAllReservations();
     }
 
-    // UPDATE ORDER
-    // Sends a request to update a specific order
+    // UPDATE RESERVATION
+    // Sends a request to update a specific reservation
     @FXML
     public void onUpdate() {
         if (client == null || !client.isConnected()) {
@@ -142,11 +143,11 @@ public class ClientFrameController implements ClientUI {
         }
 
         try {
-            int orderNum = Integer.parseInt(updateOrderField.getText().trim());
+            int reservationNum = Integer.parseInt(updateReservationField.getText().trim());
             LocalDate newDate = LocalDate.parse(updateDateField.getText().trim());
             int guests = Integer.parseInt(updateGuestsField.getText().trim());
 
-            client.requestUpdateOrder(orderNum, newDate, guests);
+            client.requestUpdateReservation(reservationNum, newDate, guests);
 
         } catch (Exception e) {
             messageArea.appendText("Invalid input: " + e.getMessage() + "\n");
@@ -160,12 +161,12 @@ public class ClientFrameController implements ClientUI {
             messageArea.appendText("[SERVER] " + msg + "\n")
         );
     }
-    // Replaces table contents with the list of orders from the server 
+    // Replaces table contents with the list of reservations from the server 
     @Override
-    public void displayOrders(List<Order> orders) {
+    public void displayReservations(List<Reservation> reservations) {
         Platform.runLater(() -> {
-            ordersTable.getItems().clear();
-            ordersTable.getItems().addAll(orders);
+            reservationsTable.getItems().clear();
+            reservationsTable.getItems().addAll(reservations);
         });
     }
 

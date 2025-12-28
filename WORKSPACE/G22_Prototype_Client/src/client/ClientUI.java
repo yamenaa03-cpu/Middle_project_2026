@@ -2,7 +2,7 @@ package client;
 
 import java.util.List;
 
-import common.Order;
+import common.entity.Reservation;
 
 /**
  * ClientUI is an interface that defines the communication layer
@@ -28,18 +28,18 @@ public interface ClientUI {
     void displayMessage(String msg);
     
     /**
-     * Displays a list of Order objects.
+     * Displays a list of Reservation objects.
      *
      * The Client calls this method when the server responds
-     * with a list of orders (for example, after GET_ALL_ORDERS).
+     * with a list of reservations (for example, after GET_ALL_RESERVATIONS).
      *
      * A UI implementation might:
      *   - Fill a JavaFX TableView
      *  
      *
-     * @param orders The list of orders sent from the server.
+     * @param reservations The list of reservations sent from the server.
      */
-    void displayOrders(List<Order> orders);
+    void displayReservations(List<Reservation> reservations);
     
     
 

@@ -7,10 +7,10 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
-import common.Order;
-import common.OrderOperation;
-import common.OrderRequest;
-import common.OrderResponse;
+import common.entity.Reservation;
+import common.entity.ReservationOperation;
+import common.entity.ReservationRequest;
+import common.entity.ReservationResponse;
 import ocsf.server.AbstractServer;
 import ocsf.server.ConnectionToClient;
 import serverDbController.ServerController;
@@ -56,8 +56,8 @@ public class Server extends AbstractServer {
 	}
 
 	
-/*HANDLE MESSAGES FROM CLIENTS, it gets messages as instances of the class OrderRequest it checks whats the specific operation that the client whants
- * in return to the client a response in an instance of OrderResponse class*/
+/*HANDLE MESSAGES FROM CLIENTS, it gets messages as instances of the class ReservationRequest it checks whats the specific operation that the client whants
+ * in return to the client a response in an instance of ReservationResponse class*/
     @Override
     protected void handleMessageFromClient(Object msg, ConnectionToClient client) {
 
@@ -65,48 +65,48 @@ public class Server extends AbstractServer {
             // if DB not initialized
             if (db == null ) {
                 client.sendToClient(
-                        new OrderResponse(false, "Database not configured!", null)
+                        new ReservationResponse(false, "Database not configured!", null)
                 );
                 ui.display("Client attempted request but DB not configured.");
                 return;
             }
 
             // if Wrong message type
-            if (!(msg instanceof OrderRequest)) {
+            if (!(msg instanceof ReservationRequest)) {
                 client.sendToClient(
-                        new OrderResponse(false, "Unknown request type", null)
+                        new ReservationResponse(false, "Unknown request type", null)
                 );
                 return;
             }
 
 
-            OrderRequest req = (OrderRequest) msg;
-            OrderResponse resp;
+            ReservationRequest req = (ReservationRequest) msg;
+            ReservationResponse resp;
 
             switch (req.getOperation()) {
 
-                case GET_ALL_ORDERS:
-                    resp = new OrderResponse(true,
-                            "Orders loaded.",
-                            db.getAllOrders());
+                case GET_ALL_RESERVATIONS:
+                    resp = new ReservationResponse(true,
+                            "Reservations loaded.",
+                            db.getAllReservations());
                     break;
 
-                case UPDATE_ORDER_FIELDS:
-                    boolean ok = db.updateOrderFields(
-                            req.getOrderNumber(),
-                            req.getNewOrderDate(),
+                case UPDATE_RESERVATION_FIELDS:
+                    boolean ok = db.updateReservationFields(
+                            req.getReservationNumber(),
+                            req.getNewReservationDate(),
                             req.getNewNumberOfGuests()
                     );
 
-                    resp = new OrderResponse(
+                    resp = new ReservationResponse(
                             ok,
-                            ok ? "Order updated." : "Order not found.",
-                            db.getAllOrders()
-                    );//checks if the order was updated correctly and returns a response according to the result
+                            ok ? "Reservation updated." : "Reservation not found.",
+                            db.getAllReservations()
+                    );//checks if the Reservation was updated correctly and returns a response according to the result
                     break;
 
                 default:
-                    resp = new OrderResponse(false,
+                    resp = new ReservationResponse(false,
                             "Unknown operation",
                             null);
             }
@@ -118,7 +118,7 @@ public class Server extends AbstractServer {
             e.printStackTrace();
             try {
                 client.sendToClient(
-                        new OrderResponse(false, "Database error occurred", null)
+                        new ReservationResponse(false, "Database error occurred", null)
                 );
             } catch (Exception ignored) {}
         } catch (Exception e) {

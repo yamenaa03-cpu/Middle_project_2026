@@ -10,7 +10,7 @@ import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 
-import common.Order;
+import common.entity.Reservation;
 
 /**
  * Handles all direct access to the database. Only this class talks to JDBC.
@@ -51,33 +51,33 @@ public class ServerController {
         }
     }
 
-	public List<Order> getAllOrders() throws SQLException {
+	public List<Reservation> getAllReservations() throws SQLException {
 		// !! check if it is possible to change to Hashmap for faster results !!
-		List<Order> result = new ArrayList<>();// array list to insert the orders in it 
+		List<Reservation> result = new ArrayList<>();// array list to insert the Reservations in it 
 
-		String sql = "SELECT order_number, order_date, number_of_guests, "
-				+ "confirmation_code, subscriber_id, date_of_placing_order " + "FROM `order`";
+		String sql = "SELECT reservation_number, reservation_date, number_of_guests, "
+				+ "confirmation_code, subscriber_id, date_of_placing_reservation " + "FROM `reservation`";
 
 		try (Connection conn = getConnection();
 				PreparedStatement ps = conn.prepareStatement(sql);
 				ResultSet rs = ps.executeQuery()) {
 			//get data from DataBase
 			while (rs.next()) {
-				int orderNumber = rs.getInt("order_number");
+				int reservationNumber = rs.getInt("reservation_number");
 
-				Date orderDateSql = rs.getDate("order_date");
-				LocalDate orderDate;
-				if (orderDateSql != null) {
-					orderDate = orderDateSql.toLocalDate();
+				Date reservationDateSql = rs.getDate("reservation_date");
+				LocalDate reservationDate;
+				if (reservationDateSql != null) {
+					reservationDate = reservationDateSql.toLocalDate();
 				} else {
-					orderDate = null;
+					reservationDate = null;
 				}
 
 				int guests = rs.getInt("number_of_guests");
 				int conf = rs.getInt("confirmation_code");
 				int subId = rs.getInt("subscriber_id");
 
-				Date placingSql = rs.getDate("date_of_placing_order");
+				Date placingSql = rs.getDate("date_of_placing_reservation");
 				LocalDate placing;
 				if (placingSql != null) {
 					placing = placingSql.toLocalDate();
@@ -85,8 +85,8 @@ public class ServerController {
 					placing = null;
 				}
 
-				// adds order to the arraylist<Order>
-				Order o = new Order(orderNumber, orderDate, guests, conf, subId, placing);
+				// adds reservation to the arraylist<reservation>
+				Reservation o = new Reservation(reservationNumber, reservationDate, guests, conf, subId, placing);
 				result.add(o);
 
 			}
@@ -95,9 +95,9 @@ public class ServerController {
 		return result;
 	}
 
-	public boolean updateOrderFields(int orderNumber, LocalDate newDate, int newGuests) throws SQLException {
+	public boolean updateReservationFields(int reservationNumber, LocalDate newDate, int newGuests) throws SQLException {
 
-		String sql = "UPDATE `Order` " + "SET order_date = ?, number_of_guests = ? " + "WHERE order_number = ?";
+		String sql = "UPDATE `Reservation` " + "SET reservation_date = ?, number_of_guests = ? " + "WHERE reservation_number = ?";
 
 		try (Connection conn = getConnection(); PreparedStatement ps = conn.prepareStatement(sql)) {
 
@@ -108,10 +108,10 @@ public class ServerController {
 			}
 
 			ps.setInt(2, newGuests);
-			ps.setInt(3, orderNumber);
+			ps.setInt(3, reservationNumber);
 
 			int updated = ps.executeUpdate();
-			return updated == 1;//check if the order was updated in the DB
+			return updated == 1;//check if the reservation was updated in the DB
 		}
 	}
 

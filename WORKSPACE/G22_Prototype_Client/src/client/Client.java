@@ -2,19 +2,20 @@ package client;
 
 import ocsf.client.AbstractClient;
 
-import common.OrderResponse;
-import common.OrderRequest;
-import common.Order;
-
 import java.io.IOException;
 import java.time.LocalDate;
 import java.util.List;
+
+import common.entity.Reservation;
+import common.entity.ReservationResponse;
+import common.entity.ReservationRequest;
+import common.entity.ReservationOperation;
 /**
  * The Client class extends the OCSF AbstractClient framework.
  * It is responsible for:
  *  - Connecting to the server
- *  - Sending requests (OrderRequest objects)
- *  - Receiving responses from the server (OrderResponse)
+ *  - Sending requests (ReservationRequest objects)
+ *  - Receiving responses from the server (ReservationResponse)
  *  - Forwarding results/messages to the GUI through ClientUI
  *@version 1.0
  */
@@ -29,7 +30,7 @@ public class Client extends AbstractClient {
     }
     /**
      * This method automatically runs whenever the server sends a message.
-     * It handles responses from the server as an instance of OrderResponse object
+     * It handles responses from the server as an instance of ReservationResponse object
      * 
      *
      * @param msg The object received from the server
@@ -37,37 +38,37 @@ public class Client extends AbstractClient {
      */
     @Override
     protected void handleMessageFromServer(Object msg) {
-        if (!(msg instanceof OrderResponse)) {
+        if (!(msg instanceof ReservationResponse)) {
             ui.displayMessage("Unknown message from server: " + msg);
             return;
         }
 
-        OrderResponse resp = (OrderResponse) msg;
+        ReservationResponse resp = (ReservationResponse) msg;
         ui.displayMessage(resp.getMessage());
 
-        List<Order> orders = resp.getOrders();
-        if (orders != null) {
-            ui.displayOrders(orders);
+        List<Reservation> reservations = resp.getReservations();
+        if (reservations != null) {
+            ui.displayReservations(reservations);
         }
     }
     
     /**
-     * Sends a request to retrieve all orders from the database.
+     * Sends a request to retrieve all reservations from the database.
      */
-    public void requestAllOrders() {
-        OrderRequest req = OrderRequest.createGetAllOrdersRequest();
+    public void requestAllReservations() {
+        ReservationRequest req = ReservationRequest.createGetAllReservationsRequest();
         sendRequest(req);
     }
     /**
-     * Sends a request (to the sever) to update an order in the database.
+     * Sends a request (to the sever) to update an Reservation in the database.
      *
-     * @param orderNumber The order ID to update
+     * @param reservationNumber The reservation ID to update
      * @param newDate     The new date to set
      * @param newGuests   The new guest count
      */
     
-    public void requestUpdateOrder(int orderNumber, LocalDate newDate, int newGuests) {
-        OrderRequest req = OrderRequest.createUpdateOrderRequest(orderNumber, newDate, newGuests);
+    public void requestUpdateReservation(int reservationNumber, LocalDate newDate, int newGuests) {
+        ReservationRequest req = ReservationRequest.createUpdateReservationRequest(reservationNumber, newDate, newGuests);
         sendRequest(req);
     }
     
@@ -75,10 +76,10 @@ public class Client extends AbstractClient {
      * sends a request object to the server.
      * catches any Exception while doing so
      *
-     * @param req The OrderRequest object to send
+     * @param req The ReservationRequest object to send
      */
     
-    private void sendRequest(OrderRequest req) {
+    private void sendRequest(ReservationRequest req) {
         try {
             sendToServer(req);
         } catch (IOException e) {

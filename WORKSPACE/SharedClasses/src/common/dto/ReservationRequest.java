@@ -1,7 +1,7 @@
 package common.dto;
 
 import java.io.Serializable;
-import java.time.LocalDate;
+import java.time.LocalDateTime;
 
 import common.enums.ReservationOperation;
 
@@ -21,7 +21,7 @@ public class ReservationRequest implements Serializable{
     private ReservationOperation operation;
 	
     private int reservationId;
-    private LocalDate reservationDate;
+    private LocalDateTime reservationDate;
     private int numberOfGuests;
     private int customerId; 
     
@@ -37,7 +37,7 @@ public class ReservationRequest implements Serializable{
     /*identify the request as an instance of Reservation request class and saves the UPDATE_RESERVATION_FIELDS operation
       as a field in the class*/
     public static ReservationRequest createUpdateReservationRequest(int ReservationNumber,
-            LocalDate newDate,
+            LocalDateTime newDate,
             int newGuests) {
     	
 		ReservationRequest req = new ReservationRequest();
@@ -51,7 +51,7 @@ public class ReservationRequest implements Serializable{
     /*identify the request as an instance of Reservation request class and saves the CREATE_RESERVATION_FIELDS operation
     as a field in the class*/
     public static ReservationRequest createCreateReservationRequest(
-            int customerId, LocalDate date, int guests) {
+            int customerId, LocalDateTime date, int guests) {
 
         ReservationRequest req = new ReservationRequest();
         req.operation = ReservationOperation.CREATE_RESERVATION;
@@ -65,7 +65,7 @@ public class ReservationRequest implements Serializable{
     //Getters for the class fields
     public ReservationOperation getOperation() { return operation; }
     public int getReservationId() { return reservationId; }
-    public LocalDate getReservationDate() { return reservationDate; }
+    public LocalDateTime getReservationDate() { return reservationDate; }
     public int getNumberOfGuests() { return numberOfGuests; }
     public int getCustomerId() { return customerId; }
 }

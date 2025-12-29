@@ -1,7 +1,7 @@
 package common.entity;
 
 import java.io.Serializable;
-import java.time.LocalDate;
+import java.time.LocalDateTime;
 
 /**
  * Represents a single Order entity stored in the database.
@@ -17,18 +17,19 @@ public class Reservation implements Serializable {
 
     // Reservation fields
     private int reservationId;          // PK
-    private LocalDate reservationDate;  // date of reservation
+    private LocalDateTime reservationDate;  // date of reservation
     private int numberOfGuests;
     private int confirmationCode;
     private int customerId;             // FK to Customer
-    private LocalDate createdAt;        // date reservation was created
+    private LocalDateTime createdAt;        // date reservation was created
+    Integer tableId;
 
     public Reservation(int reservationId,
-                       LocalDate reservationDate,
+    		LocalDateTime reservationDate,
                        int numberOfGuests,
                        int confirmationCode,
                        int customerId,
-                       LocalDate createdAt) {
+                       LocalDateTime createdAt) {
 
         this.reservationId = reservationId;
         this.reservationDate = reservationDate;
@@ -39,11 +40,11 @@ public class Reservation implements Serializable {
     }
 
     public int getReservationId() { return reservationId; }
-    public LocalDate getReservationDate() { return reservationDate; }
+    public LocalDateTime getReservationDateTime() { return reservationDate; }
     public int getNumberOfGuests() { return numberOfGuests; }
     public int getConfirmationCode() { return confirmationCode; }
     public int getCustomerId() { return customerId; }
-    public LocalDate getCreatedAt() { return createdAt; }
+    public LocalDateTime getCreatedAt() { return createdAt; }
 
     @Override
     public String toString() {

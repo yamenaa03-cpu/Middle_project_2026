@@ -68,7 +68,7 @@
                 <TableColumn fx:id="colGuests" prefWidth="80" text="Guests" />
                 <TableColumn fx:id="colConf" prefWidth="100" text="Conf Code" />
                 <TableColumn fx:id="colSub" prefWidth="100" text="Subscriber ID" />
-                <TableColumn fx:id="colPlaced" prefWidth="120" text="Placed On" />
+                <TableColumn fx:id="colCreated" prefWidth="120" text="Created On" />
             </columns>
         </TableView>
     </center>
@@ -92,7 +92,7 @@
                     <TextField fx:id="updateReservationField" GridPane.columnIndex="1" />
 
                     <!-- Row 1 -->
-                    <Label text="New Date (yyyy-MM-dd):" GridPane.columnIndex="0" GridPane.rowIndex="1" />
+                    <Label text="New Date (yyyy-MM-dd HH:mm):" GridPane.columnIndex="0" GridPane.rowIndex="1" />
                     <TextField fx:id="updateDateField" GridPane.columnIndex="1" GridPane.rowIndex="1" />
 
                     <!-- Row 2 -->

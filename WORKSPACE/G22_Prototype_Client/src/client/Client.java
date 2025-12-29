@@ -3,7 +3,7 @@ package client;
 import ocsf.client.AbstractClient;
 
 import java.io.IOException;
-import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.List;
 
 import common.dto.ReservationRequest;
@@ -67,8 +67,8 @@ public class Client extends AbstractClient {
      * @param newGuests   The new guest count
      */
     
-    public void requestUpdateReservation(int reservationId, LocalDate newDate, int newGuests) {
-        ReservationRequest req = ReservationRequest.createUpdateReservationRequest(reservationId, newDate, newGuests);
+    public void requestUpdateReservation(int reservationId, LocalDateTime newDateTime, int newGuests) {
+        ReservationRequest req = ReservationRequest.createUpdateReservationRequest(reservationId, newDateTime, newGuests);
         sendRequest(req);
     }
     
@@ -80,8 +80,8 @@ public class Client extends AbstractClient {
      * @param newGuests   The new guest count
      */
     
-    public void requestCreateReservation(int customerId, LocalDate date, int guests) {
-        ReservationRequest req = ReservationRequest.createCreateReservationRequest(customerId, date, guests);
+    public void requestCreateReservation(int customerId, LocalDateTime dateTime, int guests) {
+        ReservationRequest req = ReservationRequest.createCreateReservationRequest(customerId, dateTime, guests);
         sendRequest(req);
     }
     /**

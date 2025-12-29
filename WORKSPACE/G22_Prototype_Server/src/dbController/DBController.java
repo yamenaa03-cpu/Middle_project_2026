@@ -5,9 +5,10 @@ import java.sql.Date;
 import java.sql.DriverManager;
 import java.sql.PreparedStatement;
 import java.sql.Statement;
+import java.sql.Timestamp;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -33,7 +34,7 @@ public class DBController {
 
     //constructor for ServerController
     public DBController(String dbName, String dbUser, String dbPassword) {
-        this.url = "jdbc:mysql://127.0.0.1:3306/" + dbName + "?serverTimezone=UTC";
+        this.url = "jdbc:mysql://127.0.0.1:3306/" + dbName + "?serverTimezone=Asia/Jerusalem";
         this.user = dbUser;
         this.password = dbPassword;
     }
@@ -56,8 +57,8 @@ public class DBController {
 		// !! check if it is possible to change to Hashmap for faster results !!
 		List<Reservation> result = new ArrayList<>();// array list to insert the Reservations in it 
 
-		String sql = "SELECT reservation_id, reservation_date, number_of_guests, "
-				+ "confirmation_code, subscriber_id, created_at " + "FROM `reservation`";
+		String sql = "SELECT reservation_id, reservation_datetime, number_of_guests, "
+				+ "confirmation_code, customer_id, created_at " + "FROM `reservation`";
 
 		try (Connection conn = getConnection();
 				PreparedStatement ps = conn.prepareStatement(sql);
@@ -66,28 +67,28 @@ public class DBController {
 			while (rs.next()) {
 				int reservationNumber = rs.getInt("reservation_id");
 
-				Date reservationDateSql = rs.getDate("reservation_date");
-				LocalDate reservationDate;
-				if (reservationDateSql != null) {
-					reservationDate = reservationDateSql.toLocalDate();
+				Timestamp ts_reservation = rs.getTimestamp("reservation_datetime");
+				LocalDateTime reservationDate;
+				if (ts_reservation != null) {
+					reservationDate = ts_reservation.toLocalDateTime();
 				} else {
 					reservationDate = null;
 				}
 
 				int guests = rs.getInt("number_of_guests");
 				int conf = rs.getInt("confirmation_code");
-				int subId = rs.getInt("subscriber_id");
+				int cusId = rs.getInt("customer_id");
 
-				Date placingSql = rs.getDate("created_at");
-				LocalDate placing;
-				if (placingSql != null) {
-					placing = placingSql.toLocalDate();
+				Timestamp ts_created = rs.getTimestamp("created_at");
+				LocalDateTime placing;
+				if (ts_created != null) {
+					placing = ts_created.toLocalDateTime();
 				} else {
 					placing = null;
 				}
 
 				// adds reservation to the arraylist<reservation>
-				Reservation o = new Reservation(reservationNumber, reservationDate, guests, conf, subId, placing);
+				Reservation o = new Reservation(reservationNumber, reservationDate, guests, conf, cusId, placing);
 				result.add(o);
 
 			}
@@ -96,13 +97,13 @@ public class DBController {
 		return result;
 	}
 
-	public boolean updateReservationFields(int reservationNumber, LocalDate newDate, int newGuests) throws SQLException {
+	public boolean updateReservationFields(int reservationNumber, LocalDateTime newDateTime, int newGuests) throws SQLException {
 
-		String sql = "UPDATE reservation " + "SET reservation_date = ?, number_of_guests = ? " + "WHERE reservation_id = ?";
+		String sql = "UPDATE reservation " + "SET reservation_datetime = ?, number_of_guests = ? " + "WHERE reservation_id = ?";
 
 		try (Connection conn = getConnection(); PreparedStatement ps = conn.prepareStatement(sql)) {
 
-			ps.setDate(1, Date.valueOf(newDate));
+			ps.setTimestamp(1, Timestamp.valueOf(newDateTime));
 			ps.setInt(2, newGuests);
 			ps.setInt(3, reservationNumber);
 
@@ -111,13 +112,13 @@ public class DBController {
 		}
 	}
 
-	public int insertReservation(int customerId, LocalDate reservationDate, int numberOfGuests) throws SQLException {
+	public int insertReservation(int customerId, LocalDateTime reservationDateTime, int numberOfGuests) throws SQLException {
 
 	    String sql =
-	        "INSERT INTO reservation (reservation_date, number_of_guests, confirmation_code, subscriber_id, created_at) " +
+	        "INSERT INTO reservation (reservation_datetime, number_of_guests, confirmation_code, customer_id, created_at) " +
 	        "VALUES (?, ?, ?, ?, ?)";
 
-	    LocalDate createdAt = LocalDate.now();
+	    LocalDateTime createdAt = LocalDateTime.now();
 
 	    for (int attempt = 1; attempt <= 5; attempt++) {
 
@@ -125,11 +126,11 @@ public class DBController {
 
 	        try (Connection conn = getConnection(); PreparedStatement ps = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
 
-	            ps.setDate(1, Date.valueOf(reservationDate));
+	            ps.setTimestamp(1, Timestamp.valueOf(reservationDateTime));
 	            ps.setInt(2, numberOfGuests);
 	            ps.setInt(3, confirmationCode);
 	            ps.setInt(4, customerId);
-	            ps.setDate(5, Date.valueOf(createdAt));
+	            ps.setTimestamp(5, Timestamp.valueOf(createdAt));
 
 	            int inserted = ps.executeUpdate();
 	            if (inserted != 1) return -1;
@@ -151,4 +152,40 @@ public class DBController {
 
 	    return -1; // very rare: failed after retries
 	}
+	
+	public List<Integer> getTableCapacities() throws SQLException {
+	    List<Integer> caps = new ArrayList<>();
+	    String sql = "SELECT capacity FROM restaurant_table";
+	    try (Connection conn = getConnection();
+	         PreparedStatement ps = conn.prepareStatement(sql);
+	         ResultSet rs = ps.executeQuery()) {
+	        while (rs.next()) caps.add(rs.getInt(1));
+	    }
+	    return caps;
+	}
+
+	public List<Integer> getOverlappingGuests(LocalDateTime start, int durationMin) throws SQLException {
+	    List<Integer> guests = new ArrayList<>();
+	    String sql =
+	        "SELECT number_of_guests FROM reservation " +
+	        "WHERE status = 'ACTIVE' " +
+	        "AND reservation_datetime < ? " +
+	        "AND DATE_ADD(reservation_datetime, INTERVAL ? MINUTE) > ?";
+
+	    LocalDateTime end = start.plusMinutes(durationMin);
+
+	    try (Connection conn = getConnection();
+	         PreparedStatement ps = conn.prepareStatement(sql)) {
+
+	        ps.setTimestamp(1, Timestamp.valueOf(end));    // existingStart < newEnd
+	        ps.setInt(2, durationMin);                     // existingEnd = start + duration
+	        ps.setTimestamp(3, Timestamp.valueOf(start));  // existingEnd > newStart
+
+	        try (ResultSet rs = ps.executeQuery()) {
+	            while (rs.next()) guests.add(rs.getInt(1));
+	        }
+	    }
+	    return guests;
+	}
+
 }

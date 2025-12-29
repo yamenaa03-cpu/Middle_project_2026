@@ -9,7 +9,8 @@ import javafx.scene.control.*;
 import javafx.scene.control.cell.PropertyValueFactory;
 
 import java.io.IOException;
-import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.List;
 
 /**
@@ -36,11 +37,11 @@ public class ClientFrameController implements ClientUI {
 
     @FXML private TableView<Reservation> reservationsTable;
     @FXML private TableColumn<Reservation, Integer> colNumber;
-    @FXML private TableColumn<Reservation, LocalDate> colDate;
+    @FXML private TableColumn<Reservation, String> colDate;
     @FXML private TableColumn<Reservation, Integer> colGuests;
     @FXML private TableColumn<Reservation, Integer> colConf;
     @FXML private TableColumn<Reservation, Integer> colSub;
-    @FXML private TableColumn<Reservation, LocalDate> colPlaced;
+    @FXML private TableColumn<Reservation, String> colCreated;
 
     @FXML private TextField updateReservationField;
     @FXML private TextField updateDateField;
@@ -67,11 +68,23 @@ public class ClientFrameController implements ClientUI {
         Call getReservationNumber() and Puts that value in the column cell
         */
         colNumber.setCellValueFactory(new PropertyValueFactory<>("reservationId"));
-        colDate.setCellValueFactory(new PropertyValueFactory<>("reservationDate"));
+        
+        DateTimeFormatter dtf = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm");
+        colDate.setCellValueFactory(cellData -> {
+            LocalDateTime dt = cellData.getValue().getReservationDateTime();
+            String text = (dt == null) ? "" : dt.format(dtf);
+            return new javafx.beans.property.SimpleStringProperty(text);
+        });
+        
         colGuests.setCellValueFactory(new PropertyValueFactory<>("numberOfGuests"));
         colConf.setCellValueFactory(new PropertyValueFactory<>("confirmationCode"));
         colSub.setCellValueFactory(new PropertyValueFactory<>("customerId"));
-        colPlaced.setCellValueFactory(new PropertyValueFactory<>("createdAt"));
+        
+        colCreated.setCellValueFactory(cellData -> {
+            LocalDateTime dt = cellData.getValue().getCreatedAt();
+            String text = (dt == null) ? "" : dt.format(dtf);
+            return new javafx.beans.property.SimpleStringProperty(text);
+        });
 
 
         statusLabel.setText("DISCONNECTED");//default client status
@@ -145,10 +158,14 @@ public class ClientFrameController implements ClientUI {
 
         try {
             int reservationNum = Integer.parseInt(updateReservationField.getText().trim());
-            LocalDate newDate = LocalDate.parse(updateDateField.getText().trim());
+            DateTimeFormatter formatter =
+                    DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm");
+
+            LocalDateTime newDateTime =
+                    LocalDateTime.parse(updateDateField.getText().trim(), formatter);
             int guests = Integer.parseInt(updateGuestsField.getText().trim());
 
-            client.requestUpdateReservation(reservationNum, newDate, guests);
+            client.requestUpdateReservation(reservationNum, newDateTime, guests);
 
         } catch (Exception e) {
             messageArea.appendText("Invalid input: " + e.getMessage() + "\n");

@@ -24,13 +24,19 @@ DROP TABLE IF EXISTS `reservation`;
 /*!50503 SET character_set_client = utf8mb4 */;
 CREATE TABLE `reservation` (
   `reservation_id` int NOT NULL AUTO_INCREMENT,
-  `reservation_date` date DEFAULT NULL,
+  `reservation_datetime` datetime DEFAULT NULL,
   `number_of_guests` int DEFAULT NULL,
   `confirmation_code` int NOT NULL,
-  `subscriber_id` int DEFAULT NULL,
-  `created_at` date DEFAULT NULL,
+  `customer_id` int DEFAULT NULL,
+  `table_id` int DEFAULT NULL,
+  `created_at` datetime NOT NULL,
+  `status` varchar(20) NOT NULL DEFAULT 'ACTIVE',
   PRIMARY KEY (`reservation_id`),
-  UNIQUE KEY `confirmation_code` (`confirmation_code`)
+  UNIQUE KEY `confirmation_code` (`confirmation_code`),
+  KEY `fk_res_customer` (`customer_id`),
+  KEY `fk_res_table` (`table_id`),
+  CONSTRAINT `fk_res_customer` FOREIGN KEY (`customer_id`) REFERENCES `customer` (`customer_id`),
+  CONSTRAINT `fk_res_table` FOREIGN KEY (`table_id`) REFERENCES `restaurant_table` (`table_id`)
 ) ENGINE=InnoDB AUTO_INCREMENT=7 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
@@ -40,7 +46,7 @@ CREATE TABLE `reservation` (
 
 LOCK TABLES `reservation` WRITE;
 /*!40000 ALTER TABLE `reservation` DISABLE KEYS */;
-INSERT INTO `reservation` VALUES (1,'2025-09-09',3,9876,1001,'2025-03-01'),(2,'2025-08-07',7,5432,1002,'2025-03-05'),(3,'2025-03-22',3,6655,1003,'2025-03-08'),(4,'2063-10-20',43,7234,1004,'2025-03-09'),(6,'2025-12-29',14,165251,14,'2025-12-28');
+INSERT INTO `reservation` VALUES (1,'2025-12-31 21:00:00',7,9876,1001,NULL,'2025-03-01 00:00:00','ACTIVE'),(2,'2026-01-01 10:30:00',5,5432,1002,NULL,'2025-03-05 00:00:00','ACTIVE'),(3,'2025-12-31 00:00:00',6,6655,1003,NULL,'2025-03-08 00:00:00','ACTIVE'),(4,'2025-12-31 23:30:00',9,7234,1004,NULL,'2025-03-09 00:00:00','ACTIVE'),(6,'2025-12-31 23:00:00',8,165251,14,NULL,'2025-12-28 00:00:00','ACTIVE');
 /*!40000 ALTER TABLE `reservation` ENABLE KEYS */;
 UNLOCK TABLES;
 /*!40103 SET TIME_ZONE=@OLD_TIME_ZONE */;
@@ -53,4 +59,4 @@ UNLOCK TABLES;
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
--- Dump completed on 2025-12-28 23:05:59
+-- Dump completed on 2025-12-29 14:45:38

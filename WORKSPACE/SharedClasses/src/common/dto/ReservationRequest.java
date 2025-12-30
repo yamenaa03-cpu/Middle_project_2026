@@ -21,7 +21,7 @@ public class ReservationRequest implements Serializable{
     private ReservationOperation operation;
 	
     private int reservationId;
-    private LocalDateTime reservationDate;
+    private LocalDateTime reservationDateTime;
     private int numberOfGuests;
     private int customerId; 
     
@@ -37,13 +37,13 @@ public class ReservationRequest implements Serializable{
     /*identify the request as an instance of Reservation request class and saves the UPDATE_RESERVATION_FIELDS operation
       as a field in the class*/
     public static ReservationRequest createUpdateReservationRequest(int ReservationNumber,
-            LocalDateTime newDate,
+            LocalDateTime newDateTime,
             int newGuests) {
     	
 		ReservationRequest req = new ReservationRequest();
 		req.operation = ReservationOperation.UPDATE_RESERVATION_FIELDS;
 		req.reservationId = ReservationNumber;
-		req.reservationDate = newDate;
+		req.reservationDateTime = newDateTime;
 		req.numberOfGuests = newGuests;
 		return req;
     }
@@ -56,7 +56,7 @@ public class ReservationRequest implements Serializable{
         ReservationRequest req = new ReservationRequest();
         req.operation = ReservationOperation.CREATE_RESERVATION;
         req.customerId = customerId;
-        req.reservationDate = date;
+        req.reservationDateTime = date;
         req.numberOfGuests = guests;
         return req;
     }
@@ -65,7 +65,7 @@ public class ReservationRequest implements Serializable{
     //Getters for the class fields
     public ReservationOperation getOperation() { return operation; }
     public int getReservationId() { return reservationId; }
-    public LocalDateTime getReservationDate() { return reservationDate; }
+    public LocalDateTime getReservationDateTime() { return reservationDateTime; }
     public int getNumberOfGuests() { return numberOfGuests; }
     public int getCustomerId() { return customerId; }
 }

@@ -3,8 +3,11 @@ package controllers;
 import java.sql.SQLException;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
+import java.util.ArrayList;
 import java.util.List;
 
+import common.dto.CreateReservationResult;
+import common.dto.InsertReservationResult;
 import common.entity.Reservation;
 import dbController.DBController;
 
@@ -34,13 +37,28 @@ public class ReservationController {
         return db.updateReservationFields(reservationId, newDateTime, newGuests);
     }
     
-    public int createReservation(int customerId, LocalDateTime dateTime, int guests) throws SQLException {
-        if (customerId <= 0) return -1;
-        if (dateTime == null) return -1;
-        if (guests <= 0) return -1;
+    public CreateReservationResult createReservation(int customerId, LocalDateTime start, int guests) throws SQLException {
 
-        return db.insertReservation(customerId, dateTime, guests);
+        if (customerId <= 0) return CreateReservationResult.fail("Not logged in.");
+
+        String err = validateRequest(start, guests); // +1h, +1month, 30-min, 10:00->02:00
+        if (err != null) return CreateReservationResult.fail(err);
+
+        List<Integer> caps = db.getTableCapacities();
+        List<Integer> overlapping = db.getOverlappingGuests(start, DURATION_MIN);
+        overlapping.add(guests);
+
+        if (!feasible(caps, overlapping)) {
+            List<LocalDateTime> sug = suggestTimesWithGuests(start, guests, caps);
+            return CreateReservationResult.noSpace("No space at requested time.", sug);
+        }
+
+        InsertReservationResult r = db.insertReservation(customerId, start, guests);
+        if (r == null) return CreateReservationResult.fail("Insert failed.");
+
+        return CreateReservationResult.ok(r.getReservationId(), r.getConfirmationCode());
     }
+
     
     private String validateRequest(LocalDateTime start, int guests) {
         if (start == null) return "Missing date/time.";
@@ -107,7 +125,7 @@ public class ReservationController {
     private List<LocalDateTime> suggestTimesWithGuests(LocalDateTime start, int newGuests, List<Integer> caps) throws SQLException {
         List<LocalDateTime> suggestions = new ArrayList<>();
 
-        for (int i = 1; i <= 12; i++) { // 12 slots = 6 ساعات (30 دقيقة)
+        for (int i = 1; i <= 12; i++) {
             LocalDateTime plus = start.plusMinutes(30L * i);
             LocalDateTime minus = start.minusMinutes(30L * i);
 

@@ -7,6 +7,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
+import common.dto.CreateReservationResult;
 import common.dto.ReservationRequest;
 import common.dto.ReservationResponse;
 import common.entity.Reservation;
@@ -97,7 +98,7 @@ public class Server extends AbstractServer {
                 case UPDATE_RESERVATION_FIELDS:
                     boolean ok = reservationController.updateReservation(
                             req.getReservationId(),
-                            req.getReservationDate(),
+                            req.getReservationDateTime(),
                             req.getNumberOfGuests()
                     );
 
@@ -110,18 +111,28 @@ public class Server extends AbstractServer {
                     break;
                     
                 case CREATE_RESERVATION:
-                    Integer newId = reservationController.createReservation(
-                            req.getCustomerId(),
-                            req.getReservationDate(),
-                            req.getNumberOfGuests()
+                    CreateReservationResult r = reservationController.createReservation(
+                        req.getCustomerId(),
+                        req.getReservationDateTime(),
+                        req.getNumberOfGuests()
                     );
-
-                    boolean created = newId != null;
-                    resp = new ReservationResponse(
-                            created,
-                            created ? ("Reservation created. ID=" + newId) : "Failed to create reservation.",
-                            reservationController.getAllReservations()
-                    );
+                    if (r.isSuccess()) {
+                        resp = new ReservationResponse(
+                            true,
+                            r.getMessage(),
+                            r.getReservationId(),
+                            r.getConfirmationCode(),
+                            List.of()
+                        );
+                    } else {
+                        resp = new ReservationResponse(
+                            false,
+                            r.getMessage(),
+                            null,
+                            null,
+                            r.getSuggestions()
+                        );
+                    }
                     break;
 
                 default:

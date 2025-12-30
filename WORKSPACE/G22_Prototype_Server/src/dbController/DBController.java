@@ -12,6 +12,7 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
+import common.dto.InsertReservationResult;
 import common.entity.Reservation;
 
 /**
@@ -112,7 +113,7 @@ public class DBController {
 		}
 	}
 
-	public int insertReservation(int customerId, LocalDateTime reservationDateTime, int numberOfGuests) throws SQLException {
+	public InsertReservationResult insertReservation(int customerId, LocalDateTime reservationDateTime, int numberOfGuests) throws SQLException {
 
 	    String sql =
 	        "INSERT INTO reservation (reservation_datetime, number_of_guests, confirmation_code, customer_id, created_at) " +
@@ -133,14 +134,14 @@ public class DBController {
 	            ps.setTimestamp(5, Timestamp.valueOf(createdAt));
 
 	            int inserted = ps.executeUpdate();
-	            if (inserted != 1) return -1;
+	            if (inserted != 1) return null;
 
 	            // generated key = reservation_id (AUTO_INCREMENT)
 	            try (ResultSet keys = ps.getGeneratedKeys()) {
-	                if (keys.next()) return keys.getInt(1);
+	                if (keys.next()) return new InsertReservationResult(keys.getInt(1), confirmationCode);
 	            }
 
-	            return -1;
+	            return null;
 	        } catch (SQLException e) {
 	            // MySQL duplicate entry error (UNIQUE violation)
 	            if (e.getErrorCode() == 1062) {
@@ -150,7 +151,7 @@ public class DBController {
 	        }
 	    }
 
-	    return -1; // very rare: failed after retries
+	    return null; // very rare: failed after retries
 	}
 	
 	public List<Integer> getTableCapacities() throws SQLException {

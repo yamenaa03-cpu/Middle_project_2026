@@ -20,7 +20,7 @@ public class ReservationLogicTest {
                 14,
                 LocalDateTime.now().plusHours(2).withMinute(0),
                 4
-            )
+            ).getMessage()
         );
 
         System.out.println("=== TEST 2: invalid time (not 30 min) ===");
@@ -29,16 +29,16 @@ public class ReservationLogicTest {
                 14,
                 LocalDateTime.now().plusHours(2).withMinute(10),
                 4
-            )
+            ).getMessage()
         );
 
         System.out.println("=== TEST 3: outside opening hours ===");
         System.out.println(
             rc.createReservation(
                 14,
-                LocalDateTime.of(2025,1,5,3,0),
+                LocalDateTime.of(2026,1,5,3,0),
                 4
-            )
+            ).getMessage()
         );
     }
 }

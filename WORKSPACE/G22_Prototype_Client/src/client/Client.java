@@ -81,7 +81,7 @@ public class Client extends AbstractClient {
      */
     
     public void requestCreateReservation(int customerId, LocalDateTime dateTime, int guests) {
-        ReservationRequest req = ReservationRequest.createCreateReservationRequest(customerId, dateTime, guests);
+        ReservationRequest req = ReservationRequest.createCreateReservationRequest(dateTime, guests);
         sendRequest(req);
     }
     /**

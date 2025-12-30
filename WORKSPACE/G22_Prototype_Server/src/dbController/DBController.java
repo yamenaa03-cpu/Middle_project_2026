@@ -125,7 +125,8 @@ public class DBController {
 
 	        int confirmationCode = (int)(Math.random() * 900000) + 100000; // 6 digits
 
-	        try (Connection conn = getConnection(); PreparedStatement ps = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
+	        try (Connection conn = getConnection(); PreparedStatement ps = conn.prepareStatement(
+	        														sql, Statement.RETURN_GENERATED_KEYS)) {
 
 	            ps.setTimestamp(1, Timestamp.valueOf(reservationDateTime));
 	            ps.setInt(2, numberOfGuests);
@@ -188,5 +189,59 @@ public class DBController {
 	    }
 	    return guests;
 	}
+
+	public Integer findCustomerIdBySubscriptionCode(String code) throws SQLException {
+	    String sql = "SELECT customer_id FROM customer WHERE subscription_code = ? AND is_subscribed = 1";
+	    try (Connection conn = getConnection();
+		         PreparedStatement ps = conn.prepareStatement(sql)) {
+	        ps.setString(1, code);
+	        try (ResultSet rs = ps.executeQuery()) {
+	            return rs.next() ? rs.getInt("customer_id") : null;
+	        }
+	    }
+	}
+	
+	public Integer findCustomerIdByPhoneOrEmail(String phone, String email) throws SQLException {
+	    if (phone != null && !phone.isBlank()) {
+	        String sql = "SELECT customer_id FROM customer WHERE phone = ?";
+	        try (Connection conn = getConnection();
+			         PreparedStatement ps = conn.prepareStatement(sql)) {
+	            ps.setString(1, phone);
+	            try (ResultSet rs = ps.executeQuery()) {
+	                if (rs.next()) return rs.getInt("customer_id");
+	            }
+	        }
+	    }
+
+	    if (email != null && !email.isBlank()) {
+	        String sql = "SELECT customer_id FROM customer WHERE email = ?";
+	        try (Connection conn = getConnection();
+			         PreparedStatement ps = conn.prepareStatement(sql)) {
+	            ps.setString(1, email.toLowerCase().trim());
+	            try (ResultSet rs = ps.executeQuery()) {
+	                if (rs.next()) return rs.getInt("customer_id");
+	            }
+	        }
+	    }
+
+	    return null;
+	}
+
+	public int createGuestCustomer(String fullName, String phone, String email) throws SQLException {
+	    String sql = "INSERT INTO customer(full_name, phone, email, is_subscribed, subscription_code) VALUES (?, ?, ?, 0, NULL)";
+        try (Connection conn = getConnection(); PreparedStatement ps = conn.prepareStatement(
+				sql, Statement.RETURN_GENERATED_KEYS)) {
+	        ps.setString(1, fullName);
+	        ps.setString(2, (phone == null || phone.isBlank()) ? null : phone);
+	        ps.setString(3, (email == null || email.isBlank()) ? null : email.toLowerCase().trim());
+	        ps.executeUpdate();
+
+	        try (ResultSet keys = ps.getGeneratedKeys()) {
+	            if (keys.next()) return keys.getInt(1);
+	        }
+	    }
+	    throw new SQLException("Failed to create guest customer (no generated key).");
+	}
+
 
 }

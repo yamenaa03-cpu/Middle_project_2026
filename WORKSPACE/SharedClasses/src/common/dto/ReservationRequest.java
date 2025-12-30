@@ -23,7 +23,6 @@ public class ReservationRequest implements Serializable{
     private int reservationId;
     private LocalDateTime reservationDateTime;
     private int numberOfGuests;
-    private int customerId; 
     
     /*identify the request as an instance of Reservation request class and saves the GET_ALL_RESERVATIONS operation
      * as a field in the class
@@ -51,15 +50,24 @@ public class ReservationRequest implements Serializable{
     /*identify the request as an instance of Reservation request class and saves the CREATE_RESERVATION_FIELDS operation
     as a field in the class*/
     public static ReservationRequest createCreateReservationRequest(
-            int customerId, LocalDateTime date, int guests) {
+    		LocalDateTime dateTime, int guests) {
 
         ReservationRequest req = new ReservationRequest();
         req.operation = ReservationOperation.CREATE_RESERVATION;
-        req.customerId = customerId;
-        req.reservationDateTime = date;
+        req.reservationDateTime = dateTime;
         req.numberOfGuests = guests;
         return req;
     }
+    
+    /*identify the request as an instance of Reservation request class and saves the CANCEL_RESERVATION_FIELDS operation
+    as a field in the class*/
+    public static ReservationRequest createCancelReservationRequest(int reservationId) {
+        ReservationRequest req = new ReservationRequest();
+        req.operation = ReservationOperation.CANCEL_RESERVATION;
+        req.reservationId = reservationId;
+        return req;
+    }
+
     
    // private ReservationRequest() {}
     //Getters for the class fields
@@ -67,5 +75,4 @@ public class ReservationRequest implements Serializable{
     public int getReservationId() { return reservationId; }
     public LocalDateTime getReservationDateTime() { return reservationDateTime; }
     public int getNumberOfGuests() { return numberOfGuests; }
-    public int getCustomerId() { return customerId; }
 }

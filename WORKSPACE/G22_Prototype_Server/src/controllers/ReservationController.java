@@ -73,7 +73,6 @@ public class ReservationController {
         if (start.isAfter(now.plusMonths(1))) return "Reservation cannot be more than 1 month ahead.";
 
         // 30-minute slots
-        if (start.getSecond() != 0 || start.getNano() != 0) return "Invalid seconds.";
         int m = start.getMinute();
         if (m != 0 && m != 30) return "Time must be in 30-minute intervals.";
 

@@ -8,5 +8,6 @@ import java.io.Serializable;
 public enum ReservationOperation implements Serializable  {
     GET_ALL_RESERVATIONS,
     UPDATE_RESERVATION_FIELDS,
-    CREATE_RESERVATION
+    CREATE_RESERVATION,
+    CANCEL_RESERVATION
 }

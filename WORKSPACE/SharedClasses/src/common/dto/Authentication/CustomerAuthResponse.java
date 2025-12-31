@@ -1,4 +1,4 @@
-package common.dto;
+package common.dto.Authentication;
 
 import java.io.Serializable;
 

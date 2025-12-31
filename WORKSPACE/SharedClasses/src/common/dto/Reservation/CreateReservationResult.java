@@ -1,4 +1,4 @@
-package common.dto;
+package common.dto.Reservation;
 
 import java.io.Serializable;
 import java.time.LocalDateTime;

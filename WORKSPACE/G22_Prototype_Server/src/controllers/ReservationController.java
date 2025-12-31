@@ -6,9 +6,11 @@ import java.time.LocalTime;
 import java.util.ArrayList;
 import java.util.List;
 
-import common.dto.CreateReservationResult;
-import common.dto.InsertReservationResult;
+import common.dto.Reservation.CancelReservationResult;
+import common.dto.Reservation.CreateReservationResult;
+import common.dto.Reservation.InsertReservationResult;
 import common.entity.Reservation;
+import common.enums.ReservationStatus;
 import dbController.DBController;
 
 public class ReservationController {
@@ -160,6 +162,40 @@ public class ReservationController {
         List<Integer> overlapping = db.getOverlappingGuests(cand, DURATION_MIN);
         overlapping.add(newGuests);
         return feasible(caps, overlapping);
+    }
+
+    public List<Reservation> getReservationsForCustomer(int customerId) throws SQLException {
+        return db.getReservationsByCustomerId(customerId);
+    }
+
+    public CancelReservationResult cancelReservation(int reservationId, int sessionCustomerId) throws SQLException {
+
+        Integer ownerId = db.getReservationCustomerId(reservationId);
+        if (ownerId == null)
+            return CancelReservationResult.fail("Reservation not found.");
+
+        if (ownerId != sessionCustomerId)
+            return CancelReservationResult.fail("You can only cancel your own reservation.");
+
+        String statusStr = db.getReservationStatus(reservationId);
+        if (statusStr == null)
+            return CancelReservationResult.fail("Reservation not found.");
+
+        ReservationStatus status = ReservationStatus.valueOf(statusStr);
+
+        if (status == ReservationStatus.CANCELED)
+            return CancelReservationResult.fail("Reservation already canceled.");
+
+        if (status == ReservationStatus.COMPLETED)
+            return CancelReservationResult.fail("Cannot cancel a completed reservation.");
+
+        if (status == ReservationStatus.IN_PROGRESS)
+            return CancelReservationResult.fail("Cannot cancel in progress reservation.");
+        
+        boolean ok = db.updateReservationStatus(reservationId, ReservationStatus.CANCELED.name());
+        return ok
+            ? CancelReservationResult.ok("Reservation canceled.")
+            : CancelReservationResult.fail("Cancel failed.");
     }
 
     

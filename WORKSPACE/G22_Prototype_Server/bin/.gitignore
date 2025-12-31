@@ -1,4 +1,3 @@
 /controllers/
-/dbController/
 /server/
-/serverGUI/
+/dbController/

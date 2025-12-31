@@ -6,8 +6,8 @@ import java.io.IOException;
 import java.time.LocalDateTime;
 import java.util.List;
 
-import common.dto.ReservationRequest;
-import common.dto.ReservationResponse;
+import common.dto.Reservation.ReservationRequest;
+import common.dto.Reservation.ReservationResponse;
 import common.entity.Reservation;
 /**
  * The Client class extends the OCSF AbstractClient framework.

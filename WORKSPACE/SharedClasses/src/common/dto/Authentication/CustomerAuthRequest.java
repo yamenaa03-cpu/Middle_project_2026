@@ -1,12 +1,12 @@
-package common.dto;
+package common.dto.Authentication;
 
 import java.io.Serializable;
-import common.enums.AuthMethod;
+import common.enums.AuthOperation;
 
 public class CustomerAuthRequest implements Serializable {
     private static final long serialVersionUID = 1L;
 
-    private AuthMethod method;
+    private AuthOperation operation;
 
     // SUBSCRIPTION_CODE
     private String subscriptionCode;
@@ -18,21 +18,21 @@ public class CustomerAuthRequest implements Serializable {
 
     public static CustomerAuthRequest subscription(String code) {
         CustomerAuthRequest r = new CustomerAuthRequest();
-        r.method = AuthMethod.SUBSCRIPTION_CODE;
+        r.operation = AuthOperation.SUBSCRIPTION_CODE;
         r.subscriptionCode = code;
         return r;
     }
 
     public static CustomerAuthRequest guest(String fullName, String phone, String email) {
         CustomerAuthRequest r = new CustomerAuthRequest();
-        r.method = AuthMethod.GUEST;
+        r.operation = AuthOperation.GUEST;
         r.fullName = fullName;
         r.phone = phone;
         r.email = email;
         return r;
     }
 
-    public AuthMethod getMethod() { return method; }
+    public AuthOperation getOperation() { return operation; }
     public String getSubscriptionCode() { return subscriptionCode; }
     public String getFullName() { return fullName; }
     public String getPhone() { return phone; }

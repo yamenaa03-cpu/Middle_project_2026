@@ -5,14 +5,15 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
-import common.dto.AuthenticationResult;
-import common.dto.CreateReservationResult;
-import common.dto.CustomerAuthRequest;
-import common.dto.CustomerAuthResponse;
-import common.dto.ReservationRequest;
-import common.dto.ReservationResponse;
+import common.dto.Authentication.CustomerAuthResult;
+import common.dto.Reservation.CancelReservationResult;
+import common.dto.Reservation.CreateReservationResult;
+import common.dto.Reservation.ReservationRequest;
+import common.dto.Reservation.ReservationResponse;
+import common.dto.Authentication.CustomerAuthRequest;
+import common.dto.Authentication.CustomerAuthResponse;
 import common.entity.Reservation;
-import common.enums.AuthMethod;
+import common.enums.AuthOperation;
 import common.enums.ReservationOperation;
 import dbController.DBController;
 import ocsf.server.AbstractServer;
@@ -90,8 +91,20 @@ public class Server extends AbstractServer {
 			if (msg instanceof CustomerAuthRequest) {
 			    CustomerAuthRequest authReq = (CustomerAuthRequest) msg;
 
-			    AuthenticationResult r;
-			    if (authReq.getMethod() == AuthMethod.SUBSCRIPTION_CODE) {
+			    if (authReq.getOperation() == AuthOperation.LOGOUT) {
+			    	if(client.getInfo("customerId") == null)
+			    		client.sendToClient(new CustomerAuthResponse(false,
+			    				"Already logged out", null, false));
+			        client.setInfo("customerId", null);
+
+			        client.sendToClient(new CustomerAuthResponse(true,
+			        		"Logged out successfully.", null, false)
+			        );
+			        return;
+			    }
+			    
+			    CustomerAuthResult r;
+			    if (authReq.getOperation() == AuthOperation.SUBSCRIPTION_CODE) {
 			        r = authController.authenticateBySubscriptionCode(authReq.getSubscriptionCode());
 			    } else { // GUEST
 			        r = authController.authenticateGuest(authReq.getFullName(), authReq.getPhone(), authReq.getEmail());
@@ -159,6 +172,30 @@ public class Server extends AbstractServer {
 						resp = new ReservationResponse(false, r.getMessage(), null, null, r.getSuggestions());
 					}
 					break;
+					
+				case GET_CUSTOMER_RESERVATIONS:
+				    List<Reservation> list = reservationController.getReservationsForCustomer(sessionCustomerId);
+
+				    if (list == null || list.isEmpty()) {
+				        resp = new ReservationResponse(true, "No reservations found.", List.of());
+				    } else {
+				        resp = new ReservationResponse(true, "Your reservations loaded.", list);
+				    }
+				    break;
+				    
+				case CANCEL_RESERVATION:
+				    CancelReservationResult cr = reservationController.cancelReservation(
+				        req.getReservationId(),
+				        sessionCustomerId
+				    );
+
+				    resp = new ReservationResponse(
+				        cr.isSuccess(),
+				        cr.getMessage(),
+				        reservationController.getReservationsForCustomer(sessionCustomerId)
+				    );
+				    break;
+
 
 				default:
 					resp = new ReservationResponse(false, "Unknown operation", null);

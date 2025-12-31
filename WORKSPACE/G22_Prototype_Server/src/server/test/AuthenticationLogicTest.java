@@ -2,7 +2,7 @@ package server.test;
 
 import java.sql.SQLException;
 
-import common.dto.AuthenticationResult;
+import common.dto.Authentication.CustomerAuthResult;
 import controllers.AuthenticationController;
 import dbController.DBController;
 
@@ -69,7 +69,7 @@ public class AuthenticationLogicTest {
 
     private static void test_Subscription_valid(AuthenticationController auth) throws SQLException {
         System.out.println("\n[Test] Subscription code - VALID");
-        AuthenticationResult r = auth.authenticateBySubscriptionCode(VALID_SUB_CODE);
+        CustomerAuthResult r = auth.authenticateBySubscriptionCode(VALID_SUB_CODE);
 
         assertTrue(r.isSuccess(), "Expected success=true");
         assertNotNull(r.getCustomerId(), "Expected customerId != null");
@@ -79,7 +79,7 @@ public class AuthenticationLogicTest {
 
     private static void test_Subscription_invalid(AuthenticationController auth) throws SQLException {
         System.out.println("\n[Test] Subscription code - INVALID");
-        AuthenticationResult r = auth.authenticateBySubscriptionCode(INVALID_SUB_CODE);
+        CustomerAuthResult r = auth.authenticateBySubscriptionCode(INVALID_SUB_CODE);
 
         assertFalse(r.isSuccess(), "Expected success=false");
         assertNull(r.getCustomerId(), "Expected customerId == null");
@@ -88,7 +88,7 @@ public class AuthenticationLogicTest {
 
     private static void test_Subscription_empty(AuthenticationController auth) throws SQLException {
         System.out.println("\n[Test] Subscription code - EMPTY");
-        AuthenticationResult r = auth.authenticateBySubscriptionCode("   ");
+        CustomerAuthResult r = auth.authenticateBySubscriptionCode("   ");
 
         assertFalse(r.isSuccess(), "Expected success=false");
         assertNull(r.getCustomerId(), "Expected customerId == null");
@@ -97,7 +97,7 @@ public class AuthenticationLogicTest {
 
     private static void test_Guest_missingName(AuthenticationController auth) throws SQLException {
         System.out.println("\n[Test] Guest - Missing name");
-        AuthenticationResult r = auth.authenticateGuest("   ", "0500000000", "");
+        CustomerAuthResult r = auth.authenticateGuest("   ", "0500000000", "");
 
         assertFalse(r.isSuccess(), "Expected success=false");
         assertNull(r.getCustomerId(), "Expected customerId == null");
@@ -106,7 +106,7 @@ public class AuthenticationLogicTest {
 
     private static void test_Guest_missingContact(AuthenticationController auth) throws SQLException {
         System.out.println("\n[Test] Guest - Missing phone & email");
-        AuthenticationResult r = auth.authenticateGuest("Test Guest", "   ", "   ");
+        CustomerAuthResult r = auth.authenticateGuest("Test Guest", "   ", "   ");
 
         assertFalse(r.isSuccess(), "Expected success=false");
         assertNull(r.getCustomerId(), "Expected customerId == null");
@@ -122,7 +122,7 @@ public class AuthenticationLogicTest {
 
     private static void test_Guest_existingByPhone(AuthenticationController auth) throws SQLException {
         System.out.println("\n[Test] Guest - Existing by PHONE (should NOT create new)");
-        AuthenticationResult r = auth.authenticateGuest("Some Name", EXISTING_GUEST_PHONE, "");
+        CustomerAuthResult r = auth.authenticateGuest("Some Name", EXISTING_GUEST_PHONE, "");
 
         assertTrue(r.isSuccess(), "Expected success=true");
         assertNotNull(r.getCustomerId(), "Expected customerId != null");
@@ -137,7 +137,7 @@ public class AuthenticationLogicTest {
             return;
         }
 
-        AuthenticationResult r = auth.authenticateGuest("Some Name", "", EXISTING_GUEST_EMAIL);
+        CustomerAuthResult r = auth.authenticateGuest("Some Name", "", EXISTING_GUEST_EMAIL);
 
         assertTrue(r.isSuccess(), "Expected success=true");
         assertNotNull(r.getCustomerId(), "Expected customerId != null");
@@ -147,7 +147,7 @@ public class AuthenticationLogicTest {
 
     private static void test_Guest_createNew(AuthenticationController auth) throws SQLException {
         System.out.println("\n[Test] Guest - Create NEW (find-or-create)");
-        AuthenticationResult r = auth.authenticateGuest("New Guest", NEW_GUEST_PHONE, NEW_GUEST_EMAIL);
+        CustomerAuthResult r = auth.authenticateGuest("New Guest", NEW_GUEST_PHONE, NEW_GUEST_EMAIL);
 
         assertTrue(r.isSuccess(), "Expected success=true");
         assertNotNull(r.getCustomerId(), "Expected customerId != null");
@@ -156,7 +156,7 @@ public class AuthenticationLogicTest {
 
         // OPTIONAL: call again to ensure it now finds existing
         System.out.println("[Test] Guest - Same contact again (should be existing now)");
-        AuthenticationResult r2 = auth.authenticateGuest("New Guest X", NEW_GUEST_PHONE, NEW_GUEST_EMAIL);
+        CustomerAuthResult r2 = auth.authenticateGuest("New Guest X", NEW_GUEST_PHONE, NEW_GUEST_EMAIL);
         assertTrue(r2.isSuccess(), "Expected success=true");
         assertNotNull(r2.getCustomerId(), "Expected customerId != null");
         assertFalse(r2.isNewCustomer(), "Expected newCustomer=false");

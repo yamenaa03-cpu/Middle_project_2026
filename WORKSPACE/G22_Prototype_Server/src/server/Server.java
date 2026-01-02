@@ -55,7 +55,10 @@ public class Server extends AbstractServer {
 
 	private AuthenticationController authController;
 	
-	private ScheduledExecutorService scheduler;
+	private ScheduledExecutorService noShowScheduler;
+	
+	private ScheduledExecutorService reminderScheduler;
+
 
 	/* server constructor */
 	public Server(int port, ServerFrameController ui) {
@@ -266,14 +269,23 @@ public class Server extends AbstractServer {
 			ui.display("Database initialization failed: " + e.getMessage());
 		}
 		
-		scheduler = Executors.newSingleThreadScheduledExecutor();
-		scheduler.scheduleAtFixedRate(() -> {
+		noShowScheduler = Executors.newSingleThreadScheduledExecutor();
+		noShowScheduler.scheduleAtFixedRate(() -> {
 		    try {
 		        runNoShowCheck();
 		    } catch (Exception e) {
 		        ui.display("No-Show check error: " + e.getMessage());
 		    }
 		}, 10, 60, TimeUnit.SECONDS); // start after 10s, then every 60s
+
+		reminderScheduler = Executors.newSingleThreadScheduledExecutor();
+		reminderScheduler.scheduleAtFixedRate(() -> {
+		    try {
+		        runReminderCheck();
+		    } catch (Exception e) {
+		        ui.display("Reminder error: " + e.getMessage());
+		    }
+		}, 10, 60, TimeUnit.SECONDS);
 
 	}
 
@@ -294,11 +306,19 @@ public class Server extends AbstractServer {
 		// Remove all clients
 		ui.updateClientStatus("ALL", "", "", "DISCONNECTED");
 		
-		if (scheduler != null) {
-		    scheduler.shutdownNow();
-		    scheduler = null;
+		if (noShowScheduler != null) {
+		    noShowScheduler.shutdownNow();
+		    noShowScheduler = null;
 		}
+		
+		if (reminderScheduler != null) {
+		    reminderScheduler.shutdownNow();
+		    reminderScheduler = null;
+		}
+
 	}
+	
+	
 
 	private void runNoShowCheck() throws SQLException {
 	    List<Integer> ids = db.getNoShowReservationIds();
@@ -312,6 +332,17 @@ public class Server extends AbstractServer {
 
 	    if (canceledCount > 0) {
 	        ui.display("No-Show: auto-canceled " + canceledCount + " reservations.");
+	    }
+	}
+
+	private void runReminderCheck() throws SQLException {
+	    List<Integer> ids = db.getReservationsForReminder();
+	    if (ids.isEmpty()) return;
+
+	    for (Integer id : ids) {
+	        // MOCK reminder
+	        ui.display("🔔 Reminder: Reservation #" + id + " is scheduled in 2 hours.");
+	        db.markReminderSent(id);
 	    }
 	}
 

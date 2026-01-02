@@ -20,7 +20,7 @@
 // * - Ensure table reservation has status column (DEFAULT 'ACTIVE').
 // * - Ensure customer_id exists in customer table (use a real existing id).
 // */
-//public class NoShowLogicTest {
+//public class NoShowAndReminderLogicTest {
 //
 //    // ====== DB CONFIG (EDIT) ======
 //    private static final String DB_NAME = "bistrodb";
@@ -65,6 +65,46 @@
 //            String after2 = getStatus(db, res2);
 //            assertEquals(ReservationStatus.IN_PROGRESS.name(), after2, "IN_PROGRESS must not be auto-canceled");
 //            pass("IN_PROGRESS not canceled (ok)");
+//
+//            System.out.println("\n=== Reminder Tests ===");
+//
+//         // TEST 1: Reminder should trigger (ACTIVE + exactly 2 hours)
+//         int reminderResId = insertReservationForReminder(
+//             db,
+//             "NOW() + INTERVAL 2 HOUR",
+//             EXISTING_CUSTOMER_ID,
+//             "ACTIVE",
+//             false
+//         );
+//         pass("Inserted reservation for reminder id=" + reminderResId);
+//
+//         // شغّل منطق التذكير
+//         runReminderCheck(db);
+//
+//         // تأكد إنه اتعلّم reminder_sent
+//         boolean sent = isReminderSent(db, reminderResId);
+//         assertTrue(sent, "Expected reminder_sent=true after reminder check");
+//         pass("Reminder sent and marked");
+//
+//         // TEST 2: Reminder should NOT repeat
+//         runReminderCheck(db);
+//         boolean sentAgain = isReminderSent(db, reminderResId);
+//         assertTrue(sentAgain, "Reminder repeated (should not happen)");
+//         pass("Reminder not repeated");
+//
+//         // TEST 3: Reminder should NOT trigger for non-ACTIVE
+//         int reminderResId2 = insertReservationForReminder(
+//             db,
+//             "NOW() + INTERVAL 2 HOUR",
+//             EXISTING_CUSTOMER_ID,
+//             "IN_PROGRESS",
+//             false
+//         );
+//         runReminderCheck(db);
+//
+//         boolean sent2 = isReminderSent(db, reminderResId2);
+//         assertFalse(sent2, "Reminder sent for IN_PROGRESS (should not)");
+//         pass("No reminder for IN_PROGRESS");
 //
 //            System.out.println("\n=== DONE ===");
 //
@@ -144,6 +184,55 @@
 //        }
 //    }
 //
+//    private static int insertReservationForReminder(
+//            DBController db,
+//            String dateTimeSql,   // مثال: "NOW() + INTERVAL 2 HOUR"
+//            int customerId,
+//            String status,
+//            boolean reminderSent
+//    ) throws SQLException {
+//
+//        String sql =
+//            "INSERT INTO reservation " +
+//            "(reservation_datetime, number_of_guests, confirmation_code, customer_id, table_id, created_at, status, reminder_sent) " +
+//            "VALUES (" + dateTimeSql + ", 2, ?, ?, NULL, NOW(), ?, ?)";
+//
+//        try (Connection conn = db.getConnection();
+//             PreparedStatement ps = conn.prepareStatement(sql, PreparedStatement.RETURN_GENERATED_KEYS)) {
+//
+//            ps.setInt(1, (int)(System.currentTimeMillis() % 1_000_000));
+//            ps.setInt(2, customerId);
+//            ps.setString(3, status);
+//            ps.setBoolean(4, reminderSent);
+//
+//            ps.executeUpdate();
+//
+//            try (ResultSet rs = ps.getGeneratedKeys()) {
+//                rs.next();
+//                return rs.getInt(1);
+//            }
+//        }
+//    }
+//
+//    private static void runReminderCheck(DBController db) throws SQLException {
+//        for (Integer id : db.getReservationsForReminder()) {
+//            System.out.println("🔔 Reminder: Reservation #" + id + " in 2 hours");
+//            db.markReminderSent(id);
+//        }
+//    }
+//
+//    private static boolean isReminderSent(DBController db, int reservationId) throws SQLException {
+//        String sql = "SELECT reminder_sent FROM reservation WHERE reservation_id=?";
+//        try (Connection conn = db.getConnection();
+//             PreparedStatement ps = conn.prepareStatement(sql)) {
+//            ps.setInt(1, reservationId);
+//            try (ResultSet rs = ps.executeQuery()) {
+//                rs.next();
+//                return rs.getBoolean(1);
+//            }
+//        }
+//    }
+//
 //    // ------------------ ASSERT HELPERS ------------------
 //
 //    private static void pass(String msg) {
@@ -158,6 +247,10 @@
 //        if (!cond) fail(msg);
 //    }
 //
+//    private static void assertFalse(boolean cond, String msg) {
+//        if (cond) fail(msg);
+//    }
+//    
 //    private static void assertEquals(String expected, String actual, String msg) {
 //        if (expected == null && actual == null) return;
 //        if (expected != null && expected.equals(actual)) return;

@@ -346,4 +346,35 @@ public class DBController {
 	    return ids;
 	}
 
+	public List<Integer> getReservationsForReminder() throws SQLException {
+	    String sql =
+	        "SELECT reservation_id " +
+	        "FROM reservation " +
+	        "WHERE status='ACTIVE' " +
+	        "AND reminder_sent = FALSE " +
+	        "AND reservation_datetime BETWEEN (NOW() + INTERVAL 2 HOUR - INTERVAL 1 MINUTE) " +
+	        "AND (NOW() + INTERVAL 2 HOUR + INTERVAL 1 MINUTE)";
+
+	    List<Integer> ids = new ArrayList<>();
+
+	    try (Connection conn = getConnection();
+	         PreparedStatement ps = conn.prepareStatement(sql);
+	         ResultSet rs = ps.executeQuery()) {
+
+	        while (rs.next()) {
+	            ids.add(rs.getInt("reservation_id"));
+	        }
+	    }
+	    return ids;
+	}
+
+	public void markReminderSent(int reservationId) throws SQLException {
+	    String sql = "UPDATE reservation SET reminder_sent=TRUE WHERE reservation_id=?";
+	    try (Connection conn = getConnection();
+	         PreparedStatement ps = conn.prepareStatement(sql)) {
+	        ps.setInt(1, reservationId);
+	        ps.executeUpdate();
+	    }
+	}
+
 }

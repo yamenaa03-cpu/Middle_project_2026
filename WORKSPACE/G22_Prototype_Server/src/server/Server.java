@@ -4,6 +4,9 @@ import java.sql.SQLException;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 
 import common.dto.Authentication.CustomerAuthResult;
 import common.dto.Reservation.CancelReservationResult;
@@ -15,6 +18,7 @@ import common.dto.Authentication.CustomerAuthResponse;
 import common.entity.Reservation;
 import common.enums.AuthOperation;
 import common.enums.ReservationOperation;
+import common.enums.ReservationStatus;
 import dbController.DBController;
 import ocsf.server.AbstractServer;
 import ocsf.server.ConnectionToClient;
@@ -50,6 +54,8 @@ public class Server extends AbstractServer {
 	private ReservationController reservationController;
 
 	private AuthenticationController authController;
+	
+	private ScheduledExecutorService scheduler;
 
 	/* server constructor */
 	public Server(int port, ServerFrameController ui) {
@@ -259,6 +265,16 @@ public class Server extends AbstractServer {
 		} catch (Exception e) {
 			ui.display("Database initialization failed: " + e.getMessage());
 		}
+		
+		scheduler = Executors.newSingleThreadScheduledExecutor();
+		scheduler.scheduleAtFixedRate(() -> {
+		    try {
+		        runNoShowCheck();
+		    } catch (Exception e) {
+		        ui.display("No-Show check error: " + e.getMessage());
+		    }
+		}, 10, 60, TimeUnit.SECONDS); // start after 10s, then every 60s
+
 	}
 
 	@Override
@@ -277,6 +293,26 @@ public class Server extends AbstractServer {
 
 		// Remove all clients
 		ui.updateClientStatus("ALL", "", "", "DISCONNECTED");
+		
+		if (scheduler != null) {
+		    scheduler.shutdownNow();
+		    scheduler = null;
+		}
+	}
+
+	private void runNoShowCheck() throws SQLException {
+	    List<Integer> ids = db.getNoShowReservationIds();
+	    if (ids.isEmpty()) return;
+
+	    int canceledCount = 0;
+	    for (Integer id : ids) {
+	        boolean ok = db.updateReservationStatus(id, ReservationStatus.CANCELED.name());
+	        if (ok) canceledCount++;
+	    }
+
+	    if (canceledCount > 0) {
+	        ui.display("No-Show: auto-canceled " + canceledCount + " reservations.");
+	    }
 	}
 
 }

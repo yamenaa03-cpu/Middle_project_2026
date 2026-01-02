@@ -326,4 +326,24 @@ public class DBController {
 				tableId);
 	}
 
+	public List<Integer> getNoShowReservationIds() throws SQLException {
+	    String sql =
+	        "SELECT reservation_id " +
+	        "FROM reservation " +
+	        "WHERE status='ACTIVE' " +
+	        "AND reservation_datetime <= (NOW() - INTERVAL 15 MINUTE)";
+
+	    List<Integer> ids = new ArrayList<>();
+
+	    try (Connection conn = getConnection();
+	         PreparedStatement ps = conn.prepareStatement(sql);
+	         ResultSet rs = ps.executeQuery()) {
+
+	        while (rs.next()) {
+	            ids.add(rs.getInt("reservation_id"));
+	        }
+	    }
+	    return ids;
+	}
+
 }

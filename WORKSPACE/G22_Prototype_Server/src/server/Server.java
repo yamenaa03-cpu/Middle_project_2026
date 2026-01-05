@@ -103,11 +103,11 @@ public class Server extends AbstractServer {
 			    if (authReq.getOperation() == AuthOperation.LOGOUT) {
 			    	if(client.getInfo("customerId") == null)
 			    		client.sendToClient(new CustomerAuthResponse(false,
-			    				"Already logged out", null, false));
+			    				"Already logged out", null));
 			        client.setInfo("customerId", null);
 
 			        client.sendToClient(new CustomerAuthResponse(true,
-			        		"Logged out successfully.", null, false)
+			        		"Logged out successfully.", null)
 			        );
 			        return;
 			    }
@@ -115,8 +115,9 @@ public class Server extends AbstractServer {
 			    CustomerAuthResult r;
 			    if (authReq.getOperation() == AuthOperation.SUBSCRIPTION_CODE) {
 			        r = authController.authenticateBySubscriptionCode(authReq.getSubscriptionCode());
-			    } else { // GUEST
-			        r = authController.authenticateGuest(authReq.getFullName(), authReq.getPhone(), authReq.getEmail());
+			    }
+			    else {
+			    	r = CustomerAuthResult.fail("Invalid Operation!");
 			    }
 
 			    if (r.isSuccess()) {
@@ -126,8 +127,7 @@ public class Server extends AbstractServer {
 			    CustomerAuthResponse resp = new CustomerAuthResponse(
 			        r.isSuccess(),
 			        r.getMessage(),
-			        r.getCustomerId(),
-			        r.isNewCustomer()
+			        r.getCustomerId()
 			    );
 
 			    client.sendToClient(resp);// returns response to the client
@@ -182,6 +182,24 @@ public class Server extends AbstractServer {
 					}
 					break;
 					
+				case CREATE_GUEST_RESERVATION:
+				    CreateReservationResult gr = reservationController.createGuestReservation(
+				        req.getReservationDateTime(),
+				        req.getNumberOfGuests(),
+				        req.getFullName(),
+				        req.getPhone(),
+				        req.getEmail()
+				    );
+
+				    if (gr.isSuccess()) {
+				        resp = new ReservationResponse(true, gr.getMessage(), gr.getReservationId(),
+				                gr.getConfirmationCode(), List.of());
+				    } else {
+				        resp = new ReservationResponse(false, gr.getMessage(), null, null, gr.getSuggestions());
+				    }
+				    break;
+
+					
 				case GET_CUSTOMER_RESERVATIONS:
 				    List<Reservation> list = reservationController.getReservationsForCustomer(sessionCustomerId);
 
@@ -202,6 +220,17 @@ public class Server extends AbstractServer {
 				        cr.isSuccess(),
 				        cr.getMessage(),
 				        reservationController.getReservationsForCustomer(sessionCustomerId)
+				    );
+				    break;
+
+				case CANCEL_GUEST_RESERVATION:
+				    CancelReservationResult cgr =
+				        reservationController.cancelGuestReservation(req.getConfirmationCode());
+
+				    resp = new ReservationResponse(
+				        cgr.isSuccess(),
+				        cgr.getMessage(),
+				        null
 				    );
 				    break;
 

@@ -236,6 +236,19 @@ public class DBController {
 		return null;
 	}
 
+	public Integer findReservationIdByConfirmationCode(int confirmationCode) throws SQLException {
+	    String sql = "SELECT reservation_id FROM reservation WHERE confirmation_code = ? LIMIT 1";
+	    try (Connection conn = getConnection();
+	         PreparedStatement ps = conn.prepareStatement(sql)) {
+	        ps.setInt(1, confirmationCode);
+	        try (ResultSet rs = ps.executeQuery()) {
+	            if (rs.next()) return rs.getInt("reservation_id");
+	        }
+	    }
+	    return null;
+	}
+
+	
 	public int createGuestCustomer(String fullName, String phone, String email) throws SQLException {
 		String sql = "INSERT INTO customer(full_name, phone, email, is_subscribed, subscription_code) VALUES (?, ?, ?, 0, NULL)";
 		try (Connection conn = getConnection();
@@ -246,11 +259,10 @@ public class DBController {
 			ps.executeUpdate();
 
 			try (ResultSet keys = ps.getGeneratedKeys()) {
-				if (keys.next())
-					return keys.getInt(1);
-			}
-		}
-		throw new SQLException("Failed to create guest customer (no generated key).");
+	            if (keys.next()) return keys.getInt(1);
+	        }
+	    }
+	    throw new SQLException("Failed to create guest customer (no generated key).");
 	}
 
 	public boolean updateReservationStatus(int reservationId, String newStatus) throws SQLException {
@@ -330,7 +342,7 @@ public class DBController {
 	    String sql =
 	        "SELECT reservation_id " +
 	        "FROM reservation " +
-	        "WHERE status='ACTIVE' " +
+	        "WHERE status IN ('ACTIVE','NOTIFIED') " +
 	        "AND reservation_datetime <= (NOW() - INTERVAL 15 MINUTE)";
 
 	    List<Integer> ids = new ArrayList<>();
@@ -339,12 +351,12 @@ public class DBController {
 	         PreparedStatement ps = conn.prepareStatement(sql);
 	         ResultSet rs = ps.executeQuery()) {
 
-	        while (rs.next()) {
-	            ids.add(rs.getInt("reservation_id"));
-	        }
+	        while (rs.next()) ids.add(rs.getInt("reservation_id"));
 	    }
 	    return ids;
 	}
+
+
 
 	public List<Integer> getReservationsForReminder() throws SQLException {
 	    String sql =

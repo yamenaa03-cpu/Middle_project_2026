@@ -8,25 +8,22 @@ public class CustomerAuthResult implements Serializable {
     private final boolean success;
     private final String message;
     private final Integer customerId;
-    private final boolean newCustomer;
 
-    private CustomerAuthResult(boolean success, String message, Integer customerId, boolean newCustomer) {
+    private CustomerAuthResult(boolean success, String message, Integer customerId) {
         this.success = success;
         this.message = message;
         this.customerId = customerId;
-        this.newCustomer = newCustomer;
     }
 
-    public static CustomerAuthResult ok(int customerId, boolean newCustomer, String message) {
-        return new CustomerAuthResult(true, message, customerId, newCustomer);
+    public static CustomerAuthResult ok(int customerId, String message) {
+        return new CustomerAuthResult(true, message, customerId);
     }
 
     public static CustomerAuthResult fail(String message) {
-        return new CustomerAuthResult(false, message, null, false);
+        return new CustomerAuthResult(false, message, null);
     }
 
     public boolean isSuccess() { return success; }
     public String getMessage() { return message; }
     public Integer getCustomerId() { return customerId; }
-    public boolean isNewCustomer() { return newCustomer; }
 }

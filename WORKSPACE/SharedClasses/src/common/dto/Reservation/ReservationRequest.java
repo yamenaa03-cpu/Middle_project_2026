@@ -24,6 +24,13 @@ public class ReservationRequest implements Serializable{
     private LocalDateTime reservationDateTime;
     private int numberOfGuests;
     
+    // Guest identification fields (for CREATE_GUEST_RESERVATION / JOIN_WAITLIST, etc.)
+    private String fullName;
+    private String phone;
+    private String email;
+    private int confirmationCode;
+
+    
     /*identify the request as an instance of Reservation request class and saves the GET_ALL_RESERVATIONS operation
      * as a field in the class
     */
@@ -59,6 +66,22 @@ public class ReservationRequest implements Serializable{
         return req;
     }
     
+    /* CREATE (Guest) */
+    public static ReservationRequest createCreateGuestReservationRequest(LocalDateTime dateTime,
+                                                                         int guests,
+                                                                         String fullName,
+                                                                         String phone,
+                                                                         String email) {
+        ReservationRequest req = new ReservationRequest();
+        req.operation = ReservationOperation.CREATE_GUEST_RESERVATION;
+        req.reservationDateTime = dateTime;
+        req.numberOfGuests = guests;
+        req.fullName = fullName;
+        req.phone = phone;
+        req.email = email;
+        return req;
+    }
+    
     /*identify the request as an instance of Reservation request class and saves the CANCEL_RESERVATION_FIELDS operation
     as a field in the class*/
     public static ReservationRequest createCancelReservationRequest(int reservationId) {
@@ -67,6 +90,15 @@ public class ReservationRequest implements Serializable{
         req.reservationId = reservationId;
         return req;
     }
+    
+    /* CANCEL (Guest) */
+    public static ReservationRequest createCancelGuestReservationRequest(int confirmationCode) {
+        ReservationRequest req = new ReservationRequest();
+        req.operation = ReservationOperation.CANCEL_GUEST_RESERVATION;
+        req.confirmationCode = confirmationCode;
+        return req;
+    }
+
 
     
    // private ReservationRequest() {}
@@ -75,4 +107,11 @@ public class ReservationRequest implements Serializable{
     public int getReservationId() { return reservationId; }
     public LocalDateTime getReservationDateTime() { return reservationDateTime; }
     public int getNumberOfGuests() { return numberOfGuests; }
+    
+    // Guest getters (needed by CREATE_GUEST_RESERVATION case)
+    public String getFullName() { return fullName; }
+    public String getPhone() { return phone; }
+    public String getEmail() { return email; }
+    public int getConfirmationCode() { return confirmationCode; }
+
 }

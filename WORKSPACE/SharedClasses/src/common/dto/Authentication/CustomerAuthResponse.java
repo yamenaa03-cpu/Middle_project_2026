@@ -7,15 +7,15 @@ public class CustomerAuthResponse implements Serializable {
 
     private boolean success;
     private String message;
-    private Integer customerId;
+    private int subscriberId;
 
-    public CustomerAuthResponse(boolean success, String message, Integer customerId) {
+    public CustomerAuthResponse(boolean success, String message, Integer subscriberId) {
         this.success = success;
         this.message = message;
-        this.customerId = customerId;
+        this.subscriberId = subscriberId;
     }
 
     public boolean isSuccess() { return success; }
     public String getMessage() { return message; }
-    public Integer getCustomerId() { return customerId; }
+    public Integer getSubscriberId() { return subscriberId; }
 }

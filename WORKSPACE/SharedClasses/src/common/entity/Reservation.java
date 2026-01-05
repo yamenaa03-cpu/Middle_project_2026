@@ -37,23 +37,38 @@ public class Reservation implements Serializable {
 		this.tableId = tableId;
 	}
 
+	public int getReservationId() {
+		return reservationId;
+	}
 
-    public int getReservationId() { return reservationId; }
-    public LocalDateTime getReservationDateTime() { return reservationDateTime; }
-    public int getNumberOfGuests() { return numberOfGuests; }
-    public int getConfirmationCode() { return confirmationCode; }
-    public int getCustomerId() { return customerId; }
-    public LocalDateTime getCreatedAt() { return createdAt; }
-    public Integer getTableId() { return tableId; }
+	public LocalDateTime getReservationDateTime() {
+		return reservationDateTime;
+	}
 
-    @Override
-    public String toString() {
-        return "Reservation #" + reservationId +
-               " | date=" + reservationDateTime +
-               " | guests=" + numberOfGuests +
-               " | confirmationCode=" + confirmationCode +
-               " | customerId=" + customerId +
-               " | createdAt=" + createdAt +
-               " | tableId=" + tableId;
-    }
+	public int getNumberOfGuests() {
+		return numberOfGuests;
+	}
+
+	public int getConfirmationCode() {
+		return confirmationCode;
+	}
+
+	public int getCustomerId() {
+		return customerId;
+	}
+
+	public LocalDateTime getCreatedAt() {
+		return createdAt;
+	}
+
+	public Integer getTableId() {
+		return tableId;
+	}
+
+	@Override
+	public String toString() {
+		return "Reservation #" + reservationId + " | date=" + reservationDateTime + " | guests=" + numberOfGuests
+				+ " | confirmationCode=" + confirmationCode + " | customerId=" + customerId + " | createdAt="
+				+ createdAt + " | tableId=" + tableId;
+	}
 }

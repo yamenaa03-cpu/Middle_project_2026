@@ -7,16 +7,16 @@ public class CustomerAuthResult implements Serializable {
 
     private final boolean success;
     private final String message;
-    private final Integer customerId;
+    private final int subscriberId;
 
-    private CustomerAuthResult(boolean success, String message, Integer customerId) {
+    private CustomerAuthResult(boolean success, String message, Integer subscriberId) {
         this.success = success;
         this.message = message;
-        this.customerId = customerId;
+        this.subscriberId = subscriberId;
     }
 
-    public static CustomerAuthResult ok(int customerId, String message) {
-        return new CustomerAuthResult(true, message, customerId);
+    public static CustomerAuthResult ok(int subscriberId, String message) {
+        return new CustomerAuthResult(true, message, subscriberId);
     }
 
     public static CustomerAuthResult fail(String message) {
@@ -25,5 +25,5 @@ public class CustomerAuthResult implements Serializable {
 
     public boolean isSuccess() { return success; }
     public String getMessage() { return message; }
-    public Integer getCustomerId() { return customerId; }
+    public Integer getSubscriberId() { return subscriberId; }
 }

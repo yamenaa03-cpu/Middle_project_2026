@@ -55,6 +55,19 @@ public class DBController {
 			return false; // failed
 		}
 	}
+	
+	public static class WaitingCandidate {
+	    public final int reservationId;
+	    public final int customerId;
+	    public final int guests;
+
+	    public WaitingCandidate(int reservationId, int customerId, int guests) {
+	        this.reservationId = reservationId;
+	        this.customerId = customerId;
+	        this.guests = guests;
+	    }
+	}
+
 
 	public List<Reservation> getAllReservations() throws SQLException {
 		// !! check if it is possible to change to Hashmap for faster results !!
@@ -167,6 +180,46 @@ public class DBController {
 		return null; // very rare: failed after retries
 	}
 
+	public InsertReservationResult insertWaitlist(int customerId, int numberOfGuests) throws SQLException {
+
+	    String sql = "INSERT INTO reservation (reservation_datetime, number_of_guests, confirmation_code, " +
+	                 "customer_id, created_at, status) VALUES (?, ?, ?, ?, ?, ?)";
+
+	    LocalDateTime createdAt = LocalDateTime.now();
+
+	    for (int attempt = 1; attempt <= 5; attempt++) {
+	        int confirmationCode = (int) (Math.random() * 900000) + 100000; // 6 digits
+
+	        try (Connection conn = getConnection();
+	             PreparedStatement ps = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
+
+	            ps.setTimestamp(1, null); // reservation_datetime = NULL for WAITING
+	            ps.setInt(2, numberOfGuests);
+	            ps.setInt(3, confirmationCode);
+	            ps.setInt(4, customerId);
+	            ps.setTimestamp(5, Timestamp.valueOf(createdAt));
+	            ps.setString(6, "WAITING");
+
+	            int inserted = ps.executeUpdate();
+	            if (inserted != 1) return null;
+
+	            try (ResultSet keys = ps.getGeneratedKeys()) {
+	                if (keys.next())
+	                    return new InsertReservationResult(keys.getInt(1), confirmationCode);
+	            }
+
+	            return null;
+
+	        } catch (SQLException e) {
+	            if (e.getErrorCode() == 1062) continue; // duplicate confirmation_code
+	            throw e;
+	        }
+	    }
+
+	    return null;
+	}
+
+	
 	public List<Integer> getTableCapacities() throws SQLException {
 		List<Integer> caps = new ArrayList<>();
 		String sql = "SELECT capacity FROM restaurant_table";
@@ -386,6 +439,51 @@ public class DBController {
 	         PreparedStatement ps = conn.prepareStatement(sql)) {
 	        ps.setInt(1, reservationId);
 	        ps.executeUpdate();
+	    }
+	}
+
+	public List<WaitingCandidate> getWaitingCandidates(int maxCapacity) throws SQLException {
+	    String sql = """
+	        SELECT reservation_id, customer_id, number_of_guests
+	        FROM reservation
+	        WHERE status = 'WAITING'
+	          AND number_of_guests <= ?
+	        ORDER BY created_at ASC
+	    """;
+
+	    List<WaitingCandidate> list = new ArrayList<>();
+
+	    try (Connection conn = getConnection();
+	         PreparedStatement ps = conn.prepareStatement(sql)) {
+
+	        ps.setInt(1, maxCapacity);
+
+	        try (ResultSet rs = ps.executeQuery()) {
+	            while (rs.next()) {
+	                list.add(new WaitingCandidate(
+	                    rs.getInt("reservation_id"),
+	                    rs.getInt("customer_id"),
+	                    rs.getInt("number_of_guests")
+	                ));
+	            }
+	        }
+	    }
+	    return list;
+	}
+
+
+	public boolean notifyWaitlistReservation(int reservationId) throws SQLException {
+	    String sql = """
+	        UPDATE reservation
+	        SET status = 'NOTIFIED',
+	            reservation_datetime = NOW()
+	        WHERE reservation_id = ?
+	          AND status = 'WAITING'
+	    """;
+	    try (Connection conn = getConnection();
+	         PreparedStatement ps = conn.prepareStatement(sql)) {
+	        ps.setInt(1, reservationId);
+	        return ps.executeUpdate() == 1;
 	    }
 	}
 

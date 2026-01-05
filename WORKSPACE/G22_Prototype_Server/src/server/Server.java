@@ -75,9 +75,9 @@ public class Server extends AbstractServer {
 		this.dbPassword = dbPassword;
 	}
 
-	// Returns Logged In Customer ID
-	private Integer getSessionCustomerId(ConnectionToClient client) {
-		return (Integer) client.getInfo("customerId");
+	// Returns Logged In Subscriber ID
+	private Integer getSessionsubscriberId(ConnectionToClient client) {
+		return (Integer) client.getInfo("subscriberId");
 	}
 
 	/*
@@ -101,10 +101,10 @@ public class Server extends AbstractServer {
 			    CustomerAuthRequest authReq = (CustomerAuthRequest) msg;
 
 			    if (authReq.getOperation() == AuthOperation.LOGOUT) {
-			    	if(client.getInfo("customerId") == null)
+			    	if(client.getInfo("subscriberId") == null)
 			    		client.sendToClient(new CustomerAuthResponse(false,
 			    				"Already logged out", null));
-			        client.setInfo("customerId", null);
+			        client.setInfo("subscriberId", null);
 
 			        client.sendToClient(new CustomerAuthResponse(true,
 			        		"Logged out successfully.", null)
@@ -121,13 +121,13 @@ public class Server extends AbstractServer {
 			    }
 
 			    if (r.isSuccess()) {
-			        client.setInfo("customerId", r.getCustomerId());
+			        client.setInfo("subscriberId", r.getSubscriberId());
 			    }
 
 			    CustomerAuthResponse resp = new CustomerAuthResponse(
 			        r.isSuccess(),
 			        r.getMessage(),
-			        r.getCustomerId()
+			        r.getSubscriberId()
 			    );
 
 			    client.sendToClient(resp);// returns response to the client
@@ -138,19 +138,7 @@ public class Server extends AbstractServer {
 			if (msg instanceof ReservationRequest) {
 				ReservationRequest req = (ReservationRequest) msg;
 
-				// operations that require login (customer session)
-				boolean needsLogin =
-				        req.getOperation() == ReservationOperation.CREATE_RESERVATION
-				     || req.getOperation() == ReservationOperation.UPDATE_RESERVATION_FIELDS
-				     || req.getOperation() == ReservationOperation.CANCEL_RESERVATION; 
-
-				Integer sessionCustomerId = (Integer) client.getInfo("customerId");
-				if (needsLogin) {
-				    if (sessionCustomerId == null) {
-				        client.sendToClient(new ReservationResponse(false, "Please login first.", null));
-				        return;
-				    }
-				}
+				Integer sessionSubscriberId = (Integer) client.getInfo("subscriberId");
 				
 				ReservationResponse resp;
 
@@ -171,37 +159,38 @@ public class Server extends AbstractServer {
 					// according to the result
 					break;
 
-				case CREATE_RESERVATION:
-					CreateReservationResult r = reservationController.createReservation(sessionCustomerId,
-							req.getReservationDateTime(), req.getNumberOfGuests());
-					if (r.isSuccess()) {
-						resp = new ReservationResponse(true, r.getMessage(), r.getReservationId(),
-								r.getConfirmationCode(), List.of());
-					} else {
-						resp = new ReservationResponse(false, r.getMessage(), null, null, r.getSuggestions());
-					}
-					break;
-					
-				case CREATE_GUEST_RESERVATION:
-				    CreateReservationResult gr = reservationController.createGuestReservation(
-				        req.getReservationDateTime(),
-				        req.getNumberOfGuests(),
-				        req.getFullName(),
-				        req.getPhone(),
-				        req.getEmail()
-				    );
+				case CREATE_RESERVATION: {
+				    CreateReservationResult r;
 
-				    if (gr.isSuccess()) {
-				        resp = new ReservationResponse(true, gr.getMessage(), gr.getReservationId(),
-				                gr.getConfirmationCode(), List.of());
+				    if (sessionSubscriberId != null) {
+				        r = reservationController.createReservation(
+				            sessionSubscriberId,
+				            req.getReservationDateTime(),
+				            req.getNumberOfGuests()
+				        );
 				    } else {
-				        resp = new ReservationResponse(false, gr.getMessage(), null, null, gr.getSuggestions());
+				        r = reservationController.createGuestReservation(
+				            req.getReservationDateTime(),
+				            req.getNumberOfGuests(),
+				            req.getFullName(),
+				            req.getPhone(),
+				            req.getEmail()
+				        );
+				    }
+
+				    if (r.isSuccess()) {
+				        resp = new ReservationResponse(true, r.getMessage(), r.getReservationId(),
+				                r.getConfirmationCode(), List.of());
+				    } else {
+				        resp = new ReservationResponse(false, r.getMessage(), null, null, r.getSuggestions());
 				    }
 				    break;
+				}
+
 
 					
 				case GET_CUSTOMER_RESERVATIONS:
-				    List<Reservation> list = reservationController.getReservationsForCustomer(sessionCustomerId);
+				    List<Reservation> list = reservationController.getReservationsForCustomer(sessionSubscriberId);
 
 				    if (list == null || list.isEmpty()) {
 				        resp = new ReservationResponse(true, "No reservations found.", List.of());
@@ -210,29 +199,50 @@ public class Server extends AbstractServer {
 				    }
 				    break;
 				    
-				case CANCEL_RESERVATION:
-				    CancelReservationResult cr = reservationController.cancelReservation(
-				        req.getReservationId(),
-				        sessionCustomerId
-				    );
+				case CANCEL_RESERVATION: {
+				    CancelReservationResult cr;
 
-				    resp = new ReservationResponse(
-				        cr.isSuccess(),
-				        cr.getMessage(),
-				        reservationController.getReservationsForCustomer(sessionCustomerId)
-				    );
+				    if (sessionSubscriberId != null) {
+				        cr = reservationController.cancelReservation(req.getReservationId(), sessionSubscriberId);
+				    } else {
+				        cr = reservationController.cancelGuestReservation(req.getConfirmationCode());
+				    }
+
+				    if (sessionSubscriberId != null) {
+				        resp = new ReservationResponse(cr.isSuccess(), cr.getMessage(),
+				                reservationController.getReservationsForCustomer(sessionSubscriberId));
+				    } else {
+				        resp = new ReservationResponse(cr.isSuccess(), cr.getMessage(), List.of());
+				    }
 				    break;
+				}
 
-				case CANCEL_GUEST_RESERVATION:
-				    CancelReservationResult cgr =
-				        reservationController.cancelGuestReservation(req.getConfirmationCode());
+				case JOIN_WAITLIST: {
+				    Integer sessionCustomerId = (Integer) client.getInfo("customerId");
+				    CreateReservationResult r;
 
-				    resp = new ReservationResponse(
-				        cgr.isSuccess(),
-				        cgr.getMessage(),
-				        null
-				    );
+				    if (sessionCustomerId != null) {
+				        // Subscriber path
+				        r = reservationController.joinWaitlist(sessionCustomerId, req.getNumberOfGuests());
+				    } else {
+				        // Guest path (no session saved)
+				        r = reservationController.joinWaitlistAsGuest(
+				            req.getNumberOfGuests(),
+				            req.getFullName(),
+				            req.getPhone(),
+				            req.getEmail()
+				        );
+				    }
+
+				    if (r.isSuccess()) {
+				        resp = new ReservationResponse(true, r.getMessage(),
+				                r.getReservationId(), r.getConfirmationCode(), List.of());
+				    } else {
+				        resp = new ReservationResponse(false, r.getMessage(), null, null, List.of());
+				    }
 				    break;
+				}
+
 
 
 				default:

@@ -66,21 +66,6 @@ public class ReservationRequest implements Serializable{
         return req;
     }
     
-    /* CREATE (Guest) */
-    public static ReservationRequest createCreateGuestReservationRequest(LocalDateTime dateTime,
-                                                                         int guests,
-                                                                         String fullName,
-                                                                         String phone,
-                                                                         String email) {
-        ReservationRequest req = new ReservationRequest();
-        req.operation = ReservationOperation.CREATE_GUEST_RESERVATION;
-        req.reservationDateTime = dateTime;
-        req.numberOfGuests = guests;
-        req.fullName = fullName;
-        req.phone = phone;
-        req.email = email;
-        return req;
-    }
     
     /*identify the request as an instance of Reservation request class and saves the CANCEL_RESERVATION_FIELDS operation
     as a field in the class*/
@@ -88,14 +73,6 @@ public class ReservationRequest implements Serializable{
         ReservationRequest req = new ReservationRequest();
         req.operation = ReservationOperation.CANCEL_RESERVATION;
         req.reservationId = reservationId;
-        return req;
-    }
-    
-    /* CANCEL (Guest) */
-    public static ReservationRequest createCancelGuestReservationRequest(int confirmationCode) {
-        ReservationRequest req = new ReservationRequest();
-        req.operation = ReservationOperation.CANCEL_GUEST_RESERVATION;
-        req.confirmationCode = confirmationCode;
         return req;
     }
 

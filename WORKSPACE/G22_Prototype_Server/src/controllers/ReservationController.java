@@ -52,7 +52,7 @@ public class ReservationController {
 		} catch (IllegalArgumentException e) {
 			return CreateReservationResult.fail(e.getMessage());
 		}
-		
+
 		return createReservation(customerId, dateTime, guests);
 	}
 
@@ -189,7 +189,7 @@ public class ReservationController {
 		if (!isWithinOpeningHours(cand))
 			return false;
 
-		// keep the time window rule? (usually YES)
+		// time window rule
 		LocalDateTime now = LocalDateTime.now();
 		if (cand.isBefore(now.plusHours(1)))
 			return false;
@@ -233,26 +233,23 @@ public class ReservationController {
 		return ok ? CancelReservationResult.ok("Reservation canceled.")
 				: CancelReservationResult.fail("Cancel failed.");
 	}
-	
+
 	public CancelReservationResult cancelGuestReservation(int confirmationCode) throws SQLException {
-	    Integer reservationId = db.findReservationIdByConfirmationCode(confirmationCode);
+		Integer reservationId = db.findReservationIdByConfirmationCode(confirmationCode);
 
-	    if (reservationId == null)
-	        return CancelReservationResult.fail("Invalid confirmation code.");
+		if (reservationId == null)
+			return CancelReservationResult.fail("Invalid confirmation code.");
 
-	    String status = db.getReservationStatus(reservationId);
-	    if (status != ReservationStatus.WAITING.name() &&
-	        status != ReservationStatus.NOTIFIED.name() &&
-	        status != ReservationStatus.ACTIVE.name()) {
-	        return CancelReservationResult.fail("Reservation cannot be canceled.");
-	    }
+		String status = db.getReservationStatus(reservationId);
+		if (status != ReservationStatus.WAITING.name() && status != ReservationStatus.NOTIFIED.name()
+				&& status != ReservationStatus.ACTIVE.name()) {
+			return CancelReservationResult.fail("Reservation cannot be canceled.");
+		}
 
-	    boolean ok = db.updateReservationStatus(reservationId, ReservationStatus.CANCELED.name());
-	    return ok
-	        ? CancelReservationResult.ok("Reservation canceled.")
-	        : CancelReservationResult.fail("Cancel failed.");
+		boolean ok = db.updateReservationStatus(reservationId, ReservationStatus.CANCELED.name());
+		return ok ? CancelReservationResult.ok("Reservation canceled.")
+				: CancelReservationResult.fail("Cancel failed.");
 	}
-
 
 	private int getOrCreateGuestCustomerId(String fullName, String phone, String email) throws SQLException {
 		boolean phoneEmpty = (phone == null || phone.isBlank());
@@ -271,6 +268,72 @@ public class ReservationController {
 
 		String safeName = (fullName == null || fullName.isBlank()) ? "Guest" : fullName.trim();
 		return db.createGuestCustomer(safeName, normPhone, normEmail);
+	}
+
+	public CreateReservationResult joinWaitlist(Integer customerId, int numberOfGuests) throws SQLException {
+		if (customerId <= 0)
+			return CreateReservationResult.fail("Invalid customer id.");
+		if (numberOfGuests <= 0)
+			return CreateReservationResult.fail("Invalid number of guests.");
+
+		if (isAvailableNow(numberOfGuests)) {
+			return new CreateReservationResult(true, "GO_NOW", null, null, List.of());
+		}
+
+		InsertReservationResult ins = db.insertWaitlist(customerId, numberOfGuests);
+		if (ins == null)
+			return CreateReservationResult.fail("Insert waitlist failed.");
+
+		return new CreateReservationResult(true, "WAITLIST_JOINED", ins.getReservationId(), ins.getConfirmationCode(),
+				List.of());
+	}
+
+	public CreateReservationResult joinWaitlistAsGuest(int numberOfGuests, String fullName, String phone, String email)
+			throws SQLException {
+		if (numberOfGuests <= 0)
+			return CreateReservationResult.fail("Invalid number of guests.");
+
+		int customerId;
+		try {
+			customerId = getOrCreateGuestCustomerId(fullName, phone, email);
+		} catch (IllegalArgumentException e) {
+			return CreateReservationResult.fail(e.getMessage());
+		}
+
+		return joinWaitlist(customerId, numberOfGuests);
+	}
+
+	private boolean isAvailableNow(int guests) throws SQLException {
+		LocalDateTime now = LocalDateTime.now();
+
+		List<Integer> caps = db.getTableCapacities();
+		List<Integer> overlapping = db.getOverlappingGuests(now, DURATION_MIN);
+		overlapping.add(guests);
+
+		return feasible(caps, overlapping);
+	}
+
+	public boolean notifyNextFromWaitlist(int freedCapacity) throws SQLException {
+	    // 1) Get all WAITING candidates that fit this table
+	    List<DBController.WaitingCandidate> candidates = db.getWaitingCandidates(freedCapacity);
+	    if (candidates.isEmpty()) return false;
+
+	    // 2) For each candidate FIFO: check if starting NOW for 2 hours is feasible
+	    LocalDateTime now = LocalDateTime.now();
+	    List<Integer> caps = db.getTableCapacities();
+	    List<Integer> overlapping = db.getOverlappingGuests(now, DURATION_MIN); // 2h window if DURATION_MIN=120
+
+	    for (DBController.WaitingCandidate c : candidates) {
+	        List<Integer> test = new ArrayList<>(overlapping);
+	        test.add(c.guests);
+
+	        if (feasible(caps, test)) {
+	            boolean ok = db.notifyWaitlistReservation(c.reservationId);
+	            if (!ok) continue; // already notified/canceled
+	            return true;
+	        }
+	    }
+	    return false;
 	}
 
 }

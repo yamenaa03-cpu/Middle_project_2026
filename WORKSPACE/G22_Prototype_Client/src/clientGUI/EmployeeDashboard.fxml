@@ -1,0 +1,163 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+
+<BorderPane xmlns="http://javafx.com/javafx/21"
+            xmlns:fx="http://javafx.com/fxml/1"
+            fx:controller="clientGUI.EmployeeDashboardController"
+            prefWidth="1200" prefHeight="800">
+
+    <!-- ===== TOP BAR ===== -->
+    <top>
+        <HBox spacing="12" style="-fx-padding: 15; -fx-background-color: white;">
+            <Label text="Employee Personal Space" style="-fx-font-size: 20; -fx-font-weight: bold;"/>
+            <Pane HBox.hgrow="ALWAYS"/>
+            <Button fx:id="btnRefreshAll" text="Refresh All"/>
+        </HBox>
+    </top>
+
+    <!-- ===== CENTER ===== -->
+    <center>
+        <TabPane fx:id="dashboardTabs">
+
+            <!-- ================= WAITING LIST ================= -->
+            <Tab text="Waiting List" closable="false">
+                <VBox spacing="10">
+                    <padding>
+                        <Insets top="15" right="15" bottom="15" left="15"/>
+                    </padding>
+
+                    <HBox spacing="10">
+                        <Button fx:id="btnRefreshWaitingList" text="Refresh Waiting List"/>
+                        <Label text="Status:"/>
+                        <ChoiceBox fx:id="waitingStatusFilter"/>
+                    </HBox>
+
+                    <TableView fx:id="waitingTable" prefHeight="600">
+                        <columns>
+                            <TableColumn fx:id="colWaitId" text="Wait ID" prefWidth="90"/>
+                            <TableColumn fx:id="colWaitCustomer" text="Customer" prefWidth="220"/>
+                            <TableColumn fx:id="colWaitGuests" text="Guests" prefWidth="90"/>
+                            <TableColumn fx:id="colWaitTime" text="Request Time" prefWidth="180"/>
+                            <TableColumn fx:id="colWaitStatus" text="Status" prefWidth="120"/>
+                            <TableColumn fx:id="colWaitNotes" text="Notes" prefWidth="250"/>
+                        </columns>
+                    </TableView>
+                </VBox>
+            </Tab>
+
+            <!-- ================= RESERVATIONS ================= -->
+            <Tab text="Reservations" closable="false">
+                <VBox spacing="10">
+                    <padding>
+                        <Insets top="15" right="15" bottom="15" left="15"/>
+                    </padding>
+
+                    <HBox spacing="10">
+                        <TextField fx:id="reservationSearchField"
+                                   promptText="Search by Reservation ID / Confirmation Code / Customer ID"
+                                   HBox.hgrow="ALWAYS"/>
+                        <Button fx:id="btnSearchReservation" text="Search"/>
+                        <Label text="Status:"/>
+                        <ChoiceBox fx:id="reservationStatusFilter"/>
+                        <Button fx:id="btnRefreshReservations" text="Refresh"/>
+                    </HBox>
+
+                    <TableView fx:id="reservationTable" prefHeight="600">
+                        <columns>
+                            <TableColumn fx:id="colResId" text="Res ID" prefWidth="90"/>
+                            <TableColumn fx:id="colResDateTime" text="Date/Time" prefWidth="180"/>
+                            <TableColumn fx:id="colResGuests" text="Guests" prefWidth="90"/>
+                            <TableColumn fx:id="colResConf" text="Conf Code" prefWidth="120"/>
+                            <TableColumn fx:id="colResCustomerId" text="Customer ID" prefWidth="110"/>
+                            <TableColumn fx:id="colResTableId" text="Table ID" prefWidth="90"/>
+                            <TableColumn fx:id="colResStatus" text="Status" prefWidth="120"/>
+                            <TableColumn fx:id="colResCreated" text="Created At" prefWidth="180"/>
+                        </columns>
+                    </TableView>
+                </VBox>
+            </Tab>
+
+            <!-- ================= TABLES MANAGEMENT ================= -->
+            <Tab text="Tables" closable="false">
+                <VBox spacing="10">
+                    <padding>
+                        <Insets top="15" right="15" bottom="15" left="15"/>
+                    </padding>
+
+                    <HBox spacing="10">
+                        <Button fx:id="btnRefreshTables" text="Refresh Tables"/>
+
+                        <Region HBox.hgrow="ALWAYS"/>
+
+                        <Label text="Update selected table capacity:"/>
+                        <TextField fx:id="tableCapacityField" promptText="Capacity" prefWidth="120"/>
+                        <Button fx:id="btnUpdateTableCapacity" text="Update"/>
+                    </HBox>
+
+                    <TableView fx:id="tablesTable" prefHeight="600">
+                        <columns>
+                            <TableColumn fx:id="colTableId" text="Table ID" prefWidth="120"/>
+                            <TableColumn fx:id="colCapacity" text="Capacity" prefWidth="120"/>
+                        </columns>
+                    </TableView>
+                </VBox>
+            </Tab>
+
+            <!-- ================= WORKING HOURS ================= -->
+            <Tab text="Working Hours" closable="false">
+                <VBox spacing="10">
+                    <padding>
+                        <Insets top="15" right="15" bottom="15" left="15"/>
+                    </padding>
+
+                    <HBox spacing="10">
+                        <Button fx:id="btnLoadHours" text="Load Hours"/>
+                        <Button fx:id="btnSaveHours" text="Save Hours"/>
+                    </HBox>
+
+                    <TableView fx:id="hoursTable" prefHeight="600">
+                        <columns>
+                            <TableColumn fx:id="colDay" text="Day" prefWidth="150"/>
+                            <TableColumn fx:id="colOpen" text="Open Time" prefWidth="150"/>
+                            <TableColumn fx:id="colClose" text="Close Time" prefWidth="150"/>
+                            <TableColumn fx:id="colClosed" text="Closed?" prefWidth="120"/>
+                        </columns>
+                    </TableView>
+                </VBox>
+            </Tab>
+
+            <!-- ================= MEMBERS ================= -->
+            <Tab text="Members" closable="false">
+                <VBox spacing="10">
+                    <padding>
+                        <Insets top="15" right="15" bottom="15" left="15"/>
+                    </padding>
+
+                    <HBox spacing="10">
+                        <TextField fx:id="memberSearchField"
+                                   promptText="Search by customer_id / name / email"
+                                   HBox.hgrow="ALWAYS"/>
+                        <Button fx:id="btnSearchMember" text="Search"/>
+                        <Button fx:id="btnRefreshMembers" text="Refresh"/>
+                    </HBox>
+
+                    <TableView fx:id="membersTable" prefHeight="600">
+                        <columns>
+                            <TableColumn fx:id="colCustId" text="Customer ID" prefWidth="110"/>
+                            <TableColumn fx:id="colCustName" text="Full Name" prefWidth="220"/>
+                            <TableColumn fx:id="colCustPhone" text="Phone" prefWidth="160"/>
+                            <TableColumn fx:id="colCustEmail" text="Email" prefWidth="250"/>
+                            <TableColumn fx:id="colCustSubscribed" text="Subscribed" prefWidth="120"/>
+                            <TableColumn fx:id="colCustCode" text="Subscription Code" prefWidth="160"/>
+                        </columns>
+                    </TableView>
+                </VBox>
+            </Tab>
+
+        </TabPane>
+    </center>
+
+</BorderPane>

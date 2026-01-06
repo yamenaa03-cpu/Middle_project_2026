@@ -1,0 +1,162 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.control.Button?>
+<?import javafx.scene.control.CheckBox?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.control.ScrollPane?>
+<?import javafx.scene.control.Separator?>
+<?import javafx.scene.control.Tab?>
+<?import javafx.scene.control.TabPane?>
+<?import javafx.scene.control.TableColumn?>
+<?import javafx.scene.control.TableView?>
+<?import javafx.scene.control.TextField?>
+<?import javafx.scene.layout.BorderPane?>
+<?import javafx.scene.layout.ColumnConstraints?>
+<?import javafx.scene.layout.GridPane?>
+<?import javafx.scene.layout.HBox?>
+<?import javafx.scene.layout.Region?>
+<?import javafx.scene.layout.RowConstraints?>
+<?import javafx.scene.layout.VBox?>
+
+<BorderPane style="-fx-background-color: white;" xmlns="http://javafx.com/javafx/21" xmlns:fx="http://javafx.com/fxml/1" fx:controller="clientGUI.PersonalSpaceController">
+
+    <!-- Top bar -->
+    <top>
+        <HBox alignment="CENTER_LEFT" spacing="12" style="-fx-padding: 14 20; -fx-background-color: white;">
+            <Label style="-fx-font-size: 20px; -fx-font-weight: 700;" text="איזור אישי" />
+            <Region HBox.hgrow="ALWAYS" />
+            <Button text="Refresh" />
+            <Button text="Logout" />
+        </HBox>
+    </top>
+
+    <center>
+        <TabPane style="-fx-background-color: transparent;" tabClosingPolicy="UNAVAILABLE">
+            <!-- ================== TAB: PERSONAL INFO ================== -->
+            <Tab text="Personal Info">
+                <ScrollPane fitToWidth="true" style="-fx-background-color: transparent;">
+                    <VBox spacing="16" style="-fx-padding: 20;">
+                        <Label style="-fx-font-size: 16px; -fx-font-weight: 700;" text="Personal Information" />
+
+                        <GridPane hgap="12" vgap="12">
+                            <columnConstraints>
+                                <ColumnConstraints minWidth="170" />
+                                <ColumnConstraints hgrow="ALWAYS" />
+                            </columnConstraints>
+
+                            <!-- Membership number (read-only) -->
+                            <Label text="Membership Number:" GridPane.columnIndex="0" GridPane.rowIndex="0" />
+                            <TextField fx:id="membershipNumberField" editable="false" promptText="(auto)" GridPane.columnIndex="1" GridPane.rowIndex="0" />
+
+                            <Label text="Full Name:" GridPane.columnIndex="0" GridPane.rowIndex="1" />
+                            <TextField fx:id="fullNameField" promptText="Full name" GridPane.columnIndex="1" GridPane.rowIndex="1" />
+
+                            <Label text="Username:" GridPane.columnIndex="0" GridPane.rowIndex="2" />
+                            <TextField fx:id="usernameField" promptText="Username" GridPane.columnIndex="1" GridPane.rowIndex="2" />
+
+                            <Label text="Phone:" GridPane.columnIndex="0" GridPane.rowIndex="3" />
+                            <TextField fx:id="phoneField" promptText="05X-XXXXXXX" GridPane.columnIndex="1" GridPane.rowIndex="3" />
+
+                            <Label text="Email (Gmail):" GridPane.columnIndex="0" GridPane.rowIndex="4" />
+                            <TextField fx:id="emailField" promptText="example@gmail.com" GridPane.columnIndex="1" GridPane.rowIndex="4" />
+
+                            <Label text="Subscribed:" GridPane.columnIndex="0" GridPane.rowIndex="5" />
+                            <CheckBox fx:id="subscribedCheckBox" text="Yes" GridPane.columnIndex="1" GridPane.rowIndex="5" />
+                     <rowConstraints>
+                        <RowConstraints />
+                        <RowConstraints />
+                        <RowConstraints />
+                        <RowConstraints />
+                        <RowConstraints />
+                        <RowConstraints />
+                     </rowConstraints>
+                        </GridPane>
+
+                        <HBox spacing="10">
+                            <Button style="-fx-font-weight: 700;" text="Save Changes" />
+                            <Label fx:id="infoStatusLabel" text="" />
+                        </HBox>
+                    </VBox>
+                </ScrollPane>
+            </Tab>
+
+            <!-- ================== TAB: RESERVATIONS ================== -->
+            <Tab text="Reservations">
+                <BorderPane style="-fx-padding: 20;">
+                    <top>
+                        <VBox spacing="10">
+                            <HBox alignment="CENTER_LEFT" spacing="10">
+                                <Label style="-fx-font-size: 16px; -fx-font-weight: 700;" text="Reservations" />
+                                <Region HBox.hgrow="ALWAYS" />
+                                <Button fx:id="leaveWaitingListButton" text="Leave Waiting List" />
+                            </HBox>
+
+                            <HBox alignment="CENTER_LEFT" spacing="10">
+                                <Label style="-fx-font-weight: 700;" text="Active reservations:" />
+                                <Label fx:id="activeCountLabel" text="0" />
+                                <Region HBox.hgrow="ALWAYS" />
+                                <Button fx:id="cancelActiveButton" disable="true" text="Cancel Selected Active Reservation" />
+                                <Label fx:id="reservationStatusLabel" text="" />
+                            </HBox>
+
+                            <Separator />
+                        </VBox>
+                    </top>
+
+                    <center>
+                        <VBox spacing="16">
+
+                            <!-- Active table -->
+                            <VBox spacing="8">
+                                <Label style="-fx-font-weight: 700;" text="Active" />
+                                <TableView fx:id="activeReservationsTable" prefHeight="220">
+                                    <columns>
+                                        <TableColumn fx:id="colA_datetime" prefWidth="170" text="Date/Time" />
+                                        <TableColumn fx:id="colA_guests" prefWidth="70" text="Guests" />
+                                        <TableColumn fx:id="colA_tableId" prefWidth="71.199951171875" text="Table" />
+                                        <TableColumn fx:id="colA_code" prefWidth="169.199951171875" text="Created" />
+                              <TableColumn fx:id="colA_code1" prefWidth="305.2000732421875" text="Confirmation Code" />
+                                    </columns>
+                                </TableView>
+                            </VBox>
+
+                            <!-- History table -->
+                            <VBox spacing="8">
+                                <Label style="-fx-font-weight: 700;" text="History" />
+                                <TableView fx:id="reservationHistoryTable" prefHeight="280">
+                                    <columns>
+                                        <TableColumn fx:id="colH_datetime" prefWidth="170" text="Date/Time" />
+                                        <TableColumn fx:id="colH_guests" prefWidth="70" text="Guests" />
+                                        <TableColumn fx:id="colH_tableId" prefWidth="70" text="Table" />
+                                        <TableColumn fx:id="colH_createdAt" prefWidth="170" text="Created" />
+                              <TableColumn fx:id="colH_createdAt1" prefWidth="170" text="Confirmation Code" />
+                                    </columns>
+                                </TableView>
+                            </VBox>
+
+                        </VBox>
+                    </center>
+                </BorderPane>
+            </Tab>
+
+            <!-- ================== TAB: BILLS ================== -->
+            <Tab text="Bills">
+                <VBox spacing="10" style="-fx-padding: 20;">
+                    <Label style="-fx-font-size: 16px; -fx-font-weight: 700;" text="Bills" />
+               <Button mnemonicParsing="false" text="Pay Bill" />
+                    <Label text="(No bills tables were provided yet. Add your bills table(s), then we’ll bind them here.)" />
+                    <TableView fx:id="billsTable" prefHeight="450">
+                                                        <columns>
+                                        <TableColumn fx:id="colH_billId" prefWidth="62.00003242492676" text="Bill Id" />
+                                        <TableColumn fx:id="colH_reservationId" prefWidth="184.40001678466797" text="reservation Number" />
+                                        <TableColumn fx:id="colH_amountBeforeDiscount" prefWidth="181.99993896484375" text="Amount Before Discount" />
+                                        <TableColumn fx:id="colH_finalAmount" prefWidth="134.80007934570312" text="Final Amount" />
+                              <TableColumn fx:id="colH_paid" prefWidth="146.800048828125" text="paid" />
+                                    </columns>
+                                     </TableView>
+                </VBox>
+            </Tab>
+
+        </TabPane>
+    </center>
+</BorderPane>

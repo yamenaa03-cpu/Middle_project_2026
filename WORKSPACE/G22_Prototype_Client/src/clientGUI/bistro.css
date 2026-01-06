@@ -1,0 +1,11 @@
+.topButton {
+    -fx-background-color: transparent;
+    -fx-border-color: transparent;
+    -fx-font-size: 14px;
+    -fx-text-fill: black;
+}
+
+.topButton:hover {
+    -fx-text-fill: #c0c0c0;    /* gray color */
+    -fx-underline: true;
+}

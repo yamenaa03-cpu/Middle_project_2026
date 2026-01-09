@@ -3,38 +3,42 @@ package common.entity;
 import java.io.Serializable;
 import java.time.LocalDateTime;
 
-/**
- * Represents a single Order entity stored in the database. Contains all fields
- * taken from the Order table and used by both client and server.
- * 
- * @author Yamen abu Ahmad
- * @version 1.0
- * 
- */
+import common.enums.ReservationStatus;
 
+/**
+ * Represents a single Reservation entity stored in the database. Shared between
+ * client & server.
+ *
+ * Notes: - Billing data is stored in Bill entity/table (not here). - status is
+ * essential for flows: WAITING/NOTIFIED/ACTIVE/IN_PROGRESS/COMPLETED/CANCELED
+ */
 public class Reservation implements Serializable {
 
 	private static final long serialVersionUID = 1L;
 
-	// Reservation fields
-	private int reservationId; // PK
-	private LocalDateTime reservationDateTime; // date of reservation
-	private int numberOfGuests;
-	private int confirmationCode;
-	private int customerId; // FK to Customer
-	private LocalDateTime createdAt; // date reservation was created
-	private Integer tableId;
+	// Core fields
+	private final int reservationId; // PK
+	private final LocalDateTime reservationDateTime; // reservation time (and can be used as seated_at when IN_PROGRESS)
+	private final int numberOfGuests;
+	private final int confirmationCode;
+	private final int customerId; // FK to customer
+	private final LocalDateTime createdAt; // created timestamp
+	private final Integer tableId; // nullable
 
-	public Reservation(int reservationId, LocalDateTime reservationDate, int numberOfGuests, int confirmationCode,
-			int customerId, LocalDateTime createdAt, Integer tableId) {
+	// Lifecycle field
+	private final ReservationStatus status; // IMPORTANT
 
+
+	public Reservation(int reservationId, LocalDateTime reservationDateTime, int numberOfGuests, int confirmationCode,
+			int customerId, LocalDateTime createdAt, Integer tableId, ReservationStatus status) {
 		this.reservationId = reservationId;
-		this.reservationDateTime = reservationDate;
+		this.reservationDateTime = reservationDateTime;
 		this.numberOfGuests = numberOfGuests;
 		this.confirmationCode = confirmationCode;
 		this.customerId = customerId;
 		this.createdAt = createdAt;
 		this.tableId = tableId;
+		this.status = status;
 	}
 
 	public int getReservationId() {
@@ -65,10 +69,14 @@ public class Reservation implements Serializable {
 		return tableId;
 	}
 
+	public ReservationStatus getStatus() {
+		return status;
+	}
+
 	@Override
 	public String toString() {
-		return "Reservation #" + reservationId + " | date=" + reservationDateTime + " | guests=" + numberOfGuests
-				+ " | confirmationCode=" + confirmationCode + " | customerId=" + customerId + " | createdAt="
-				+ createdAt + " | tableId=" + tableId;
+		return "Reservation #" + reservationId + " | status=" + status + " | dateTime=" + reservationDateTime
+				+ " | guests=" + numberOfGuests + " | confirmationCode=" + confirmationCode + " | customerId="
+				+ customerId + " | createdAt=" + createdAt + " | tableId=" + tableId;
 	}
 }

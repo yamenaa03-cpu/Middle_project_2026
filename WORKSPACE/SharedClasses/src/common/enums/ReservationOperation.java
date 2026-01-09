@@ -11,5 +11,7 @@ public enum ReservationOperation implements Serializable  {
     CREATE_RESERVATION,
     CANCEL_RESERVATION,
     GET_CUSTOMER_RESERVATIONS,
-    JOIN_WAITLIST
+    JOIN_WAITLIST,
+    RECEIVE_TABLE,
+    CHECKOUT
 }

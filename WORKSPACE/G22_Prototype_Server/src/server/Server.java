@@ -11,10 +11,13 @@ import java.util.concurrent.TimeUnit;
 import common.dto.Authentication.CustomerAuthResult;
 import common.dto.Reservation.CancelReservationResult;
 import common.dto.Reservation.CreateReservationResult;
+import common.dto.Reservation.PayBillResult;
+import common.dto.Reservation.ReceiveTableResult;
 import common.dto.Reservation.ReservationRequest;
 import common.dto.Reservation.ReservationResponse;
 import common.dto.Authentication.CustomerAuthRequest;
 import common.dto.Authentication.CustomerAuthResponse;
+import common.entity.Bill;
 import common.entity.Reservation;
 import common.enums.AuthOperation;
 import common.enums.ReservationOperation;
@@ -54,11 +57,12 @@ public class Server extends AbstractServer {
 	private ReservationController reservationController;
 
 	private AuthenticationController authController;
-	
+
 	private ScheduledExecutorService noShowScheduler;
-	
+
 	private ScheduledExecutorService reminderScheduler;
 
+	private ScheduledExecutorService billingScheduler;
 
 	/* server constructor */
 	public Server(int port, ServerFrameController ui) {
@@ -92,54 +96,46 @@ public class Server extends AbstractServer {
 		try {
 			// if DB not initialized
 			if (db == null) {
-				client.sendToClient(new ReservationResponse(false, "Database not configured!", null));
+				client.sendToClient(new ReservationResponse(false, "Database not configured!"));
 				ui.display("Client attempted request but DB not configured.");
 				return;
 			}
 
 			if (msg instanceof CustomerAuthRequest) {
-			    CustomerAuthRequest authReq = (CustomerAuthRequest) msg;
+				CustomerAuthRequest authReq = (CustomerAuthRequest) msg;
 
-			    if (authReq.getOperation() == AuthOperation.LOGOUT) {
-			    	if(client.getInfo("subscriberId") == null)
-			    		client.sendToClient(new CustomerAuthResponse(false,
-			    				"Already logged out", null));
-			        client.setInfo("subscriberId", null);
+				if (authReq.getOperation() == AuthOperation.LOGOUT) {
+					if (client.getInfo("subscriberId") == null)
+						client.sendToClient(new CustomerAuthResponse(false, "Already logged out", null));
+					client.setInfo("subscriberId", null);
 
-			        client.sendToClient(new CustomerAuthResponse(true,
-			        		"Logged out successfully.", null)
-			        );
-			        return;
-			    }
-			    
-			    CustomerAuthResult r;
-			    if (authReq.getOperation() == AuthOperation.SUBSCRIPTION_CODE) {
-			        r = authController.authenticateBySubscriptionCode(authReq.getSubscriptionCode());
-			    }
-			    else {
-			    	r = CustomerAuthResult.fail("Invalid Operation!");
-			    }
+					client.sendToClient(new CustomerAuthResponse(true, "Logged out successfully.", null));
+					return;
+				}
 
-			    if (r.isSuccess()) {
-			        client.setInfo("subscriberId", r.getSubscriberId());
-			    }
+				CustomerAuthResult r;
+				if (authReq.getOperation() == AuthOperation.SUBSCRIPTION_CODE) {
+					r = authController.authenticateBySubscriptionCode(authReq.getSubscriptionCode());
+				} else {
+					r = CustomerAuthResult.fail("Invalid Operation!");
+				}
 
-			    CustomerAuthResponse resp = new CustomerAuthResponse(
-			        r.isSuccess(),
-			        r.getMessage(),
-			        r.getSubscriberId()
-			    );
+				if (r.isSuccess()) {
+					client.setInfo("subscriberId", r.getSubscriberId());
+				}
 
-			    client.sendToClient(resp);// returns response to the client
-			    return;
+				CustomerAuthResponse resp = new CustomerAuthResponse(r.isSuccess(), r.getMessage(),
+						r.getSubscriberId());
+
+				client.sendToClient(resp);// returns response to the client
+				return;
 			}
-
 
 			if (msg instanceof ReservationRequest) {
 				ReservationRequest req = (ReservationRequest) msg;
 
 				Integer sessionSubscriberId = (Integer) client.getInfo("subscriberId");
-				
+
 				ReservationResponse resp;
 
 				switch (req.getOperation()) {
@@ -160,93 +156,96 @@ public class Server extends AbstractServer {
 					break;
 
 				case CREATE_RESERVATION: {
-				    CreateReservationResult r;
+					CreateReservationResult r;
 
-				    if (sessionSubscriberId != null) {
-				        r = reservationController.createReservation(
-				            sessionSubscriberId,
-				            req.getReservationDateTime(),
-				            req.getNumberOfGuests()
-				        );
-				    } else {
-				        r = reservationController.createGuestReservation(
-				            req.getReservationDateTime(),
-				            req.getNumberOfGuests(),
-				            req.getFullName(),
-				            req.getPhone(),
-				            req.getEmail()
-				        );
-				    }
+					if (sessionSubscriberId != null) {
+						r = reservationController.createReservation(sessionSubscriberId, req.getReservationDateTime(),
+								req.getNumberOfGuests());
+					} else {
+						r = reservationController.createGuestReservation(req.getReservationDateTime(),
+								req.getNumberOfGuests(), req.getFullName(), req.getPhone(), req.getEmail());
+					}
 
-				    if (r.isSuccess()) {
-				        resp = new ReservationResponse(true, r.getMessage(), r.getReservationId(),
-				                r.getConfirmationCode(), List.of());
-				    } else {
-				        resp = new ReservationResponse(false, r.getMessage(), null, null, r.getSuggestions());
-				    }
-				    break;
+					if (r.isSuccess()) {
+						resp = new ReservationResponse(true, r.getMessage(), r.getReservationId(),
+								r.getConfirmationCode(), List.of());
+					} else {
+						resp = new ReservationResponse(false, r.getMessage(), null, null, r.getSuggestions());
+					}
+					break;
 				}
 
-
-					
 				case GET_CUSTOMER_RESERVATIONS:
-				    List<Reservation> list = reservationController.getReservationsForCustomer(sessionSubscriberId);
+					List<Reservation> list = reservationController.getReservationsForCustomer(sessionSubscriberId);
 
-				    if (list == null || list.isEmpty()) {
-				        resp = new ReservationResponse(true, "No reservations found.", List.of());
-				    } else {
-				        resp = new ReservationResponse(true, "Your reservations loaded.", list);
-				    }
-				    break;
-				    
+					if (list == null || list.isEmpty()) {
+						resp = new ReservationResponse(true, "No reservations found.", List.of());
+					} else {
+						resp = new ReservationResponse(true, "Your reservations loaded.", list);
+					}
+					break;
+
 				case CANCEL_RESERVATION: {
-				    CancelReservationResult cr;
+					CancelReservationResult cr;
+					
+					if (sessionSubscriberId != null) {
+						cr = reservationController.cancelReservation(req.getReservationId(), sessionSubscriberId);
+					} else {
+						cr = reservationController.cancelGuestReservation(req.getConfirmationCode());
+					}
 
-				    if (sessionSubscriberId != null) {
-				        cr = reservationController.cancelReservation(req.getReservationId(), sessionSubscriberId);
-				    } else {
-				        cr = reservationController.cancelGuestReservation(req.getConfirmationCode());
-				    }
-
-				    if (sessionSubscriberId != null) {
-				        resp = new ReservationResponse(cr.isSuccess(), cr.getMessage(),
-				                reservationController.getReservationsForCustomer(sessionSubscriberId));
-				    } else {
-				        resp = new ReservationResponse(cr.isSuccess(), cr.getMessage(), List.of());
-				    }
-				    break;
+					if (sessionSubscriberId != null) {
+						resp = new ReservationResponse(cr.isSuccess(), cr.getMessage(),
+								reservationController.getReservationsForCustomer(sessionSubscriberId));
+					} else {
+						resp = new ReservationResponse(cr.isSuccess(), cr.getMessage(), List.of());
+					}
+					
+					if(cr.isSuccess())
+						reservationController.notifyNextFromWaitlist();
+					
+					break;
 				}
 
 				case JOIN_WAITLIST: {
-				    Integer sessionCustomerId = (Integer) client.getInfo("customerId");
-				    CreateReservationResult r;
+					CreateReservationResult r;
 
-				    if (sessionCustomerId != null) {
-				        // Subscriber path
-				        r = reservationController.joinWaitlist(sessionCustomerId, req.getNumberOfGuests());
-				    } else {
-				        // Guest path (no session saved)
-				        r = reservationController.joinWaitlistAsGuest(
-				            req.getNumberOfGuests(),
-				            req.getFullName(),
-				            req.getPhone(),
-				            req.getEmail()
-				        );
-				    }
+					if (sessionSubscriberId != null) {
+						// Subscriber path
+						r = reservationController.joinWaitlist(sessionSubscriberId, req.getNumberOfGuests());
+					} else {
+						// Guest path (no session saved)
+						r = reservationController.joinWaitlistAsGuest(req.getNumberOfGuests(), req.getFullName(),
+								req.getPhone(), req.getEmail());
+					}
 
-				    if (r.isSuccess()) {
-				        resp = new ReservationResponse(true, r.getMessage(),
-				                r.getReservationId(), r.getConfirmationCode(), List.of());
-				    } else {
-				        resp = new ReservationResponse(false, r.getMessage(), null, null, List.of());
-				    }
-				    break;
+					if (r.isSuccess()) {
+						resp = new ReservationResponse(true, r.getMessage(), r.getReservationId(),
+								r.getConfirmationCode(), List.of());
+					} else {
+						resp = new ReservationResponse(false, r.getMessage(), null, null, List.of());
+					}
+					break;
 				}
 
+				case RECEIVE_TABLE: {
+					ReceiveTableResult r = reservationController.receiveTable(req.getConfirmationCode());
+					resp = new ReservationResponse(r.isSuccess(), r.getMessage(), List.of());
+					break;
+				}
 
+				case CHECKOUT: {
+					PayBillResult r = reservationController.payBillByCode(req.getConfirmationCode());
+
+					resp = new ReservationResponse(r.isSuccess(), r.getMessage(), List.of());
+					
+					if(r.isSuccess())
+						reservationController.notifyNextFromWaitlist(r.getFreedCapacity());
+					break;
+				}
 
 				default:
-					resp = new ReservationResponse(false, "Unknown operation", null);
+					resp = new ReservationResponse(false, "Unknown operation");
 				}
 
 				client.sendToClient(resp);// returns response to the client
@@ -256,7 +255,7 @@ public class Server extends AbstractServer {
 			ui.display("SQL Error: " + e.getMessage());
 			e.printStackTrace();
 			try {
-				client.sendToClient(new ReservationResponse(false, "Database error occurred", null));
+				client.sendToClient(new ReservationResponse(false, "Database error occurred"));
 			} catch (Exception ignored) {
 			}
 		} catch (Exception e) {
@@ -307,23 +306,32 @@ public class Server extends AbstractServer {
 		} catch (Exception e) {
 			ui.display("Database initialization failed: " + e.getMessage());
 		}
-		
+
 		noShowScheduler = Executors.newSingleThreadScheduledExecutor();
 		noShowScheduler.scheduleAtFixedRate(() -> {
-		    try {
-		        runNoShowCheck();
-		    } catch (Exception e) {
-		        ui.display("No-Show check error: " + e.getMessage());
-		    }
+			try {
+				runNoShowCheck();
+			} catch (Exception e) {
+				ui.display("No-Show check error: " + e.getMessage());
+			}
 		}, 10, 60, TimeUnit.SECONDS); // start after 10s, then every 60s
 
 		reminderScheduler = Executors.newSingleThreadScheduledExecutor();
 		reminderScheduler.scheduleAtFixedRate(() -> {
-		    try {
-		        runReminderCheck();
-		    } catch (Exception e) {
-		        ui.display("Reminder error: " + e.getMessage());
-		    }
+			try {
+				runReminderCheck();
+			} catch (Exception e) {
+				ui.display("Reminder error: " + e.getMessage());
+			}
+		}, 10, 60, TimeUnit.SECONDS);
+
+		billingScheduler = Executors.newSingleThreadScheduledExecutor();
+		billingScheduler.scheduleAtFixedRate(() -> {
+			try {
+				runBillingCheck();
+			} catch (Exception e) {
+				ui.display("Billing check error: " + e.getMessage());
+			}
 		}, 10, 60, TimeUnit.SECONDS);
 
 	}
@@ -344,45 +352,64 @@ public class Server extends AbstractServer {
 
 		// Remove all clients
 		ui.updateClientStatus("ALL", "", "", "DISCONNECTED");
-		
+
 		if (noShowScheduler != null) {
-		    noShowScheduler.shutdownNow();
-		    noShowScheduler = null;
+			noShowScheduler.shutdownNow();
+			noShowScheduler = null;
 		}
-		
+
 		if (reminderScheduler != null) {
-		    reminderScheduler.shutdownNow();
-		    reminderScheduler = null;
+			reminderScheduler.shutdownNow();
+			reminderScheduler = null;
 		}
 
 	}
-	
-	
 
 	private void runNoShowCheck() throws SQLException {
-	    List<Integer> ids = db.getNoShowReservationIds();
-	    if (ids.isEmpty()) return;
+		List<Integer> ids = db.getNoShowReservationIds();
+		if (ids.isEmpty())
+			return;
 
-	    int canceledCount = 0;
-	    for (Integer id : ids) {
-	        boolean ok = db.updateReservationStatus(id, ReservationStatus.CANCELED.name());
-	        if (ok) canceledCount++;
-	    }
+		int canceledCount = 0;
+		for (Integer id : ids) {
+			boolean ok = db.updateReservationStatus(id, ReservationStatus.CANCELED.name());
+			if (ok)
+				canceledCount++;
+		}
 
-	    if (canceledCount > 0) {
-	        ui.display("No-Show: auto-canceled " + canceledCount + " reservations.");
-	    }
+		if (canceledCount > 0) {
+			ui.display("No-Show: auto-canceled " + canceledCount + " reservations.");
+		}
 	}
 
 	private void runReminderCheck() throws SQLException {
-	    List<Integer> ids = db.getReservationsForReminder();
-	    if (ids.isEmpty()) return;
+		List<Integer> ids = db.getReservationsForReminder();
+		if (ids.isEmpty())
+			return;
 
-	    for (Integer id : ids) {
-	        // MOCK reminder
-	        ui.display("🔔 Reminder: Reservation #" + id + " is scheduled in 2 hours.");
-	        db.markReminderSent(id);
+		for (Integer id : ids) {
+			// MOCK reminder
+			ui.display("🔔 Reminder: Reservation #" + id + " is scheduled in 2 hours.");
+			db.markReminderSent(id);
+		}
+	}
+
+	private void runBillingCheck() throws SQLException {
+	    List<Reservation> res = db.getReservationsForBilling();
+	    if (res.isEmpty()) return;
+
+	    int sent = 0;
+
+	    for (Reservation r : res) {
+	        Bill bill = reservationController.computeBill(r);
+	        if (bill != null) {
+
+	            sent++;
+	            ui.display("💳 Bill sent for reservation # " + r.getReservationId() + "Initial amount: "
+	            		+ bill.getAmountBeforeDiscount() + "Final amount: " + bill.getFinalAmount());
+	        }
 	    }
+	    if (sent > 0) ui.display("💳 Bills sent: " + sent);
 	}
 
 }

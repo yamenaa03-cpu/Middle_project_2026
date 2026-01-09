@@ -15,9 +15,17 @@ public class ReservationResponse implements Serializable {
     private List<Reservation> reservations;  
     private int reservationId;
 	private int confirmationCode;
-
+	private Double finalAmount;
+	
 	private List<LocalDateTime> suggestedTimes;
 
+	public ReservationResponse(boolean success, String message) {
+	    this.success = success;
+	    this.message = message;
+	    this.reservations = null;
+	}
+
+	
     public ReservationResponse(boolean success, String message, List<Reservation> reservations) {
         this.success = success;
         this.message = message;
@@ -43,10 +51,17 @@ public class ReservationResponse implements Serializable {
         this.suggestedTimes = suggestedTimes;
     }
 
+    public ReservationResponse(boolean success, String message, Double finalAmount) {
+        this.success = success;
+        this.message = message;
+        this.finalAmount = finalAmount;
+    }
+    
     public boolean isSuccess() { return success; }
     public String getMessage() { return message; }
     public List<Reservation> getReservations() { return reservations; }
     public int getReservationId() { return reservationId; }
     public int getConfirmationCode() { return confirmationCode; }
     public List<LocalDateTime> getSuggestedTimes() { return suggestedTimes; }
+    public Double getFinalAmount() { return finalAmount; }
 }

@@ -76,7 +76,19 @@ public class ReservationRequest implements Serializable{
         return req;
     }
 
-
+    public static ReservationRequest createReceiveTableRequest(int confirmationCode) {
+        ReservationRequest req = new ReservationRequest();
+        req.operation = ReservationOperation.RECEIVE_TABLE;
+        req.confirmationCode = confirmationCode;
+        return req;
+    }
+    
+    public static ReservationRequest createPayBillRequest(int confirmationCode) {
+        ReservationRequest req = new ReservationRequest();
+        req.operation = ReservationOperation.CHECKOUT;
+        req.confirmationCode = confirmationCode;
+        return req;
+    }
     
    // private ReservationRequest() {}
     //Getters for the class fields

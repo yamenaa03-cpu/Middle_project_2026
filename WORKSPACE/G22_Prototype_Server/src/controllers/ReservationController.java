@@ -12,6 +12,7 @@ import common.dto.Reservation.CreateReservationResult;
 import common.dto.Reservation.InsertReservationResult;
 import common.dto.Reservation.PayBillResult;
 import common.dto.Reservation.ReceiveTableResult;
+import common.dto.Reservation.WaitingCandidate;
 import common.entity.Bill;
 import common.entity.Reservation;
 import common.enums.ReservationStatus;
@@ -232,9 +233,9 @@ public class ReservationController {
 
 		if (status == ReservationStatus.IN_PROGRESS)
 			return CancelReservationResult.fail("Cannot cancel in progress reservation.");
-
+			
 		boolean ok = db.updateReservationStatus(reservationId, ReservationStatus.CANCELED.name());
-		return ok ? CancelReservationResult.ok("Reservation canceled.")
+		return ok ? CancelReservationResult.ok("Reservation canceled.", status)
 				: CancelReservationResult.fail("Cancel failed.");
 	}
 
@@ -245,14 +246,16 @@ public class ReservationController {
 			return CancelReservationResult.fail("Invalid confirmation code.");
 
 		int reservationId = reservation.getReservationId();
-		String status = db.getReservationStatus(reservationId);
-		if (status != ReservationStatus.WAITING.name() && status != ReservationStatus.NOTIFIED.name()
-				&& status != ReservationStatus.ACTIVE.name()) {
+		String statusStr = db.getReservationStatus(reservationId);
+		ReservationStatus status = ReservationStatus.valueOf(statusStr);
+		
+		if (status != ReservationStatus.WAITING && status != ReservationStatus.NOTIFIED
+				&& status != ReservationStatus.ACTIVE) {
 			return CancelReservationResult.fail("Reservation cannot be canceled.");
 		}
 
 		boolean ok = db.updateReservationStatus(reservationId, ReservationStatus.CANCELED.name());
-		return ok ? CancelReservationResult.ok("Reservation canceled.")
+		return ok ? CancelReservationResult.ok("Reservation canceled.", status)
 				: CancelReservationResult.fail("Cancel failed.");
 	}
 
@@ -324,18 +327,18 @@ public class ReservationController {
 		return feasible(caps, overlapping);
 	}
 
-	public boolean notifyNextFromWaitlist(int freedCapacity) throws SQLException {
+	public Integer notifyNextFromWaitlist(int freedCapacity) throws SQLException {
 		// 1) Get all WAITING candidates that fit this table
-		List<DBController.WaitingCandidate> candidates = db.getWaitingCandidates(freedCapacity);
+		List<WaitingCandidate> candidates = db.getWaitingCandidates(freedCapacity);
 		if (candidates.isEmpty())
-			return false;
+			return null;
 
 		// 2) For each candidate FIFO: check if starting NOW for 2 hours is feasible
 		LocalDateTime now = LocalDateTime.now();
 		List<Integer> caps = db.getTableCapacities();
 		List<Integer> overlapping = db.getOverlappingGuests(now, DURATION_MIN); // 2h window if DURATION_MIN=120
 
-		for (DBController.WaitingCandidate c : candidates) {
+		for (WaitingCandidate c : candidates) {
 			List<Integer> test = new ArrayList<>(overlapping);
 			test.add(c.guests);
 
@@ -343,24 +346,24 @@ public class ReservationController {
 				boolean ok = db.notifyWaitlistReservation(c.reservationId);
 				if (!ok)
 					continue; // already notified/canceled
-				return true;
+				return c.reservationId;
 			}
 		}
-		return false;
+		return null;
 	}
 	
-	public boolean notifyNextFromWaitlist() throws SQLException {
+	public Integer notifyNextFromWaitlist() throws SQLException {
 		// 1) Get all WAITING candidates
-		List<DBController.WaitingCandidate> candidates = db.getWaitingCandidates();
+		List<WaitingCandidate> candidates = db.getWaitingCandidates();
 		if (candidates.isEmpty())
-			return false;
+			return null;
 
 		// 2) For each candidate FIFO: check if starting NOW for 2 hours is feasible
 		LocalDateTime now = LocalDateTime.now();
 		List<Integer> caps = db.getTableCapacities();
 		List<Integer> overlapping = db.getOverlappingGuests(now, DURATION_MIN); // 2h window if DURATION_MIN=120
 
-		for (DBController.WaitingCandidate c : candidates) {
+		for (WaitingCandidate c : candidates) {
 			List<Integer> test = new ArrayList<>(overlapping);
 			test.add(c.guests);
 
@@ -368,10 +371,10 @@ public class ReservationController {
 				boolean ok = db.notifyWaitlistReservation(c.reservationId);
 				if (!ok)
 					continue; // already notified/canceled
-				return true;
+				return c.reservationId;
 			}
 		}
-		return false;
+		return null;
 	}
 
 	public ReceiveTableResult receiveTable(int confirmationCode) throws SQLException {

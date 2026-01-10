@@ -27,6 +27,7 @@ import ocsf.server.AbstractServer;
 import ocsf.server.ConnectionToClient;
 import serverGUI.ServerFrameController;
 import controllers.AuthenticationController;
+import controllers.NotificationController;
 import controllers.ReservationController;
 
 /**
@@ -63,6 +64,8 @@ public class Server extends AbstractServer {
 	private ScheduledExecutorService reminderScheduler;
 
 	private ScheduledExecutorService billingScheduler;
+
+	private NotificationController notificationController;
 
 	/* server constructor */
 	public Server(int port, ServerFrameController ui) {
@@ -169,6 +172,8 @@ public class Server extends AbstractServer {
 					if (r.isSuccess()) {
 						resp = new ReservationResponse(true, r.getMessage(), r.getReservationId(),
 								r.getConfirmationCode(), List.of());
+						
+						notificationController.sendReservationConfirmation(r.getReservationId());
 					} else {
 						resp = new ReservationResponse(false, r.getMessage(), null, null, r.getSuggestions());
 					}
@@ -187,7 +192,7 @@ public class Server extends AbstractServer {
 
 				case CANCEL_RESERVATION: {
 					CancelReservationResult cr;
-					
+
 					if (sessionSubscriberId != null) {
 						cr = reservationController.cancelReservation(req.getReservationId(), sessionSubscriberId);
 					} else {
@@ -200,9 +205,14 @@ public class Server extends AbstractServer {
 					} else {
 						resp = new ReservationResponse(cr.isSuccess(), cr.getMessage(), List.of());
 					}
-					
-					if(cr.isSuccess())
-						reservationController.notifyNextFromWaitlist();
+
+					if (cr.isSuccess() && (cr.getReservationStatusBefore() == ReservationStatus.ACTIVE
+							|| cr.getReservationStatusBefore() == ReservationStatus.NOTIFIED)) {
+						runNotifyCheck();
+					}
+
+					if (cr.isSuccess())
+						 notificationController.sendReservationCanceled(req.getReservationId());
 					
 					break;
 				}
@@ -222,6 +232,7 @@ public class Server extends AbstractServer {
 					if (r.isSuccess()) {
 						resp = new ReservationResponse(true, r.getMessage(), r.getReservationId(),
 								r.getConfirmationCode(), List.of());
+						
 					} else {
 						resp = new ReservationResponse(false, r.getMessage(), null, null, List.of());
 					}
@@ -231,6 +242,12 @@ public class Server extends AbstractServer {
 				case RECEIVE_TABLE: {
 					ReceiveTableResult r = reservationController.receiveTable(req.getConfirmationCode());
 					resp = new ReservationResponse(r.isSuccess(), r.getMessage(), List.of());
+					
+					if (r.isSuccess()) {
+						Reservation resObj = db.findReservationByConfirmationCode(req.getConfirmationCode());
+						if (resObj != null)
+							notificationController.sendTableReceived(resObj.getReservationId());
+					}
 					break;
 				}
 
@@ -238,9 +255,15 @@ public class Server extends AbstractServer {
 					PayBillResult r = reservationController.payBillByCode(req.getConfirmationCode());
 
 					resp = new ReservationResponse(r.isSuccess(), r.getMessage(), List.of());
+
+					if (r.isSuccess() && r.getFreedCapacity() > 0)
+						runNotifyCheck(r.getFreedCapacity());
 					
-					if(r.isSuccess())
-						reservationController.notifyNextFromWaitlist(r.getFreedCapacity());
+					if (r.isSuccess()) {
+						Reservation resObj = db.findReservationByConfirmationCode(req.getConfirmationCode());
+						if (resObj != null)
+							notificationController.sendPaymentSuccess(resObj.getReservationId());
+					}
 					break;
 				}
 
@@ -300,12 +323,14 @@ public class Server extends AbstractServer {
 
 		try {
 			db = new DBController(dbName, dbUser, dbPassword);
-			reservationController = new ReservationController(db);
-			authController = new AuthenticationController(db);
 			ui.display("Database connection initialized.");
 		} catch (Exception e) {
 			ui.display("Database initialization failed: " + e.getMessage());
 		}
+
+		reservationController = new ReservationController(db);
+		authController = new AuthenticationController(db);
+		notificationController = new NotificationController(ui, db);
 
 		noShowScheduler = Executors.newSingleThreadScheduledExecutor();
 		noShowScheduler.scheduleAtFixedRate(() -> {
@@ -373,13 +398,17 @@ public class Server extends AbstractServer {
 		int canceledCount = 0;
 		for (Integer id : ids) {
 			boolean ok = db.updateReservationStatus(id, ReservationStatus.CANCELED.name());
-			if (ok)
+			if (ok) {
 				canceledCount++;
+				notificationController.sendReservationCanceled(id);
+			}
 		}
 
 		if (canceledCount > 0) {
 			ui.display("No-Show: auto-canceled " + canceledCount + " reservations.");
+			runNotifyCheck();
 		}
+
 	}
 
 	private void runReminderCheck() throws SQLException {
@@ -388,28 +417,39 @@ public class Server extends AbstractServer {
 			return;
 
 		for (Integer id : ids) {
-			// MOCK reminder
-			ui.display("🔔 Reminder: Reservation #" + id + " is scheduled in 2 hours.");
+			notificationController.sendReservationReminder(id);
 			db.markReminderSent(id);
 		}
 	}
 
 	private void runBillingCheck() throws SQLException {
-	    List<Reservation> res = db.getReservationsForBilling();
-	    if (res.isEmpty()) return;
+		List<Reservation> res = db.getReservationsForBilling();
+		if (res.isEmpty())
+			return;
 
-	    int sent = 0;
+		int sent = 0;
 
-	    for (Reservation r : res) {
-	        Bill bill = reservationController.computeBill(r);
-	        if (bill != null) {
-
-	            sent++;
-	            ui.display("💳 Bill sent for reservation # " + r.getReservationId() + "Initial amount: "
-	            		+ bill.getAmountBeforeDiscount() + "Final amount: " + bill.getFinalAmount());
-	        }
-	    }
-	    if (sent > 0) ui.display("💳 Bills sent: " + sent);
+		for (Reservation r : res) {
+			Bill bill = reservationController.computeBill(r);
+			if (bill != null) {
+				sent++;
+				notificationController.sendBillSent(r.getReservationId(), bill);
+			}
+		}
+		if (sent > 0)
+			ui.display("💳 Bills sent: " + sent);
+	}
+	
+	private void runNotifyCheck() throws SQLException {
+		Integer notifiedReservationId = null;
+		while((notifiedReservationId = reservationController.notifyNextFromWaitlist()) != null)
+			notificationController.sendTableAvailable(notifiedReservationId);
+	}
+	
+	private void runNotifyCheck(int freedCapacity) throws SQLException {
+		Integer notifiedReservationId = null;
+		while((notifiedReservationId = reservationController.notifyNextFromWaitlist(freedCapacity)) != null)
+			notificationController.sendTableAvailable(notifiedReservationId);
 	}
 
 }

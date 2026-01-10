@@ -1,0 +1,11 @@
+package common.enums;
+
+public enum NotificationType {
+    RESERVATION_CONFIRMATION,
+    RESERVATION_REMINDER,
+    TABLE_AVAILABLE,
+    TABLE_RECEIVED,
+    BILL_SENT,
+    PAYMENT_SUCCESS,
+    RESERVATION_CANCELED
+}

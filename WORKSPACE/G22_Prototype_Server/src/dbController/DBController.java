@@ -12,7 +12,10 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
+import common.dto.Notification.CustomerContactInfo;
 import common.dto.Reservation.InsertReservationResult;
+import common.dto.Reservation.ReservationBasicInfo;
+import common.dto.Reservation.WaitingCandidate;
 import common.entity.Bill;
 import common.entity.Reservation;
 import common.enums.ReservationStatus;
@@ -57,18 +60,7 @@ public class DBController {
 		}
 	}
 	
-	public static class WaitingCandidate {
-	    public final int reservationId;
-	    public final int customerId;
-	    public final int guests;
-
-	    public WaitingCandidate(int reservationId, int customerId, int guests) {
-	        this.reservationId = reservationId;
-	        this.customerId = customerId;
-	        this.guests = guests;
-	    }
-	}
-
+	
 	public List<Reservation> getAllReservations() throws SQLException {
 		// !! check if it is possible to change to Hashmap for faster results !!
 		List<Reservation> result = new ArrayList<>();// array list to insert the Reservations in it
@@ -639,26 +631,11 @@ public class DBController {
 	        try (ResultSet keys = ps.getGeneratedKeys()) {
 	            if (keys.next()) {
 	                Bill bill = new Bill(keys.getInt(1), reservationId, amountBeforeDiscount, finalAmount, false);
-	                if(assignBill(reservationId, bill.getBillId()))
-	                	return bill;
+	                return bill;
 	            }
 	        }
 	    }
 	    return null;
-	}
-
-	public boolean assignBill(int reservationId, int billId) throws SQLException {
-	    String sql = """
-	        UPDATE reservation SET bill_id = ? WHERE reservation_id = ?
-	    """;
-	    try (Connection conn = getConnection();
-		         PreparedStatement ps = conn.prepareStatement(sql)) {
-		        ps.setInt(1, billId);
-		        ps.setInt(2, reservationId);
-
-	        int updated = ps.executeUpdate();
-	        return (updated==1);
-	    }
 	}
 
 	public boolean markBillPaid(int reservationId) throws SQLException {
@@ -699,4 +676,89 @@ public class DBController {
 	    }
 	    return null;
 	}
+	
+	public CustomerContactInfo getCustomerContactInfo(int customerId) throws SQLException {
+	    String sql = """
+	        SELECT customer_id, full_name, phone, email
+	        FROM customer
+	        WHERE customer_id = ?
+	        LIMIT 1
+	    """;
+
+	    try (Connection conn = getConnection();
+	         PreparedStatement ps = conn.prepareStatement(sql)) {
+
+	        ps.setInt(1, customerId);
+
+	        try (ResultSet rs = ps.executeQuery()) {
+	            if (!rs.next()) return null;
+
+	            return new CustomerContactInfo(
+	                rs.getInt("customer_id"),
+	                rs.getString("full_name"),
+	                rs.getString("phone"),
+	                rs.getString("email")
+	            );
+	        }
+	    }
+	}
+	
+	public CustomerContactInfo getContactInfoByReservationId(int reservationId) throws SQLException {
+	    String sql = """
+	        SELECT c.customer_id, c.full_name, c.phone, c.email
+	        FROM reservation r
+	        JOIN customer c ON c.customer_id = r.customer_id
+	        WHERE r.reservation_id = ?
+	        LIMIT 1
+	    """;
+
+	    try (Connection conn = getConnection();
+	         PreparedStatement ps = conn.prepareStatement(sql)) {
+
+	        ps.setInt(1, reservationId);
+
+	        try (ResultSet rs = ps.executeQuery()) {
+	            if (!rs.next()) return null;
+
+	            return new CustomerContactInfo(
+	                rs.getInt("customer_id"),
+	                rs.getString("full_name"),
+	                rs.getString("phone"),
+	                rs.getString("email")
+	            );
+	        }
+	    }
+	}
+
+	public ReservationBasicInfo getReservationBasicInfo(int reservationId) throws SQLException {
+	    String sql = """
+	        SELECT c.full_name, r.reservation_datetime, r.number_of_guests, r.confirmation_code
+	        FROM reservation r
+	        JOIN customer c ON c.customer_id = r.customer_id
+	        WHERE r.reservation_id = ?
+	        LIMIT 1
+	    """;
+
+	    try (Connection conn = getConnection();
+	         PreparedStatement ps = conn.prepareStatement(sql)) {
+
+	        ps.setInt(1, reservationId);
+
+	        try (ResultSet rs = ps.executeQuery()) {
+	            if (!rs.next()) return null;
+
+	            Timestamp ts = rs.getTimestamp("reservation_datetime");
+	            LocalDateTime dt = (ts == null ? null : ts.toLocalDateTime());
+
+	            return new ReservationBasicInfo(
+	                rs.getString("full_name"),
+	                dt,
+	                rs.getInt("number_of_guests"),
+	                rs.getInt("confirmation_code")
+	            );
+	        }
+	    }
+	}
+
+
 }

@@ -2,14 +2,12 @@ package clientGUI;
 
 import client.Client;
 import client.ClientUI;
-import common.dto.Authentication.CustomerAuthRequest;
-import common.dto.Authentication.CustomerAuthResponse;
+import common.dto.Authentication.SubscriberAuthRequest;
+import common.dto.Authentication.SubscriberAuthResponse;
 import common.enums.AuthOperation;
-import javafx.application.Platform;
 import javafx.fxml.FXML;
 import javafx.scene.control.Label;
 import javafx.scene.control.TextField;
-import javafx.stage.Stage;
 
 public class LoginController {
 
@@ -30,31 +28,26 @@ public class LoginController {
 	        statusLabel.setText("Please enter your membership code.");
 	        return;
 	    }
-	    if (client == null || !client.isConnected()) {
-	        statusLabel.setText("Not connected to server. Please reopen the app / try again.");
-	        return;
-	    }
 
+	    SubscriberAuthRequest req = SubscriberAuthRequest.createAuthRequest(code);
 
 	    try {
-	    		statusLabel.setText("Logging in...");
-	        client.requestLoginBySubscriptionCode(code); // replace with your actual client instance
-	        
+	        client.sendToServer(req); // replace with your actual client instance
+	        statusLabel.setText("Logging in...");
 	    } catch (Exception e) {
 	        statusLabel.setText("Could not reach server.");
 	        e.printStackTrace();
 	    }
 	}
-	public void onAuthResponse(CustomerAuthResponse resp) {
-	    Platform.runLater(() -> {
-	        statusLabel.setText(resp.getMessage());
+	public void onAuthResponse(SubscriberAuthResponse resp) {
+	    System.out.println("Login success = " + resp.isSuccess());
 
-	        if (resp.isSuccess()) {
-	            // close the login window
-	            Stage st = (Stage) statusLabel.getScene().getWindow();
-	            st.close();
-	        }
-	    });
+	    statusLabel.setText("success = " + resp.isSuccess() + " | " + resp.getMessage());
+
+	    if (resp.isSuccess()) {
+	        // close if you want:
+	        // ((Stage) membershipCodeField.getScene().getWindow()).close();
+	    }
 	}
 
 }

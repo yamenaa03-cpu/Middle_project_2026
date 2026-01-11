@@ -6,179 +6,203 @@ import java.time.LocalDateTime;
 import common.enums.ReservationOperation;
 
 /**
- * Message object sent from client to server describing a reservation-related
- * operation and relevant parameters. Factory methods are provided for common
- * request types.
+ * A message sent from the client to the server containing the requested
+ * operation and relevant parameters. Shared between both projects (client &
+ * server).
+ * 
+ * @author: Yamen Abu Ahmad
+ * @version 1.0
  */
-public class ReservationRequest implements Serializable{
-    
- 	 private static final long serialVersionUID = 1L;
-    
-    private ReservationOperation operation;
-    
-    private int reservationId;
-    private LocalDateTime reservationDateTime;
-    private int numberOfGuests;
-    
-    // Guest identification fields (for CREATE_GUEST_RESERVATION / JOIN_WAITLIST, etc.)
-    private String fullName;
-    private String phone;
-    private String email;
-    private int confirmationCode;
 
-    /**
-     * Create a request asking for all reservations.
-     *
-     * @return configured ReservationRequest
-     */
-    public static ReservationRequest createGetAllReservationsRequest() {
-        ReservationRequest req = new ReservationRequest();
-        req.operation = ReservationOperation.GET_ALL_RESERVATIONS;
-        return req;
-    }
-    
-    /**
-     * Create an update request for an existing reservation.
-     *
-     * @param ReservationNumber reservation id to update
-     * @param newDateTime new date/time value
-     * @param newGuests new guest count
-     * @return configured ReservationRequest
-     */
-    public static ReservationRequest createUpdateReservationRequest(int ReservationNumber,
-            LocalDateTime newDateTime,
-            int newGuests) {
-    	
-    	ReservationRequest req = new ReservationRequest();
-    	req.operation = ReservationOperation.UPDATE_RESERVATION_FIELDS;
-    	req.reservationId = ReservationNumber;
-    	req.reservationDateTime = newDateTime;
-    	req.numberOfGuests = newGuests;
-    	return req;
-    }
-    
-    /**
-     * Create a request for obtaining the current customer's reservations.
-     *
-     * @return configured ReservationRequest
-     */
-    public static ReservationRequest createGetCustomerReservationsRequest() {
-        ReservationRequest r = new ReservationRequest();
-        r.operation = ReservationOperation.GET_CUSTOMER_RESERVATIONS;
-        return r;
-    }
+/* This class */
+public class ReservationRequest implements Serializable {
 
-    /**
-     * Create a request to create a reservation for the logged-in customer.
-     *
-     * @param dateTime desired reservation time
-     * @param guests number of guests
-     * @return configured ReservationRequest
-     */
-    public static ReservationRequest createCreateReservationRequest(
-    		LocalDateTime dateTime, int guests) {
+	private static final long serialVersionUID = 1L;
 
-        ReservationRequest req = new ReservationRequest();
-        req.operation = ReservationOperation.CREATE_RESERVATION;
-        req.reservationDateTime = dateTime;
-        req.numberOfGuests = guests;
-        return req;
-    }
-    
-    /**
-     * Create a reservation request for a guest (non-logged-in) user.
-     */
-    public static ReservationRequest createGuestCreateReservationRequest(
-            LocalDateTime dateTime, int guests,
-            String fullName, String phone, String email) {
+	private ReservationOperation operation;
 
-        ReservationRequest req = new ReservationRequest();
-        req.operation = ReservationOperation.CREATE_RESERVATION;
-        req.reservationDateTime = dateTime;
-        req.numberOfGuests = guests;
-        req.fullName = fullName;
-        req.phone = phone;
-        req.email = email;
-        return req;
-    }
+	private int reservationId;
+	private LocalDateTime reservationDateTime;
+	private int numberOfGuests;
+	private int customerId;
 
-    /**
-     * Create a cancel reservation request for the given reservation id.
-     *
-     * @param reservationId id to cancel
-     * @return configured ReservationRequest
-     */
-    public static ReservationRequest createCancelReservationRequest(int reservationId) {
-        ReservationRequest req = new ReservationRequest();
-        req.operation = ReservationOperation.CANCEL_RESERVATION;
-        req.reservationId = reservationId;
-        return req;
-    }
+	// Guest identification fields (for CREATE_GUEST_RESERVATION / JOIN_WAITLIST,
+	// etc.)
+	private String fullName;
+	private String phone;
+	private String email;
+	private int confirmationCode;
 
-    /**
-     * Create a request to mark a table as received using the confirmation code.
-     *
-     * @param confirmationCode numeric confirmation provided to customer
-     * @return configured ReservationRequest
-     */
-    public static ReservationRequest createReceiveTableRequest(int confirmationCode) {
-        ReservationRequest req = new ReservationRequest();
-        req.operation = ReservationOperation.RECEIVE_TABLE;
-        req.confirmationCode = confirmationCode;
-        return req;
-    }
-    
-    /**
-     * Create a billing/checkout request using the confirmation code.
-     *
-     * @param confirmationCode numeric confirmation provided to customer
-     * @return configured ReservationRequest
-     */
-    public static ReservationRequest createPayBillRequest(int confirmationCode) {
-        ReservationRequest req = new ReservationRequest();
-        req.operation = ReservationOperation.CHECKOUT;
-        req.confirmationCode = confirmationCode;
-        return req;
-    }
-    
-   // private ReservationRequest() {}
-    //Getters for the class fields
-    /**
-     * Returns the requested operation.
-     *
-     * @return reservation operation
-     */
-    public ReservationOperation getOperation() { return operation; }
+	/*
+	 * identify the request as an instance of Reservation request class and saves
+	 * the GET_ALL_RESERVATIONS operation as a field in the class
+	 */
+	public static ReservationRequest createGetAllReservationsRequest() {
+		ReservationRequest req = new ReservationRequest();
+		req.operation = ReservationOperation.GET_ALL_RESERVATIONS;
+		return req;
+	}
 
-    /**
-     * Returns reservation id when applicable.
-     *
-     * @return reservation id
-     */
-    public int getReservationId() { return reservationId; }
+	/*
+	 * identify the request as an instance of Reservation request class and saves
+	 * the UPDATE_RESERVATION_FIELDS operation as a field in the class
+	 */
+	public static ReservationRequest createUpdateReservationRequest(int ReservationNumber, LocalDateTime newDateTime,
+			int newGuests) {
 
-    /**
-     * Returns the requested reservation date/time when applicable.
-     *
-     * @return reservation date/time
-     */
-    public LocalDateTime getReservationDateTime() { return reservationDateTime; }
+		ReservationRequest req = new ReservationRequest();
+		req.operation = ReservationOperation.UPDATE_RESERVATION_FIELDS;
+		req.reservationId = ReservationNumber;
+		req.reservationDateTime = newDateTime;
+		req.numberOfGuests = newGuests;
+		return req;
+	}
 
-    /**
-     * Returns the number of guests when applicable.
-     *
-     * @return guest count
-     */
-    public int getNumberOfGuests() { return numberOfGuests; }
-    
-    // Guest getters (needed by CREATE_GUEST_RESERVATION case)
-    /** Returns guest full name. */
-    public String getFullName() { return fullName; }
-    /** Returns guest phone. */
-    public String getPhone() { return phone; }
-    /** Returns guest email. */
-    public String getEmail() { return email; }
-    /** Returns confirmation code when present. */
-    public int getConfirmationCode() { return confirmationCode; }
+	/*
+	 * identify the request as an instance of Reservation request class and saves
+	 * the CREATE_RESERVATION_FIELDS operation as a field in the class
+	 */
+	public static ReservationRequest createCreateReservationRequest(LocalDateTime dateTime, int guests) {
+
+		ReservationRequest req = new ReservationRequest();
+		req.operation = ReservationOperation.CREATE_RESERVATION;
+		req.reservationDateTime = dateTime;
+		req.numberOfGuests = guests;
+		return req;
+	}
+
+	public static ReservationRequest createCreateGuestReservationRequest(LocalDateTime dateTime, int guests,
+			String fullName, String phone, String email) {
+
+		ReservationRequest req = new ReservationRequest();
+		req.operation = ReservationOperation.CREATE_RESERVATION;
+		req.reservationDateTime = dateTime;
+		req.numberOfGuests = guests;
+		req.fullName = fullName;
+		req.phone = phone;
+		req.email = email;
+		return req;
+	}
+
+	public static ReservationRequest createResendConfirmationCodeRequest(String phone, String email) {
+		ReservationRequest req = new ReservationRequest();
+		req.operation = ReservationOperation.RESEND_CONFIRMATION_CODE;
+		req.phone = phone;
+		req.email = email;
+		return req;
+	}
+
+	public static ReservationRequest createGetCancellableReservationsRequest() {
+		ReservationRequest req = new ReservationRequest();
+		req.operation = ReservationOperation.GET_CUSTOMER_RESERVATIONS_FOR_CANCELLATION;
+		return req;
+	}
+
+	public static ReservationRequest createGetCancellableReservationByConfirmationCodeRequest(int confirmationCode) {
+		ReservationRequest req = new ReservationRequest();
+		req.operation = ReservationOperation.GET_RESERVATION_By_CONFIRMATION_CODE_FOR_CANCELLATION;
+		req.confirmationCode = confirmationCode;
+		return req;
+	}
+
+	/*
+	 * identify the request as an instance of Reservation request class and saves
+	 * the CANCEL_RESERVATION_FIELDS operation as a field in the class
+	 */
+	public static ReservationRequest createCancelReservationRequest(int reservationId) {
+		ReservationRequest req = new ReservationRequest();
+		req.operation = ReservationOperation.CANCEL_RESERVATION;
+		req.reservationId = reservationId;
+		return req;
+	}
+
+	public static ReservationRequest createGetReceivableReservationsRequest() {
+		ReservationRequest req = new ReservationRequest();
+		req.operation = ReservationOperation.GET_CUSTOMER_RESERVATIONS_FOR_RECEIVING;
+		return req;
+	}
+
+	public static ReservationRequest createGetReceivableReservationByConfirmationCodeRequest(int confirmationCode) {
+		ReservationRequest req = new ReservationRequest();
+		req.operation = ReservationOperation.GET_RESERVATION_By_CONFIRMATION_CODE_FOR_RECEIVING;
+		req.confirmationCode = confirmationCode;
+		return req;
+	}
+
+	public static ReservationRequest createReceiveTableRequest(int reservationId) {
+		ReservationRequest req = new ReservationRequest();
+		req.operation = ReservationOperation.RECEIVE_TABLE;
+		req.reservationId = reservationId;
+		return req;
+	}
+
+	public static ReservationRequest createJoinWaitlistRequest(int guests) {
+
+		ReservationRequest req = new ReservationRequest();
+		req.operation = ReservationOperation.CREATE_RESERVATION;
+		req.numberOfGuests = guests;
+		return req;
+	}
+
+	public static ReservationRequest createJoinGuestWaitlistRequest(int guests, String fullName, String phone,
+			String email) {
+
+		ReservationRequest req = new ReservationRequest();
+		req.operation = ReservationOperation.CREATE_RESERVATION;
+		req.numberOfGuests = guests;
+		req.fullName = fullName;
+		req.phone = phone;
+		req.email = email;
+		return req;
+	}
+
+	public static ReservationRequest createPayBillRequest(int confirmationCode) {
+		ReservationRequest req = new ReservationRequest();
+		req.operation = ReservationOperation.CHECKOUT;
+		req.confirmationCode = confirmationCode;
+		return req;
+	}
+
+	public static ReservationRequest createPayBillByIdRequest(int reservationId) {
+		ReservationRequest req = new ReservationRequest();
+		req.operation = ReservationOperation.CHECKOUT;
+		req.reservationId = reservationId;
+		return req;
+	}
+
+	// private ReservationRequest() {}
+	// Getters for the class fields
+	public ReservationOperation getOperation() {
+		return operation;
+	}
+
+	public int getReservationId() {
+		return reservationId;
+	}
+
+	public LocalDateTime getReservationDateTime() {
+		return reservationDateTime;
+	}
+
+	public int getNumberOfGuests() {
+		return numberOfGuests;
+	}
+
+	// Guest getters (needed by CREATE_GUEST_RESERVATION case)
+	public String getFullName() {
+		return fullName;
+	}
+
+	public String getPhone() {
+		return phone;
+	}
+
+	public String getEmail() {
+		return email;
+	}
+
+	public int getConfirmationCode() {
+		return confirmationCode;
+	}
 
 }

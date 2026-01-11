@@ -18,6 +18,7 @@ import common.dto.Reservation.ReservationResponse;
 import common.dto.Authentication.CustomerAuthRequest;
 import common.dto.Authentication.CustomerAuthResponse;
 import common.entity.Bill;
+import common.entity.Customer;
 import common.entity.Reservation;
 import common.enums.AuthOperation;
 import common.enums.ReservationOperation;
@@ -105,34 +106,97 @@ public class Server extends AbstractServer {
 			}
 
 			if (msg instanceof CustomerAuthRequest) {
-				CustomerAuthRequest authReq = (CustomerAuthRequest) msg;
+			    CustomerAuthRequest authReq = (CustomerAuthRequest) msg;
 
-				if (authReq.getOperation() == AuthOperation.LOGOUT) {
-					if (client.getInfo("subscriberId") == null)
-						client.sendToClient(new CustomerAuthResponse(false, "Already logged out", null));
-					client.setInfo("subscriberId", null);
+			    // session subscriber id saved after login
+			    Integer sessionId = (Integer) client.getInfo("subscriberId");
 
-					client.sendToClient(new CustomerAuthResponse(true, "Logged out successfully.", null));
-					return;
-				}
+			    // LOGOUT 
+			    if (authReq.getOperation() == AuthOperation.LOGOUT) {
 
-				CustomerAuthResult r;
-				if (authReq.getOperation() == AuthOperation.SUBSCRIPTION_CODE) {
-					r = authController.authenticateBySubscriptionCode(authReq.getSubscriptionCode());
-				} else {
-					r = CustomerAuthResult.fail("Invalid Operation!");
-				}
+			        if (sessionId == null) {
+			            client.sendToClient(new CustomerAuthResponse(false, "Already logged out", null));
+			            return;
+			        }
 
-				if (r.isSuccess()) {
-					client.setInfo("subscriberId", r.getSubscriberId());
-				}
+			        client.setInfo("subscriberId", null);
+			        client.sendToClient(new CustomerAuthResponse(true, "Logged out successfully.", null));
+			        return;
+			    }
 
-				CustomerAuthResponse resp = new CustomerAuthResponse(r.isSuccess(), r.getMessage(),
-						r.getSubscriberId());
+			    // LOGIN BY SUBSCRIPTION CODE 
+			    else if (authReq.getOperation() == AuthOperation.SUBSCRIPTION_CODE) {
 
-				client.sendToClient(resp);// returns response to the client
-				return;
+			        CustomerAuthResult r = authController.authenticateBySubscriptionCode(authReq.getSubscriptionCode());
+
+			        if (r.isSuccess()) {
+			            client.setInfo("subscriberId", r.getSubscriberId());
+			        }
+
+			        CustomerAuthResponse resp = new CustomerAuthResponse(
+			                r.isSuccess(),
+			                r.getMessage(),
+			                r.getSubscriberId()
+			        );
+
+			        client.sendToClient(resp);
+			        return;
+			    }
+
+			    //  GET PROFILE 
+			    else if (authReq.getOperation() == AuthOperation.GET_PROFILE) {
+
+			        if (sessionId == null) {
+			            client.sendToClient(new CustomerAuthResponse(false, "Not logged in.", null));
+			            return;
+			        }
+
+			        Customer c = authController.getProfile(sessionId);
+
+			        if (c == null) {
+			            client.sendToClient(new CustomerAuthResponse(false, "Customer not found.", sessionId));
+			        } else {
+			            client.sendToClient(new CustomerAuthResponse(true, "Profile loaded.", sessionId, c));
+			        }
+
+			        return;
+			    }
+
+			    // UPDATE PROFILE
+			    else if (authReq.getOperation() == AuthOperation.UPDATE_PROFILE) {
+
+			        if (sessionId == null) {
+			            client.sendToClient(new CustomerAuthResponse(false, "Not logged in.", null));
+			            return;
+			        }
+
+			        boolean ok = authController.updateProfile(
+			                sessionId,
+			                authReq.getFullName(),
+			                authReq.getPhone(),
+			                authReq.getEmail()
+			        );
+
+			        // return updated customer (so client refreshes UI immediately)
+			        Customer updated = authController.getProfile(sessionId);
+
+			        client.sendToClient(new CustomerAuthResponse(
+			                ok,
+			                ok ? "Profile updated." : "Profile update failed.",
+			                sessionId,
+			                updated
+			        ));
+
+			        return;
+			    }
+
+			    // ---------------- UNKNOWN AUTH OP ----------------
+			    else {
+			        client.sendToClient(new CustomerAuthResponse(false, "Invalid Operation!", sessionId));
+			        return;
+			    }
 			}
+
 
 			if (msg instanceof ReservationRequest) {
 				ReservationRequest req = (ReservationRequest) msg;
@@ -270,7 +334,7 @@ public class Server extends AbstractServer {
 				default:
 					resp = new ReservationResponse(false, "Unknown operation");
 				}
-
+				
 				client.sendToClient(resp);// returns response to the client
 			}
 

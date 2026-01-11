@@ -1,5 +1,8 @@
 package common.enums;
 
+/**
+ * Lifecycle states for a reservation.
+ */
 public enum ReservationStatus {
     ACTIVE,
     CANCELED,

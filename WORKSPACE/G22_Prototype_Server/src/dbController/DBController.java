@@ -17,6 +17,7 @@ import common.dto.Reservation.InsertReservationResult;
 import common.dto.Reservation.ReservationBasicInfo;
 import common.dto.Reservation.WaitingCandidate;
 import common.entity.Bill;
+import common.entity.Customer;
 import common.entity.Reservation;
 import common.enums.ReservationStatus;
 
@@ -217,6 +218,56 @@ public class DBController {
 
 	    return null;
 	}
+	public Customer getCustomerById(int customerId) throws SQLException {
+	    String sql = """
+	        SELECT customer_id, full_name, phone, email, subscription_code
+	        FROM customer
+	        WHERE customer_id = ?
+	        LIMIT 1
+	    """;
+
+	    try (Connection conn = getConnection();
+	         PreparedStatement ps = conn.prepareStatement(sql)) {
+
+	        ps.setInt(1, customerId);
+
+	        try (ResultSet rs = ps.executeQuery()) {
+	            if (!rs.next()) return null;
+
+	            String subCode = rs.getString("subscription_code");
+	            boolean isSubscriber = (subCode != null && !subCode.isBlank());
+
+	            return new Customer(
+	                rs.getInt("customer_id"),
+	                isSubscriber,
+	                rs.getString("full_name"),
+	                rs.getString("phone"),
+	                rs.getString("email"),
+	                subCode
+	            );
+	        }
+	    }
+	}
+	
+	public boolean updateCustomerProfile(int customerId, String fullName, String phone, String email) throws SQLException {
+	    String sql = """
+	        UPDATE customer
+	        SET full_name = ?, phone = ?, email = ?
+	        WHERE customer_id = ?
+	    """;
+
+	    try (Connection conn = getConnection();
+	         PreparedStatement ps = conn.prepareStatement(sql)) {
+
+	        ps.setString(1, fullName);
+	        ps.setString(2, phone);
+	        ps.setString(3, (email == null || email.isBlank()) ? null : email.trim().toLowerCase());
+	        ps.setInt(4, customerId);
+
+	        return ps.executeUpdate() == 1;
+	    }
+	}
+
 
 	
 	public List<Integer> getTableCapacities() throws SQLException {

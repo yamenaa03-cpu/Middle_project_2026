@@ -25,8 +25,9 @@
         <HBox alignment="CENTER_LEFT" spacing="12" style="-fx-padding: 14 20; -fx-background-color: white;">
             <Label style="-fx-font-size: 20px; -fx-font-weight: 700;" text="איזור אישי" />
             <Region HBox.hgrow="ALWAYS" />
-            <Button text="Refresh" />
-            <Button text="Logout" />
+            <Button fx:id="refreshBtn" text="Refresh" onAction="#onRefresh"/>
+			<Button fx:id="logoutBtn" text="Logout" onAction="#onLogout"/>
+
         </HBox>
     </top>
 
@@ -61,7 +62,8 @@
                             <TextField fx:id="emailField" promptText="example@gmail.com" GridPane.columnIndex="1" GridPane.rowIndex="4" />
 
                             <Label text="Subscribed:" GridPane.columnIndex="0" GridPane.rowIndex="5" />
-                            <CheckBox fx:id="subscribedCheckBox" text="Yes" GridPane.columnIndex="1" GridPane.rowIndex="5" />
+                            <CheckBox fx:id="subscribedCheckBox" text="Yes"           selected="true"
+          					disable="true" GridPane.columnIndex="1" GridPane.rowIndex="5" />
                      <rowConstraints>
                         <RowConstraints />
                         <RowConstraints />
@@ -73,7 +75,7 @@
                         </GridPane>
 
                         <HBox spacing="10">
-                            <Button style="-fx-font-weight: 700;" text="Save Changes" />
+                            <Button fx:id="saveBtn" text="Save Changes" styleClass="primary-button" onAction="#onSaveChanges"/>
                             <Label fx:id="infoStatusLabel" text="" />
                         </HBox>
                     </VBox>

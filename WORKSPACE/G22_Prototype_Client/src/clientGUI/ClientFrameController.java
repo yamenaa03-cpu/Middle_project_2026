@@ -2,6 +2,8 @@ package clientGUI;
 
 import client.Client;
 import client.ClientUI;
+import common.dto.Authentication.CustomerAuthResponse;
+import common.dto.Reservation.ReservationResponse;
 import common.entity.Reservation;
 import javafx.application.Platform;
 import javafx.fxml.FXML;
@@ -187,6 +189,18 @@ public class ClientFrameController implements ClientUI {
             reservationsTable.getItems().addAll(reservations);
         });
     }
+
+	@Override
+	public void handleAuthResponse(CustomerAuthResponse resp) {
+		// TODO Auto-generated method stub
+		
+	}
+
+	@Override
+	public void handleReservationResponse(ReservationResponse resp) {
+		// TODO Auto-generated method stub
+		
+	}
 
 
 

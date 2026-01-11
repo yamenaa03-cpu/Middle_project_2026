@@ -1,5 +1,8 @@
 package common.enums;
 
+/**
+ * Types of notifications that can be sent to customers.
+ */
 public enum NotificationType {
     RESERVATION_CONFIRMATION,
     RESERVATION_REMINDER,

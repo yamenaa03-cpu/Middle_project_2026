@@ -2,9 +2,9 @@ package common.enums;
 
 import java.io.Serializable;
 
-/*
- * This class operates as the */
-
+/**
+ * Enumeration of reservation-related operations used in request messages.
+ */
 public enum ReservationOperation implements Serializable  {
     GET_ALL_RESERVATIONS,
     UPDATE_RESERVATION_FIELDS,

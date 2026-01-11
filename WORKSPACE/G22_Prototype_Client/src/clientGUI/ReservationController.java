@@ -3,9 +3,13 @@ package clientGUI;
 import client.Client;
 import javafx.application.Platform;
 import javafx.fxml.FXML;
+import javafx.fxml.FXMLLoader;
 import javafx.scene.Node;
+import javafx.scene.Parent;
+import javafx.scene.Scene;
 import javafx.scene.control.*;
 import javafx.scene.layout.VBox;
+import javafx.stage.Modality;
 import javafx.stage.Stage;
 
 import java.time.LocalDate;
@@ -31,9 +35,18 @@ public class ReservationController {
     // SERVER CONNECTION
     // ==========================================================
     private Client client;
+    private ClientController mainController;
+    private LocalDateTime lastRequestedDateTime;
+    private int lastRequestedGuests;
+
 
     public void setClient(Client client) {
         this.client = client;
+    }
+
+    
+    public void setMainController(ClientController mainController) {
+        this.mainController = mainController;
     }
 
     // ==========================================================
@@ -47,6 +60,7 @@ public class ReservationController {
     @FXML private VBox guestPane;
 
     @FXML private TextField membershipCodeField;
+    @FXML private TextField fullNameField;
     @FXML private TextField phoneField;
     @FXML private TextField emailField;
 
@@ -61,6 +75,8 @@ public class ReservationController {
 
     @FXML private Button checkAvailabilityButton;
     @FXML private Hyperlink cancelReservationLink;
+    
+    @FXML private Label statusLabel1;
 
     // ==========================================================
     // INTERNAL STATE
@@ -76,6 +92,7 @@ public class ReservationController {
         setupTimeOptions();
         updateGuestCountLabel();
         statusLabel.setText("");
+        
     }
 
     // ==========================================================
@@ -122,10 +139,22 @@ public class ReservationController {
     // TIME COMBOBOX SETUP
     // ==========================================================
     private void setupTimeOptions() {
-        IntStream.rangeClosed(10, 22)
-                .mapToObj(hour -> LocalTime.of(hour, 0))
-                .forEach(timeComboBox.getItems()::add);
+        timeComboBox.getItems().clear();
+
+        // 10:00 -> 23:30
+        for (int hour = 10; hour <= 23; hour++) {
+            timeComboBox.getItems().add(LocalTime.of(hour, 0));
+            timeComboBox.getItems().add(LocalTime.of(hour, 30));
+        }
+
+        // 00:00 -> 02:00
+        timeComboBox.getItems().add(LocalTime.of(0, 0));
+        timeComboBox.getItems().add(LocalTime.of(0, 30));
+        timeComboBox.getItems().add(LocalTime.of(1, 0));
+        timeComboBox.getItems().add(LocalTime.of(1, 30));
+        timeComboBox.getItems().add(LocalTime.of(2, 0));
     }
+
 
     // ==========================================================
     // GUEST COUNT HANDLING
@@ -156,6 +185,8 @@ public class ReservationController {
     @FXML
     private void onCheckAvailability() {
 
+        statusLabel.setText("");
+
         if (client == null || !client.isConnected()) {
             statusLabel.setText("Not connected to server.");
             return;
@@ -170,24 +201,88 @@ public class ReservationController {
         LocalTime time = timeComboBox.getValue();
         LocalDateTime reservationDateTime = LocalDateTime.of(date, time);
 
+        lastRequestedDateTime = reservationDateTime;
+        lastRequestedGuests = guestCount;
+
+        // ================= MEMBER =================
         if (memberToggle.isSelected()) {
-            String code = membershipCodeField.getText().trim();
-            if (code.isEmpty()) {
-                statusLabel.setText("Please enter membership code.");
+
+            // ✅ require login
+            if (mainController == null || !mainController.isLoggedIn()) {
+                Alert a = new Alert(Alert.AlertType.WARNING);
+                a.setHeaderText(null);
+                a.setContentText("You must log in before making a member reservation.");
+                a.show();
+                statusLabel.setText("Please login first.");
                 return;
             }
-            client.requestCreateReservation(guestCount, reservationDateTime, guestCount);
-        } else {
-            String phone = phoneField.getText().trim();
-            if (phone.isEmpty()) {
-                statusLabel.setText("Please enter phone number.");
-                return;
-            }
-            client.requestCreateReservation(guestCount, reservationDateTime, guestCount);
+
+            // ✅ send CREATE_RESERVATION (server uses session subscriberId)
+            client.requestCreateReservation(0, reservationDateTime, guestCount);
+            statusLabel.setText("Checking availability...");
+            return;
         }
+
+        // ================= GUEST =================
+        String phone = phoneField.getText().trim();
+        if (phone.isEmpty()) {
+            statusLabel.setText("Please enter phone number.");
+            return;
+        }
+
+        String name = fullNameField.getText().trim();
+        String email = emailField.getText().trim();
+
+        // ✅ You must send guest info in request, so we need a new request type (next step)
+        client.requestCreateGuestReservation(reservationDateTime, guestCount, name, phone, email);
 
         statusLabel.setText("Checking availability...");
     }
+    
+    public void onReservationResponse(common.dto.Reservation.ReservationResponse resp) {
+        Platform.runLater(() -> {
+
+            if (resp.isSuccess()) {
+                // open confirmation page
+                openConfirmationPage(resp.getConfirmationCode(), lastRequestedDateTime, lastRequestedGuests);
+                return;
+            }
+
+            // failed
+            if (resp.getSuggestedTimes() != null && !resp.getSuggestedTimes().isEmpty()) {
+                LocalDateTime closest = resp.getSuggestedTimes().get(0);
+                Platform.runLater(() -> statusLabel1.setText(resp.getMessage() + "\nClosest available: " + closest));
+            } else {
+            		statusLabel1.setText(resp.getMessage());
+            }
+        });
+    }
+    
+    private void openConfirmationPage(int confirmationCode, LocalDateTime dt, int guests) {
+        try {
+            FXMLLoader loader = new FXMLLoader(getClass().getResource("/clientGUI/ReservationPageConfirmation.fxml"));
+            Parent root = loader.load();
+
+            ReservationConfirmationController c = loader.getController();
+            c.setData(confirmationCode, dt, guests);
+
+            Stage stage = new Stage();
+            stage.setTitle("Reservation Confirmation");
+            stage.initModality(Modality.APPLICATION_MODAL);
+            stage.setScene(new Scene(root));
+            stage.setResizable(false);
+            stage.show();
+
+            // optionally close current reservation window:
+            Stage current = (Stage) statusLabel.getScene().getWindow();
+            current.close();
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            statusLabel.setText("Could not open confirmation page.");
+        }
+    }
+
 
     // ==========================================================
     // SERVER FEEDBACK

@@ -26,7 +26,7 @@
 
                     <!-- Row 1 -->
                     <Label text="DB Name:" GridPane.rowIndex="1"/>
-                    <TextField fx:id="dbNameField" text="bestrodb" GridPane.rowIndex="1"/>
+                    <TextField fx:id="dbNameField" text="bistrodb" GridPane.rowIndex="1"/>
 
                     <!-- Row 2 -->
                     <Label text="DB User:" GridPane.rowIndex="2"/>

@@ -6,6 +6,8 @@ import java.io.IOException;
 import java.time.LocalDateTime;
 import java.util.List;
 
+import common.dto.Authentication.CustomerAuthRequest;
+import common.dto.Authentication.CustomerAuthResponse;
 import common.dto.Reservation.ReservationRequest;
 import common.dto.Reservation.ReservationResponse;
 import common.entity.Reservation;
@@ -37,17 +39,27 @@ public class Client extends AbstractClient {
      */
     @Override
     protected void handleMessageFromServer(Object msg) {
-        if (!(msg instanceof ReservationResponse)) {
-            ui.displayMessage("Unknown message from server: " + msg);
+
+        if (msg instanceof CustomerAuthResponse authResp) {
+        		ui.displayMessage(authResp.getMessage());
+            ui.handleAuthResponse(authResp);
             return;
         }
 
-        ReservationResponse resp = (ReservationResponse) msg;
-        ui.displayMessage(resp.getMessage());
+        if (msg instanceof ReservationResponse resResp) {
+            ui.handleReservationResponse(resResp);   // ✅ THIS is the missing link
+            return;
+            
+        }
 
-        List<Reservation> reservations = resp.getReservations();
-        if (reservations != null) {
-            ui.displayReservations(reservations);
+        ui.displayMessage("Unknown message from server: " + msg);
+    }
+    
+    public void requestLoginBySubscriptionCode(String code) {
+        try {
+            sendToServer(common.dto.Authentication.CustomerAuthRequest.subscription(code));
+        } catch (IOException e) {
+            ui.displayMessage("Error sending login request: " + e.getMessage());
         }
     }
     
@@ -84,6 +96,42 @@ public class Client extends AbstractClient {
         ReservationRequest req = ReservationRequest.createCreateReservationRequest(dateTime, guests);
         sendRequest(req);
     }
+    
+    public void requestCreateGuestReservation(LocalDateTime dateTime, int guests,
+            String fullName, String phone, String email) {
+		ReservationRequest req =
+		ReservationRequest.createGuestCreateReservationRequest(dateTime, guests, fullName, phone, email);
+		sendRequest(req);
+	}
+    
+    public void requestCustomerProfile() {
+        try {
+            sendToServer(CustomerAuthRequest.getProfile());
+        } catch (IOException e) {
+            ui.displayMessage("Error: " + e.getMessage());
+        }
+    }
+
+    public void requestUpdateCustomerProfile(String fullName, String phone, String email) {
+        try {
+            sendToServer(CustomerAuthRequest.updateProfile(fullName, phone, email));
+        } catch (IOException e) {
+            ui.displayMessage("Error: " + e.getMessage());
+        }
+    }
+
+    
+   
+    public void requestCustomerReservations() { sendRequest(ReservationRequest.createGetCustomerReservationsRequest()); }
+ 
+    public void requestCancelReservation(int reservationId, int confirmationCode) {
+        sendRequest(ReservationRequest.createCancelReservationRequest(reservationId));
+    }
+    public void requestCheckout(int confirmationCode) {
+        sendRequest(ReservationRequest.createPayBillRequest(confirmationCode));
+    }
+
+
     /**
      * sends a request object to the server.
      * catches any Exception while doing so

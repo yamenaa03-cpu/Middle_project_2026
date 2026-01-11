@@ -4,6 +4,11 @@ import java.io.Serializable;
 
 import common.enums.ReservationStatus;
 
+/**
+ * Result object returned after attempting to cancel a reservation. Contains
+ * success flag, human-readable message and the previous reservation status
+ * when available.
+ */
 public class CancelReservationResult implements Serializable {
     private static final long serialVersionUID = 1L;
 
@@ -30,8 +35,25 @@ public class CancelReservationResult implements Serializable {
         return new CancelReservationResult(false, msg);
     }
 
+    /**
+     * Returns whether the cancellation succeeded.
+     *
+     * @return true if cancelled successfully
+     */
     public boolean isSuccess() { return success; }
+
+    /**
+     * Human readable message describing the result.
+     *
+     * @return descriptive message
+     */
     public String getMessage() { return message; }
+
+    /**
+     * Returns the reservation status before cancellation, if available.
+     *
+     * @return previous reservation status or null
+     */
     public ReservationStatus getReservationStatusBefore() { return before; }
 }
 

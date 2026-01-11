@@ -3,6 +3,7 @@ package controllers;
 import java.sql.SQLException;
 
 import common.dto.Authentication.CustomerAuthResult;
+import common.entity.Customer;
 import dbController.DBController;
 
 public class AuthenticationController {
@@ -25,6 +26,14 @@ public class AuthenticationController {
         }
 
         return CustomerAuthResult.ok(customerId, "Login successful.");
+    }
+    
+    public Customer getProfile(int customerId) throws SQLException {
+        return db.getCustomerById(customerId);
+    }
+
+    public boolean updateProfile(int customerId, String fullName, String phone, String email) throws SQLException {
+        return db.updateCustomerProfile(customerId, fullName, phone, email);
     }
 
 }

@@ -28,10 +28,8 @@
             <VBox fx:id="memberPane" maxWidth="320" spacing="8">
                 <Label text="Membership code" />
                 <TextField fx:id="membershipCodeField" promptText="Enter subscription code" />
-            <Label text=" User Name" />
-            <TextField fx:id="membershipCodeField1" promptText="Enter subscription code" />
             </VBox>
-<Button mnemonicParsing="false" onAction="#onLogin" prefHeight="45.0" prefWidth="234.0" style="-fx-background-radius: 20; -fx-font: ariel;" text="Log In">
+<Button mnemonicParsing="false" onAction="#onLogin" prefHeight="45.0" prefWidth="234.0" style="-fx-font: 20px Arial;" text="Log In">
     <font>
         <Font name="System Bold" size="20.0" />
     </font>
@@ -39,7 +37,7 @@
 </Button>
 
 
- <Label fx:id="statusLabel" prefHeight="56.0" prefWidth="212.0" textFill="RED" wrapText="true" />
+ <Label fx:id="statusLabel" prefHeight="56.0" prefWidth="431.0" textFill="RED" wrapText="true" />
         </VBox>
     </center>
 </BorderPane>

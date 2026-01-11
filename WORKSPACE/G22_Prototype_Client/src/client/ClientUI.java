@@ -2,6 +2,8 @@ package client;
 
 import java.util.List;
 
+import common.dto.Authentication.CustomerAuthResponse;
+import common.dto.Reservation.ReservationResponse;
 import common.entity.Reservation;
 
 /**
@@ -40,6 +42,11 @@ public interface ClientUI {
      * @param reservations The list of reservations sent from the server.
      */
     void displayReservations(List<Reservation> reservations);
+    
+    void handleAuthResponse(CustomerAuthResponse resp);
+    
+    
+    void handleReservationResponse(ReservationResponse resp);
     
     
 

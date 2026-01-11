@@ -5,6 +5,7 @@ package common.enums;
  */
 public enum NotificationType {
     RESERVATION_CONFIRMATION,
+    RESEND_CONFIRMATION,
     RESERVATION_REMINDER,
     TABLE_AVAILABLE,
     TABLE_RECEIVED,

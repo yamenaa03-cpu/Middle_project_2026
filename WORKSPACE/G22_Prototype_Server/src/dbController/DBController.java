@@ -60,8 +60,7 @@ public class DBController {
 			return false; // failed
 		}
 	}
-	
-	
+
 	public List<Reservation> getAllReservations() throws SQLException {
 		// !! check if it is possible to change to Hashmap for faster results !!
 		List<Reservation> result = new ArrayList<>();// array list to insert the Reservations in it
@@ -145,78 +144,82 @@ public class DBController {
 	}
 
 	public InsertReservationResult insertNotifiedNow(int customerId, int numberOfGuests) throws SQLException {
-	    String sql = "INSERT INTO reservation (reservation_datetime, number_of_guests, confirmation_code, " +
-	                 "customer_id, created_at, status) VALUES (?, ?, ?, ?, ?, ?)";
+		String sql = "INSERT INTO reservation (reservation_datetime, number_of_guests, confirmation_code, "
+				+ "customer_id, created_at, status) VALUES (?, ?, ?, ?, ?, ?)";
 
-	    LocalDateTime now = LocalDateTime.now();
+		LocalDateTime now = LocalDateTime.now();
 
-	    for (int attempt = 1; attempt <= 5; attempt++) {
-	        int confirmationCode = (int) (Math.random() * 900000) + 100000;
+		for (int attempt = 1; attempt <= 5; attempt++) {
+			int confirmationCode = (int) (Math.random() * 900000) + 100000;
 
-	        try (Connection conn = getConnection();
-	             PreparedStatement ps = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
+			try (Connection conn = getConnection();
+					PreparedStatement ps = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
 
-	            ps.setTimestamp(1, Timestamp.valueOf(now));
-	            ps.setInt(2, numberOfGuests);
-	            ps.setInt(3, confirmationCode);
-	            ps.setInt(4, customerId);
-	            ps.setTimestamp(5, Timestamp.valueOf(now));
-	            ps.setString(6, "NOTIFIED");
+				ps.setTimestamp(1, Timestamp.valueOf(now));
+				ps.setInt(2, numberOfGuests);
+				ps.setInt(3, confirmationCode);
+				ps.setInt(4, customerId);
+				ps.setTimestamp(5, Timestamp.valueOf(now));
+				ps.setString(6, "NOTIFIED");
 
-	            int inserted = ps.executeUpdate();
-	            if (inserted != 1) return null;
+				int inserted = ps.executeUpdate();
+				if (inserted != 1)
+					return null;
 
-	            try (ResultSet keys = ps.getGeneratedKeys()) {
-	                if (keys.next()) return new InsertReservationResult(keys.getInt(1), confirmationCode);
-	            }
-	            return null;
+				try (ResultSet keys = ps.getGeneratedKeys()) {
+					if (keys.next())
+						return new InsertReservationResult(keys.getInt(1), confirmationCode);
+				}
+				return null;
 
-	        } catch (SQLException e) {
-	            if (e.getErrorCode() == 1062) continue;
-	            throw e;
-	        }
-	    }
-	    return null;
+			} catch (SQLException e) {
+				if (e.getErrorCode() == 1062)
+					continue;
+				throw e;
+			}
+		}
+		return null;
 	}
 
-	
 	public InsertReservationResult insertWaitlist(int customerId, int numberOfGuests) throws SQLException {
 
-	    String sql = "INSERT INTO reservation (reservation_datetime, number_of_guests, confirmation_code, " +
-	                 "customer_id, created_at, status) VALUES (?, ?, ?, ?, ?, ?)";
+		String sql = "INSERT INTO reservation (reservation_datetime, number_of_guests, confirmation_code, "
+				+ "customer_id, created_at, status) VALUES (?, ?, ?, ?, ?, ?)";
 
-	    LocalDateTime createdAt = LocalDateTime.now();
+		LocalDateTime createdAt = LocalDateTime.now();
 
-	    for (int attempt = 1; attempt <= 5; attempt++) {
-	        int confirmationCode = (int) (Math.random() * 900000) + 100000; // 6 digits
+		for (int attempt = 1; attempt <= 5; attempt++) {
+			int confirmationCode = (int) (Math.random() * 900000) + 100000; // 6 digits
 
-	        try (Connection conn = getConnection();
-	             PreparedStatement ps = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
+			try (Connection conn = getConnection();
+					PreparedStatement ps = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
 
-	            ps.setTimestamp(1, null); // reservation_datetime = NULL for WAITING
-	            ps.setInt(2, numberOfGuests);
-	            ps.setInt(3, confirmationCode);
-	            ps.setInt(4, customerId);
-	            ps.setTimestamp(5, Timestamp.valueOf(createdAt));
-	            ps.setString(6, "WAITING");
+				ps.setTimestamp(1, null); // reservation_datetime = NULL for WAITING
+				ps.setInt(2, numberOfGuests);
+				ps.setInt(3, confirmationCode);
+				ps.setInt(4, customerId);
+				ps.setTimestamp(5, Timestamp.valueOf(createdAt));
+				ps.setString(6, "WAITING");
 
-	            int inserted = ps.executeUpdate();
-	            if (inserted != 1) return null;
+				int inserted = ps.executeUpdate();
+				if (inserted != 1)
+					return null;
 
-	            try (ResultSet keys = ps.getGeneratedKeys()) {
-	                if (keys.next())
-	                    return new InsertReservationResult(keys.getInt(1), confirmationCode);
-	            }
+				try (ResultSet keys = ps.getGeneratedKeys()) {
+					if (keys.next())
+						return new InsertReservationResult(keys.getInt(1), confirmationCode);
+				}
 
-	            return null;
+				return null;
 
-	        } catch (SQLException e) {
-	            if (e.getErrorCode() == 1062) continue; // duplicate confirmation_code
-	            throw e;
-	        }
-	    }
+			} catch (SQLException e) {
+				if (e.getErrorCode() == 1062)
+					continue; // duplicate confirmation_code
+				throw e;
+			}
+		}
 
-	    return null;
+		return null;
 	}
 	public Customer getCustomerById(int customerId) throws SQLException {
 	    String sql = """
@@ -269,7 +272,6 @@ public class DBController {
 	}
 
 
-	
 	public List<Integer> getTableCapacities() throws SQLException {
 		List<Integer> caps = new ArrayList<>();
 		String sql = "SELECT capacity FROM restaurant_table";
@@ -284,8 +286,9 @@ public class DBController {
 
 	public List<Integer> getOverlappingGuests(LocalDateTime start, int durationMin) throws SQLException {
 		List<Integer> guests = new ArrayList<>();
-		String sql = "SELECT number_of_guests FROM reservation " + "WHERE status IN ('ACTIVE','NOTIFIED','IN_PROGRESS') "
-				+ "AND reservation_datetime < ? " + "AND DATE_ADD(reservation_datetime, INTERVAL ? MINUTE) > ?";
+		String sql = "SELECT number_of_guests FROM reservation "
+				+ "WHERE status IN ('ACTIVE','NOTIFIED','IN_PROGRESS') " + "AND reservation_datetime < ? "
+				+ "AND DATE_ADD(reservation_datetime, INTERVAL ? MINUTE) > ?";
 
 		LocalDateTime end = start.plusMinutes(durationMin);
 
@@ -339,27 +342,46 @@ public class DBController {
 		return null;
 	}
 
-	public Reservation findReservationByConfirmationCode(int code) throws SQLException {
-	    String sql = """
-	        SELECT reservation_id, reservation_datetime, number_of_guests,
-	               confirmation_code, customer_id, created_at, table_id, status
-	        FROM reservation
-	        WHERE confirmation_code = ?
-	        LIMIT 1
-	    """;
+	public List<Reservation> findReservationsByPhoneOrEmail(String phone, String email) throws SQLException {
+		Integer customerId = findCustomerIdByPhoneOrEmail(phone, email);
+		if (customerId == null)
+			return null;
 
-	    try (Connection conn = getConnection();
-	         PreparedStatement ps = conn.prepareStatement(sql)) {
+		String sql = "SELECT * FROM reservation WHERE customer_id = ?";
 
-	        ps.setInt(1, code);
-	        try (ResultSet rs = ps.executeQuery()) {
-	            if (!rs.next()) return null;
-	            return mapReservation(rs);
-	        }
-	    }
+		List<Reservation> list = new ArrayList<>();
+		try (Connection conn = getConnection(); PreparedStatement ps = conn.prepareStatement(sql)) {
+			ps.setInt(1, customerId);
+			try (ResultSet rs = ps.executeQuery()) {
+				while (rs.next()) {
+					Reservation r = mapReservation(rs);
+					list.add(r);
+				}
+			}
+		}
+		return list;
 	}
 
-	
+	public Reservation findReservationByConfirmationCode(int code) throws SQLException {
+		String sql = """
+				    SELECT reservation_id, reservation_datetime, number_of_guests,
+				           confirmation_code, customer_id, created_at, table_id, status
+				    FROM reservation
+				    WHERE confirmation_code = ?
+				    LIMIT 1
+				""";
+
+		try (Connection conn = getConnection(); PreparedStatement ps = conn.prepareStatement(sql)) {
+
+			ps.setInt(1, code);
+			try (ResultSet rs = ps.executeQuery()) {
+				if (!rs.next())
+					return null;
+				return mapReservation(rs);
+			}
+		}
+	}
+
 	public int createGuestCustomer(String fullName, String phone, String email) throws SQLException {
 		String sql = "INSERT INTO customer(full_name, phone, email, is_subscribed, subscription_code) VALUES (?, ?, ?, 0, NULL)";
 		try (Connection conn = getConnection();
@@ -370,10 +392,11 @@ public class DBController {
 			ps.executeUpdate();
 
 			try (ResultSet keys = ps.getGeneratedKeys()) {
-	            if (keys.next()) return keys.getInt(1);
-	        }
-	    }
-	    throw new SQLException("Failed to create guest customer (no generated key).");
+				if (keys.next())
+					return keys.getInt(1);
+			}
+		}
+		throw new SQLException("Failed to create guest customer (no generated key).");
 	}
 
 	public boolean updateReservationStatus(int reservationId, String newStatus) throws SQLException {
@@ -412,8 +435,9 @@ public class DBController {
 		}
 	}
 
-	public List<Reservation> getReservationsByCustomerId(int customerId) throws SQLException {
-		String sql = "SELECT * FROM reservation WHERE customer_id=? AND status='ACTIVE' ORDER BY reservation_datetime DESC";
+	public List<Reservation> getCancellableReservationsByCustomerId(int customerId) throws SQLException {
+		String sql = "SELECT * FROM reservation WHERE customer_id=? AND status IN ('ACTIVE','NOTIFIED', 'WAITING')"
+				+ " ORDER BY reservation_datetime DESC";
 		List<Reservation> list = new ArrayList<>();
 
 		try (Connection conn = getConnection(); PreparedStatement ps = conn.prepareStatement(sql)) {
@@ -428,388 +452,461 @@ public class DBController {
 		return list;
 	}
 
+	public Reservation getCancellableReservationByCode(int confirmationCode) throws SQLException {
+		String sql = "SELECT * FROM reservation WHERE confirmation_code = ? AND status IN"
+				+ " ('ACTIVE','NOTIFIED', 'WAITING') LIMIT 1";
+
+		Reservation reservation = null;
+		try (Connection conn = getConnection(); PreparedStatement ps = conn.prepareStatement(sql)) {
+			ps.setInt(1, confirmationCode);
+			try (ResultSet rs = ps.executeQuery()) {
+				if (rs.next()) {
+					reservation = mapReservation(rs);
+				}
+			}
+		}
+		return reservation;
+	}
+
+	public List<Reservation> getReceivableReservationsByCustomerId(int customerId) throws SQLException {
+		String sql = "SELECT * FROM reservation WHERE customer_id=? AND status IN ('ACTIVE','NOTIFIED')"
+				+ " And reservation_datetime <= NOW()" + " ORDER BY reservation_datetime DESC";
+		List<Reservation> list = new ArrayList<>();
+
+		try (Connection conn = getConnection(); PreparedStatement ps = conn.prepareStatement(sql)) {
+			ps.setInt(1, customerId);
+			try (ResultSet rs = ps.executeQuery()) {
+				while (rs.next()) {
+					Reservation r = mapReservation(rs);
+					list.add(r);
+				}
+			}
+		}
+		return list;
+	}
+
+	public Reservation getReceivableReservationByCode(int confirmationCode) throws SQLException {
+		String sql = "SELECT * FROM reservation WHERE confirmation_code = ? AND status IN"
+				+ " ('ACTIVE','NOTIFIED') LIMIT 1 And reservation_datetime <= NOW()";
+
+		Reservation reservation = null;
+		try (Connection conn = getConnection(); PreparedStatement ps = conn.prepareStatement(sql)) {
+			ps.setInt(1, confirmationCode);
+			try (ResultSet rs = ps.executeQuery()) {
+				if (rs.next()) {
+					reservation = mapReservation(rs);
+				}
+			}
+		}
+		return reservation;
+	}
+
+	public String getFullNameByCustomerId(int customerId) throws SQLException {
+		String sql = "SELECT full_name FROM customer WHERE customer_id=?";
+		try (Connection conn = getConnection(); PreparedStatement ps = conn.prepareStatement(sql)) {
+			ps.setInt(1, customerId);
+			try (ResultSet rs = ps.executeQuery()) {
+				if (rs.next())
+					return rs.getString("full_name");
+				return null; // reservation not found
+			}
+		}
+	}
+
 	private Reservation mapReservation(ResultSet rs) throws SQLException {
 
-	    int reservationId = rs.getInt("reservation_id");
+		int reservationId = rs.getInt("reservation_id");
 
-	    LocalDateTime reservationDateTime = null;
-	    Timestamp ts = rs.getTimestamp("reservation_datetime");
-	    if (ts != null) {
-	        reservationDateTime = ts.toLocalDateTime();
-	    }
+		LocalDateTime reservationDateTime = null;
+		Timestamp ts = rs.getTimestamp("reservation_datetime");
+		if (ts != null) {
+			reservationDateTime = ts.toLocalDateTime();
+		}
 
-	    int guests = rs.getInt("number_of_guests");
-	    int confirmationCode = rs.getInt("confirmation_code");
-	    int customerId = rs.getInt("customer_id");
+		int guests = rs.getInt("number_of_guests");
+		int confirmationCode = rs.getInt("confirmation_code");
+		int customerId = rs.getInt("customer_id");
 
-	    LocalDateTime createdAt = rs.getTimestamp("created_at").toLocalDateTime();
+		LocalDateTime createdAt = rs.getTimestamp("created_at").toLocalDateTime();
 
-	    Integer tableId = null;
-	    int tid = rs.getInt("table_id");
-	    if (!rs.wasNull()) {
-	        tableId = tid;
-	    }
+		Integer tableId = null;
+		int tid = rs.getInt("table_id");
+		if (!rs.wasNull()) {
+			tableId = tid;
+		}
 
-	    ReservationStatus status = null;
-	    String statusStr = rs.getString("status");
-	    if (statusStr != null) {
-	        status = ReservationStatus.valueOf(statusStr);
-	    }
+		ReservationStatus status = null;
+		String statusStr = rs.getString("status");
+		if (statusStr != null) {
+			status = ReservationStatus.valueOf(statusStr);
+		}
 
-	    return new Reservation(
-	            reservationId,
-	            reservationDateTime,
-	            guests,
-	            confirmationCode,
-	            customerId,
-	            createdAt,
-	            tableId,
-	            status
-	    );
+		return new Reservation(reservationId, reservationDateTime, guests, confirmationCode, customerId, createdAt,
+				tableId, status);
 	}
-
 
 	public List<Integer> getNoShowReservationIds() throws SQLException {
-	    String sql =
-	        "SELECT reservation_id " +
-	        "FROM reservation " +
-	        "WHERE status IN ('ACTIVE','NOTIFIED') " +
-	        "AND reservation_datetime <= (NOW() - INTERVAL 15 MINUTE)";
+		String sql = "SELECT reservation_id " + "FROM reservation " + "WHERE status IN ('ACTIVE','NOTIFIED') "
+				+ "AND reservation_datetime <= (NOW() - INTERVAL 15 MINUTE)";
 
-	    List<Integer> ids = new ArrayList<>();
+		List<Integer> ids = new ArrayList<>();
 
-	    try (Connection conn = getConnection();
-	         PreparedStatement ps = conn.prepareStatement(sql);
-	         ResultSet rs = ps.executeQuery()) {
+		try (Connection conn = getConnection();
+				PreparedStatement ps = conn.prepareStatement(sql);
+				ResultSet rs = ps.executeQuery()) {
 
-	        while (rs.next()) ids.add(rs.getInt("reservation_id"));
-	    }
-	    return ids;
+			while (rs.next())
+				ids.add(rs.getInt("reservation_id"));
+		}
+		return ids;
 	}
 
-
-
 	public List<Integer> getReservationsForReminder() throws SQLException {
-	    String sql =
-	        "SELECT reservation_id " +
-	        "FROM reservation " +
-	        "WHERE status='ACTIVE' " +
-	        "AND reminder_sent = FALSE " +
-	        "AND reservation_datetime BETWEEN (NOW() + INTERVAL 2 HOUR - INTERVAL 1 MINUTE) " +
-	        "AND (NOW() + INTERVAL 2 HOUR + INTERVAL 1 MINUTE)";
+		String sql = "SELECT reservation_id " + "FROM reservation " + "WHERE status='ACTIVE' "
+				+ "AND reminder_sent = FALSE "
+				+ "AND reservation_datetime BETWEEN (NOW() + INTERVAL 2 HOUR - INTERVAL 1 MINUTE) "
+				+ "AND (NOW() + INTERVAL 2 HOUR + INTERVAL 1 MINUTE)";
 
-	    List<Integer> ids = new ArrayList<>();
+		List<Integer> ids = new ArrayList<>();
 
-	    try (Connection conn = getConnection();
-	         PreparedStatement ps = conn.prepareStatement(sql);
-	         ResultSet rs = ps.executeQuery()) {
+		try (Connection conn = getConnection();
+				PreparedStatement ps = conn.prepareStatement(sql);
+				ResultSet rs = ps.executeQuery()) {
 
-	        while (rs.next()) {
-	            ids.add(rs.getInt("reservation_id"));
-	        }
-	    }
-	    return ids;
+			while (rs.next()) {
+				ids.add(rs.getInt("reservation_id"));
+			}
+		}
+		return ids;
 	}
 
 	public void markReminderSent(int reservationId) throws SQLException {
-	    String sql = "UPDATE reservation SET reminder_sent=TRUE WHERE reservation_id=?";
-	    try (Connection conn = getConnection();
-	         PreparedStatement ps = conn.prepareStatement(sql)) {
-	        ps.setInt(1, reservationId);
-	        ps.executeUpdate();
-	    }
+		String sql = "UPDATE reservation SET reminder_sent=TRUE WHERE reservation_id=?";
+		try (Connection conn = getConnection(); PreparedStatement ps = conn.prepareStatement(sql)) {
+			ps.setInt(1, reservationId);
+			ps.executeUpdate();
+		}
 	}
 
 	public List<WaitingCandidate> getWaitingCandidates(int maxCapacity) throws SQLException {
-	    String sql = """
-	        SELECT reservation_id, customer_id, number_of_guests
-	        FROM reservation
-	        WHERE status = 'WAITING'
-	          AND number_of_guests <= ?
-	        ORDER BY created_at ASC
-	    """;
+		String sql = """
+				    SELECT reservation_id, customer_id, number_of_guests
+				    FROM reservation
+				    WHERE status = 'WAITING'
+				      AND number_of_guests <= ?
+				    ORDER BY created_at ASC
+				""";
 
-	    List<WaitingCandidate> list = new ArrayList<>();
+		List<WaitingCandidate> list = new ArrayList<>();
 
-	    try (Connection conn = getConnection();
-	         PreparedStatement ps = conn.prepareStatement(sql)) {
+		try (Connection conn = getConnection(); PreparedStatement ps = conn.prepareStatement(sql)) {
 
-	        ps.setInt(1, maxCapacity);
+			ps.setInt(1, maxCapacity);
 
-	        try (ResultSet rs = ps.executeQuery()) {
-	            while (rs.next()) {
-	                list.add(new WaitingCandidate(
-	                    rs.getInt("reservation_id"),
-	                    rs.getInt("customer_id"),
-	                    rs.getInt("number_of_guests")
-	                ));
-	            }
-	        }
-	    }
-	    return list;
+			try (ResultSet rs = ps.executeQuery()) {
+				while (rs.next()) {
+					list.add(new WaitingCandidate(rs.getInt("reservation_id"), rs.getInt("customer_id"),
+							rs.getInt("number_of_guests")));
+				}
+			}
+		}
+		return list;
 	}
 
 	public List<WaitingCandidate> getWaitingCandidates() throws SQLException {
-	    String sql = """
-	        SELECT reservation_id, customer_id, number_of_guests
-	        FROM reservation
-	        WHERE status = 'WAITING'
-	        ORDER BY created_at ASC
-	    """;
+		String sql = """
+				    SELECT reservation_id, customer_id, number_of_guests
+				    FROM reservation
+				    WHERE status = 'WAITING'
+				    ORDER BY created_at ASC
+				""";
 
-	    List<WaitingCandidate> list = new ArrayList<>();
+		List<WaitingCandidate> list = new ArrayList<>();
 
-	    try (Connection conn = getConnection();
-	         PreparedStatement ps = conn.prepareStatement(sql)) {
+		try (Connection conn = getConnection(); PreparedStatement ps = conn.prepareStatement(sql)) {
 
-	        try (ResultSet rs = ps.executeQuery()) {
-	            while (rs.next()) {
-	                list.add(new WaitingCandidate(
-	                    rs.getInt("reservation_id"),
-	                    rs.getInt("customer_id"),
-	                    rs.getInt("number_of_guests")
-	                ));
-	            }
-	        }
-	    }
-	    return list;
+			try (ResultSet rs = ps.executeQuery()) {
+				while (rs.next()) {
+					list.add(new WaitingCandidate(rs.getInt("reservation_id"), rs.getInt("customer_id"),
+							rs.getInt("number_of_guests")));
+				}
+			}
+		}
+		return list;
 	}
-	
+
 	public boolean notifyWaitlistReservation(int reservationId) throws SQLException {
-	    String sql = """
-	        UPDATE reservation
-	        SET status = 'NOTIFIED',
-	            reservation_datetime = NOW()
-	        WHERE reservation_id = ?
-	          AND status = 'WAITING'
-	    """;
-	    try (Connection conn = getConnection();
-	         PreparedStatement ps = conn.prepareStatement(sql)) {
-	        ps.setInt(1, reservationId);
-	        return ps.executeUpdate() == 1;
-	    }
+		String sql = """
+				    UPDATE reservation
+				    SET status = 'NOTIFIED',
+				        reservation_datetime = NOW()
+				    WHERE reservation_id = ?
+				      AND status = 'WAITING'
+				""";
+		try (Connection conn = getConnection(); PreparedStatement ps = conn.prepareStatement(sql)) {
+			ps.setInt(1, reservationId);
+			return ps.executeUpdate() == 1;
+		}
 	}
 
 	public boolean markSeatedNow(int reservationId) throws SQLException {
-	    String sql = """
-	        UPDATE reservation
-	        SET status='IN_PROGRESS',
-	            reservation_datetime = NOW()
-	        WHERE reservation_id = ?
-	          AND status IN ('ACTIVE','NOTIFIED')
-	    """;
+		String sql = """
+				    UPDATE reservation
+				    SET status='IN_PROGRESS',
+				        reservation_datetime = NOW()
+				    WHERE reservation_id = ?
+				      AND status IN ('ACTIVE','NOTIFIED')
+				""";
 
-	    try (Connection conn = getConnection();
-	         PreparedStatement ps = conn.prepareStatement(sql)) {
-	        ps.setInt(1, reservationId);
-	        return ps.executeUpdate() == 1;
-	    }
+		try (Connection conn = getConnection(); PreparedStatement ps = conn.prepareStatement(sql)) {
+			ps.setInt(1, reservationId);
+			return ps.executeUpdate() == 1;
+		}
 	}
 
 	public List<Reservation> getReservationsForBilling() throws SQLException {
 		String sql = """
-		        SELECT r.*
-		        FROM reservation r
-		        LEFT JOIN bill b ON b.reservation_id = r.reservation_id
-		        WHERE r.status = 'IN_PROGRESS'
-		          AND r.reservation_datetime <= NOW() - INTERVAL 2 HOUR
-		          AND b.bill_id IS NULL
-		    """;
+				    SELECT r.*
+				    FROM reservation r
+				    LEFT JOIN bill b ON b.reservation_id = r.reservation_id
+				    WHERE r.status = 'IN_PROGRESS'
+				      AND r.reservation_datetime <= NOW() - INTERVAL 2 HOUR
+				      AND b.bill_id IS NULL
+				""";
 
-	    List<Reservation> list = new ArrayList<>();
-	    try (Connection conn = getConnection();
-	         PreparedStatement ps = conn.prepareStatement(sql);
-	         ResultSet rs = ps.executeQuery()) {
+		List<Reservation> list = new ArrayList<>();
+		try (Connection conn = getConnection();
+				PreparedStatement ps = conn.prepareStatement(sql);
+				ResultSet rs = ps.executeQuery()) {
 
-	        while (rs.next()) {
-	            list.add(mapReservation(rs));
-	        }
-	    }
-	    return list;
+			while (rs.next()) {
+				list.add(mapReservation(rs));
+			}
+		}
+		return list;
 	}
 
 	public boolean isCustomerSubscribed(int customerId) throws SQLException {
-	    String sql = "SELECT is_subscribed FROM customer WHERE customer_id=?";
-	    try (Connection conn = getConnection();
-	         PreparedStatement ps = conn.prepareStatement(sql)) {
-	        ps.setInt(1, customerId);
-	        try (ResultSet rs = ps.executeQuery()) {
-	            return rs.next() && rs.getInt(1) == 1;
-	        }
-	    }
+		String sql = "SELECT is_subscribed FROM customer WHERE customer_id=?";
+		try (Connection conn = getConnection(); PreparedStatement ps = conn.prepareStatement(sql)) {
+			ps.setInt(1, customerId);
+			try (ResultSet rs = ps.executeQuery()) {
+				return rs.next() && rs.getInt(1) == 1;
+			}
+		}
 	}
 
 	public Bill findBillByReservationId(int reservationId) throws SQLException {
-	    String sql = """
-	        SELECT bill_id, reservation_id, amount_before_discount, final_amount, paid
-	        FROM bill
-	        WHERE reservation_id = ?
-	        LIMIT 1
-	    """;
-	    try (Connection conn = getConnection();
-	         PreparedStatement ps = conn.prepareStatement(sql)) {
-	        ps.setInt(1, reservationId);
-	        try (ResultSet rs = ps.executeQuery()) {
-	            if (rs.next()) {
-	                return new Bill(
-	                    rs.getInt("bill_id"),
-	                    rs.getInt("reservation_id"),
-	                    rs.getDouble("amount_before_discount"),
-	                    rs.getDouble("final_amount"),
-	                    rs.getInt("paid") == 1
-	                );
-	            }
-	        }
-	    }
-	    return null;
+		String sql = """
+				    SELECT bill_id, reservation_id, amount_before_discount, final_amount, paid
+				    FROM bill
+				    WHERE reservation_id = ?
+				    LIMIT 1
+				""";
+		try (Connection conn = getConnection(); PreparedStatement ps = conn.prepareStatement(sql)) {
+			ps.setInt(1, reservationId);
+			try (ResultSet rs = ps.executeQuery()) {
+				if (rs.next()) {
+					return new Bill(rs.getInt("bill_id"), rs.getInt("reservation_id"),
+							rs.getDouble("amount_before_discount"), rs.getDouble("final_amount"),
+							rs.getInt("paid") == 1);
+				}
+			}
+		}
+		return null;
 	}
-	
+
 	public Bill createBill(int reservationId, double amountBeforeDiscount, double finalAmount) throws SQLException {
-	    String sql = """
-	        INSERT INTO bill (reservation_id, amount_before_discount, final_amount, paid)
-	        VALUES (?, ?, ?, 0)
-	    """;
-	    try (Connection conn = getConnection();
-	         PreparedStatement ps = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
+		String sql = """
+				    INSERT INTO bill (reservation_id, amount_before_discount, final_amount, paid)
+				    VALUES (?, ?, ?, 0)
+				""";
+		try (Connection conn = getConnection();
+				PreparedStatement ps = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
 
-	        ps.setInt(1, reservationId);
-	        ps.setDouble(2, amountBeforeDiscount);
-	        ps.setDouble(3, finalAmount);
+			ps.setInt(1, reservationId);
+			ps.setDouble(2, amountBeforeDiscount);
+			ps.setDouble(3, finalAmount);
 
-	        int inserted = ps.executeUpdate();
-	        if (inserted != 1) return null;
+			int inserted = ps.executeUpdate();
+			if (inserted != 1)
+				return null;
 
-	        try (ResultSet keys = ps.getGeneratedKeys()) {
-	            if (keys.next()) {
-	                Bill bill = new Bill(keys.getInt(1), reservationId, amountBeforeDiscount, finalAmount, false);
-	                return bill;
-	            }
-	        }
-	    }
-	    return null;
+			try (ResultSet keys = ps.getGeneratedKeys()) {
+				if (keys.next()) {
+					Bill bill = new Bill(keys.getInt(1), reservationId, amountBeforeDiscount, finalAmount, false);
+					return bill;
+				}
+			}
+		}
+		return null;
 	}
 
 	public boolean markBillPaid(int reservationId) throws SQLException {
-	    String sql = """
-	        UPDATE bill
-	        SET paid = 1,
-	            paid_at = NOW()
-	        WHERE reservation_id = ?
-	          AND paid = 0
-	    """;
-	    try (Connection conn = getConnection();
-	         PreparedStatement ps = conn.prepareStatement(sql)) {
-	        ps.setInt(1, reservationId);
-	        return ps.executeUpdate() == 1;
-	    }
+		String sql = """
+				    UPDATE bill
+				    SET paid = 1,
+				        paid_at = NOW()
+				    WHERE reservation_id = ?
+				      AND paid = 0
+				""";
+		try (Connection conn = getConnection(); PreparedStatement ps = conn.prepareStatement(sql)) {
+			ps.setInt(1, reservationId);
+			return ps.executeUpdate() == 1;
+		}
 	}
 
 	public Integer getTableCapacityById(int tableId) throws SQLException {
-	    String sql = "SELECT capacity FROM restaurant_table WHERE table_id = ? LIMIT 1";
-	    try (Connection conn = getConnection();
-	         PreparedStatement ps = conn.prepareStatement(sql)) {
-	        ps.setInt(1, tableId);
-	        try (ResultSet rs = ps.executeQuery()) {
-	            if (rs.next()) return rs.getInt(1);
-	        }
-	    }
-	    return null;
+		String sql = "SELECT capacity FROM restaurant_table WHERE table_id = ? LIMIT 1";
+		try (Connection conn = getConnection(); PreparedStatement ps = conn.prepareStatement(sql)) {
+			ps.setInt(1, tableId);
+			try (ResultSet rs = ps.executeQuery()) {
+				if (rs.next())
+					return rs.getInt(1);
+			}
+		}
+		return null;
 	}
 
 	public Integer getTableIdByReservationId(int reservationId) throws SQLException {
-	    String sql = "SELECT table_id FROM reservation WHERE reservation_id = ? LIMIT 1";
-	    try (Connection conn = getConnection();
-	         PreparedStatement ps = conn.prepareStatement(sql)) {
-	        ps.setInt(1, reservationId);
-	        try (ResultSet rs = ps.executeQuery()) {
-	            if (rs.next()) return rs.getInt(1);
-	        }
-	    }
-	    return null;
+		String sql = "SELECT table_id FROM reservation WHERE reservation_id = ? LIMIT 1";
+		try (Connection conn = getConnection(); PreparedStatement ps = conn.prepareStatement(sql)) {
+			ps.setInt(1, reservationId);
+			try (ResultSet rs = ps.executeQuery()) {
+				if (rs.next())
+					return rs.getInt(1);
+			}
+		}
+		return null;
 	}
-	
+
 	public CustomerContactInfo getCustomerContactInfo(int customerId) throws SQLException {
-	    String sql = """
-	        SELECT customer_id, full_name, phone, email
-	        FROM customer
-	        WHERE customer_id = ?
-	        LIMIT 1
-	    """;
+		String sql = """
+				    SELECT customer_id, full_name, phone, email
+				    FROM customer
+				    WHERE customer_id = ?
+				    LIMIT 1
+				""";
 
-	    try (Connection conn = getConnection();
-	         PreparedStatement ps = conn.prepareStatement(sql)) {
+		try (Connection conn = getConnection(); PreparedStatement ps = conn.prepareStatement(sql)) {
 
-	        ps.setInt(1, customerId);
+			ps.setInt(1, customerId);
 
-	        try (ResultSet rs = ps.executeQuery()) {
-	            if (!rs.next()) return null;
+			try (ResultSet rs = ps.executeQuery()) {
+				if (!rs.next())
+					return null;
 
-	            return new CustomerContactInfo(
-	                rs.getInt("customer_id"),
-	                rs.getString("full_name"),
-	                rs.getString("phone"),
-	                rs.getString("email")
-	            );
-	        }
-	    }
+				return new CustomerContactInfo(rs.getInt("customer_id"), rs.getString("full_name"),
+						rs.getString("phone"), rs.getString("email"));
+			}
+		}
 	}
-	
+
 	public CustomerContactInfo getContactInfoByReservationId(int reservationId) throws SQLException {
-	    String sql = """
-	        SELECT c.customer_id, c.full_name, c.phone, c.email
-	        FROM reservation r
-	        JOIN customer c ON c.customer_id = r.customer_id
-	        WHERE r.reservation_id = ?
-	        LIMIT 1
-	    """;
+		String sql = """
+				    SELECT c.customer_id, c.full_name, c.phone, c.email
+				    FROM reservation r
+				    JOIN customer c ON c.customer_id = r.customer_id
+				    WHERE r.reservation_id = ?
+				    LIMIT 1
+				""";
 
-	    try (Connection conn = getConnection();
-	         PreparedStatement ps = conn.prepareStatement(sql)) {
+		try (Connection conn = getConnection(); PreparedStatement ps = conn.prepareStatement(sql)) {
 
-	        ps.setInt(1, reservationId);
+			ps.setInt(1, reservationId);
 
-	        try (ResultSet rs = ps.executeQuery()) {
-	            if (!rs.next()) return null;
+			try (ResultSet rs = ps.executeQuery()) {
+				if (!rs.next())
+					return null;
 
-	            return new CustomerContactInfo(
-	                rs.getInt("customer_id"),
-	                rs.getString("full_name"),
-	                rs.getString("phone"),
-	                rs.getString("email")
-	            );
-	        }
-	    }
+				return new CustomerContactInfo(rs.getInt("customer_id"), rs.getString("full_name"),
+						rs.getString("phone"), rs.getString("email"));
+			}
+		}
 	}
 
 	public ReservationBasicInfo getReservationBasicInfo(int reservationId) throws SQLException {
-	    String sql = """
-	        SELECT c.full_name, r.reservation_datetime, r.number_of_guests, r.confirmation_code
-	        FROM reservation r
-	        JOIN customer c ON c.customer_id = r.customer_id
-	        WHERE r.reservation_id = ?
-	        LIMIT 1
-	    """;
+		String sql = """
+				    SELECT c.full_name, r.reservation_datetime, r.number_of_guests, r.confirmation_code
+				    FROM reservation r
+				    JOIN customer c ON c.customer_id = r.customer_id
+				    WHERE r.reservation_id = ?
+				    LIMIT 1
+				""";
 
-	    try (Connection conn = getConnection();
-	         PreparedStatement ps = conn.prepareStatement(sql)) {
+		try (Connection conn = getConnection(); PreparedStatement ps = conn.prepareStatement(sql)) {
 
-	        ps.setInt(1, reservationId);
+			ps.setInt(1, reservationId);
 
-	        try (ResultSet rs = ps.executeQuery()) {
-	            if (!rs.next()) return null;
+			try (ResultSet rs = ps.executeQuery()) {
+				if (!rs.next())
+					return null;
 
-	            Timestamp ts = rs.getTimestamp("reservation_datetime");
-	            LocalDateTime dt = (ts == null ? null : ts.toLocalDateTime());
+				Timestamp ts = rs.getTimestamp("reservation_datetime");
+				LocalDateTime dt = (ts == null ? null : ts.toLocalDateTime());
 
-	            return new ReservationBasicInfo(
-	                rs.getString("full_name"),
-	                dt,
-	                rs.getInt("number_of_guests"),
-	                rs.getInt("confirmation_code")
-	            );
-	        }
-	    }
+				return new ReservationBasicInfo(rs.getString("full_name"), dt, rs.getInt("number_of_guests"),
+						rs.getInt("confirmation_code"));
+			}
+		}
 	}
 
+	public Integer assignTableNow(int reservationId, int guests, int durationMin) throws SQLException {
+
+		String qFindTable = """
+				    SELECT t.table_id
+				    FROM restaurant_table t
+				    WHERE t.capacity >= ?
+				      AND NOT EXISTS (
+				          SELECT 1
+				          FROM reservation r
+				          WHERE r.table_id = t.table_id
+				            AND r.status IN ('ACTIVE','NOTIFIED','IN_PROGRESS')
+				            AND r.reservation_datetime IS NOT NULL
+				            AND r.reservation_datetime < (NOW() + INTERVAL ? MINUTE)
+				            AND DATE_ADD(r.reservation_datetime, INTERVAL ? MINUTE) > NOW()
+				      )
+				    ORDER BY t.capacity ASC
+				    LIMIT 1
+				""";
+
+		String qUpdate = """
+				    UPDATE reservation
+				    SET status='IN_PROGRESS',
+				        reservation_datetime=NOW(),
+				        table_id=?
+				    WHERE reservation_id=?
+				      AND status IN ('ACTIVE','NOTIFIED')
+				""";
+
+		Integer tableId = null;
+
+		try (Connection conn = getConnection(); PreparedStatement ps = conn.prepareStatement(qFindTable)) {
+			ps.setInt(1, guests);
+			ps.setInt(2, durationMin);
+			ps.setInt(3, durationMin);
+
+			try (ResultSet rs = ps.executeQuery()) {
+				if (rs.next())
+					tableId = rs.getInt(1);
+			}
+		}
+
+		if (tableId == null) {
+			return null; // no table available
+		}
+
+		int updated;
+		try (Connection conn = getConnection(); PreparedStatement ps = conn.prepareStatement(qUpdate)) {
+			ps.setInt(1, tableId);
+			ps.setInt(2, reservationId);
+			updated = ps.executeUpdate();
+		}
+
+		if (updated != 1) {
+			return null;
+		}
+		return tableId;
+	}
 
 }

@@ -12,6 +12,7 @@ import common.dto.Reservation.CreateReservationResult;
 import common.dto.Reservation.InsertReservationResult;
 import common.dto.Reservation.PayBillResult;
 import common.dto.Reservation.ReceiveTableResult;
+import common.dto.Reservation.ReservationBasicInfo;
 import common.dto.Reservation.WaitingCandidate;
 import common.entity.Bill;
 import common.entity.Reservation;
@@ -206,18 +207,23 @@ public class ReservationController {
 		return feasible(caps, overlapping);
 	}
 
-	public List<Reservation> getReservationsForCustomer(int customerId) throws SQLException {
-		return db.getReservationsByCustomerId(customerId);
+	public List<Reservation> loadReservationsForCancellation(int customerId) throws SQLException {
+		return db.getCancellableReservationsByCustomerId(customerId);
 	}
-
-	public CancelReservationResult cancelReservation(int reservationId, int sessionCustomerId) throws SQLException {
-
-		Integer ownerId = db.getReservationCustomerId(reservationId);
-		if (ownerId == null)
-			return CancelReservationResult.fail("Reservation not found.");
-
-		if (ownerId != sessionCustomerId)
-			return CancelReservationResult.fail("You can only cancel your own reservation.");
+	
+	public Reservation getReservationForCancellationByCode(int confirmationCode) throws SQLException {
+		return db.getCancellableReservationByCode(confirmationCode);
+	}
+	
+	public List<Reservation> loadReservationsForReceiving(int customerId) throws SQLException {
+		return db.getReceivableReservationsByCustomerId(customerId);
+	}
+	
+	public Reservation getReservationForReceivingByCode(int confirmationCode) throws SQLException {
+		return db.getReceivableReservationByCode(confirmationCode);
+	}
+	
+	public CancelReservationResult cancelReservation(int reservationId) throws SQLException {
 
 		String statusStr = db.getReservationStatus(reservationId);
 		if (statusStr == null)
@@ -377,25 +383,37 @@ public class ReservationController {
 		return null;
 	}
 
-	public ReceiveTableResult receiveTable(int confirmationCode) throws SQLException {
+	public ReceiveTableResult receiveTable(int reservationId) throws SQLException {
 
-		Reservation r = db.findReservationByConfirmationCode(confirmationCode);
-		if (r == null) {
-			return ReceiveTableResult.fail("Invalid confirmation code.");
-		}
+	    if (reservationId <= 0)
+	        return ReceiveTableResult.fail("Invalid reservation id.");
 
-		if (r.getStatus() != ReservationStatus.ACTIVE && r.getStatus() != ReservationStatus.NOTIFIED) {
+	    ReservationBasicInfo info = db.getReservationBasicInfo(reservationId);
+	    if (info == null)
+	        return ReceiveTableResult.fail("Reservation not found.");
 
-			return ReceiveTableResult.fail("Reservation status does not allow table receiving.");
-		}
+	    // status check
+	    String statusStr = db.getReservationStatus(reservationId);
+	    if (statusStr == null)
+	        return ReceiveTableResult.fail("Reservation not found.");
 
-		boolean ok = db.markSeatedNow(r.getReservationId());
-		if (!ok) {
-			return ReceiveTableResult.fail("Failed to receive table.");
-		}
+	    ReservationStatus status = ReservationStatus.valueOf(statusStr);
 
-		return ReceiveTableResult.ok();
+	    if (status != ReservationStatus.ACTIVE && status != ReservationStatus.NOTIFIED) {
+	        return ReceiveTableResult.fail("Reservation status does not allow table receiving.");
+	    }
+
+	    Integer tableId = db.assignTableNow(reservationId, info.guests, DURATION_MIN);
+	    if (tableId == null) {
+	        return ReceiveTableResult.fail("No available table right now.");
+	    }
+	    
+	    if(db.markSeatedNow(reservationId))
+	    	return ReceiveTableResult.fail("Failed to mark seated");
+
+	    return ReceiveTableResult.ok(tableId);
 	}
+
 
 	private int rand80to150() {
 		return 80 + (int) (Math.random() * 71);

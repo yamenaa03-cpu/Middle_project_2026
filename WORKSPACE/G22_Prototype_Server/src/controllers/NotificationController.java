@@ -7,6 +7,7 @@ import java.time.format.DateTimeFormatter;
 import common.dto.Notification.CustomerContactInfo;
 import common.dto.Reservation.ReservationBasicInfo;
 import common.entity.Bill;
+import common.entity.Reservation;
 import common.enums.NotificationType;
 import dbController.DBController;
 import server.ServerUI;
@@ -21,21 +22,39 @@ public class NotificationController {
         this.db = db;
     }
 
+    private Integer resolveReservationIdByCode(int confirmationCode) throws SQLException {
+        if (confirmationCode <= 0) return null;
+        Reservation res = db.findReservationByConfirmationCode(confirmationCode);
+        return (res == null) ? null : res.getReservationId();
+    }
+    
  // 1) Reservation confirmation
     public boolean sendReservationConfirmation(int reservationId) throws SQLException {
 
         CustomerContactInfo contact = db.getContactInfoByReservationId(reservationId);
         
         ReservationBasicInfo info = db.getReservationBasicInfo(reservationId); 
-        
+        if (info == null || contact == null) return false;
         String msg = buildMessage(NotificationType.RESERVATION_CONFIRMATION,
         		info.fullName, info.dateTime, info.guests, info.confirmationCode, null, null);
 
         return send(contact, msg);
     }
+    
+    // 2) Resend confirmation
+    public boolean resendReservationConfirmation(int reservationId) throws SQLException {
 
+        CustomerContactInfo contact = db.getContactInfoByReservationId(reservationId);
+        
+        ReservationBasicInfo info = db.getReservationBasicInfo(reservationId); 
+        if (info == null || contact == null) return false;
+        String msg = buildMessage(NotificationType.RESEND_CONFIRMATION,
+        		info.fullName, info.dateTime, info.guests, info.confirmationCode, null, null);
 
-    // 2) Reminder
+        return send(contact, msg);
+    }
+
+    // 3) Reminder
     public boolean sendReservationReminder(int reservationId) throws SQLException {
 
         CustomerContactInfo contact = db.getContactInfoByReservationId(reservationId);
@@ -50,7 +69,7 @@ public class NotificationController {
     }
 
 
-    // 3) Table available 
+    // 4) Table available 
     public boolean sendTableAvailable(int reservationId) throws SQLException {
 
         CustomerContactInfo contact = db.getContactInfoByReservationId(reservationId);
@@ -65,7 +84,7 @@ public class NotificationController {
     }
 
 
-    // 4) Table received 
+    // 5) Table received 
     public boolean sendTableReceived(int reservationId) throws SQLException {
 
         CustomerContactInfo contact = db.getContactInfoByReservationId(reservationId);
@@ -78,8 +97,16 @@ public class NotificationController {
         return send(contact, msg);
     }
 
+    public boolean sendTableReceivedByCode(int confirmationCode) throws SQLException {
+        Integer resId = resolveReservationIdByCode(confirmationCode);
+        if (resId == null) {
+            ui.display("❌ TABLE_RECEIVED not sent: invalid confirmationCode=" + confirmationCode);
+            return false;
+        }
+        return sendTableReceived(resId);
+    }
 
-    // 5) Bill sent 
+    // 6) Bill sent 
     public boolean sendBillSent(int reservationId, Bill bill) throws SQLException {
 
         CustomerContactInfo contact = db.getContactInfoByReservationId(reservationId);
@@ -95,7 +122,7 @@ public class NotificationController {
     }
 
 
-    // 6) Payment success 
+    // 7) Payment success 
     public boolean sendPaymentSuccess(int reservationId) throws SQLException {
 
         CustomerContactInfo contact = db.getContactInfoByReservationId(reservationId);
@@ -108,8 +135,16 @@ public class NotificationController {
         return send(contact, msg);
     }
 
+    public boolean sendPaymentSuccessByCode(int confirmationCode) throws SQLException {
+        Integer resId = resolveReservationIdByCode(confirmationCode);
+        if (resId == null) {
+            ui.display("❌ PAYMENT_SUCCESS not sent: invalid confirmationCode=" + confirmationCode);
+            return false;
+        }
+        return sendPaymentSuccess(resId);
+    }
 
-    // 7) Reservation canceled
+    // 8) Reservation canceled
     public boolean sendReservationCanceled(int reservationId) throws SQLException {
 
         CustomerContactInfo contact = db.getContactInfoByReservationId(reservationId);
@@ -122,6 +157,14 @@ public class NotificationController {
         return send(contact, msg);
     }
 
+    public boolean sendReservationCanceledByCode(int confirmationCode) throws SQLException {
+        Integer resId = resolveReservationIdByCode(confirmationCode);
+        if (resId == null) {
+            ui.display("❌ RESERVATION_CANCELED not sent: invalid confirmationCode=" + confirmationCode);
+            return false;
+        }
+        return sendReservationCanceled(resId);
+    }
     
     /**
      * Sends message to contact info (simulation).
@@ -206,6 +249,26 @@ public class NotificationController {
                             guests,
                             confirmationCode
                     );
+                    
+            case RESEND_CONFIRMATION -> """
+            Hello %s,
+
+            Your reservation confirmation and code resend.
+
+            Reservation details:
+            • Date & Time: %s
+            • Number of Guests: %d
+            • Confirmation Code: %d
+
+            Please keep this code safe.
+
+            Restaurant Management
+            """.formatted(
+                    name,
+                    format(dateTime),
+                    guests,
+                    confirmationCode
+            );
 
             case RESERVATION_REMINDER -> """
                     Hello %s,

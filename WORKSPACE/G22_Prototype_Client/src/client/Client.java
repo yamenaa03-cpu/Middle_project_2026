@@ -6,10 +6,10 @@ import java.io.IOException;
 import java.time.LocalDateTime;
 import java.util.List;
 
-import common.dto.Authentication.CustomerAuthRequest;
-import common.dto.Authentication.CustomerAuthResponse;
 import common.dto.Reservation.ReservationRequest;
 import common.dto.Reservation.ReservationResponse;
+import common.dto.UserAccount.CustomerAuthRequest;
+import common.dto.UserAccount.CustomerAuthResponse;
 import common.entity.Reservation;
 /**
  * The Client class extends the OCSF AbstractClient framework.
@@ -57,7 +57,7 @@ public class Client extends AbstractClient {
     
     public void requestLoginBySubscriptionCode(String code) {
         try {
-            sendToServer(common.dto.Authentication.CustomerAuthRequest.subscription(code));
+            sendToServer(common.dto.UserAccount.dto.Authentication.CustomerAuthRequest.subscription(code));
         } catch (IOException e) {
             ui.displayMessage("Error sending login request: " + e.getMessage());
         }

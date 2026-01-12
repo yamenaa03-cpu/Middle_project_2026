@@ -2,9 +2,9 @@ package clientGUI;
 
 import client.Client;
 import client.ClientUI;
-import common.dto.Authentication.SubscriberAuthRequest;
-import common.dto.Authentication.SubscriberAuthResponse;
-import common.enums.AuthOperation;
+import common.dto.UserAccount.UserAccountRequest;
+import common.dto.UserAccount.UserAccountResponse;
+import common.enums.UserAccountOperation;
 import javafx.fxml.FXML;
 import javafx.scene.control.Label;
 import javafx.scene.control.TextField;
@@ -29,7 +29,7 @@ public class LoginController {
 	        return;
 	    }
 
-	    SubscriberAuthRequest req = SubscriberAuthRequest.createAuthRequest(code);
+	    UserAccountRequest req = UserAccountRequest.createAuthRequest(code);
 
 	    try {
 	        client.sendToServer(req); // replace with your actual client instance
@@ -39,7 +39,7 @@ public class LoginController {
 	        e.printStackTrace();
 	    }
 	}
-	public void onAuthResponse(SubscriberAuthResponse resp) {
+	public void onAuthResponse(UserAccountResponse resp) {
 	    System.out.println("Login success = " + resp.isSuccess());
 
 	    statusLabel.setText("success = " + resp.isSuccess() + " | " + resp.getMessage());

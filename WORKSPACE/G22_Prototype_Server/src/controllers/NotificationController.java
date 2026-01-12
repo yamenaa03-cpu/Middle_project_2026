@@ -97,15 +97,6 @@ public class NotificationController {
         return send(contact, msg);
     }
 
-    public boolean sendTableReceivedByCode(int confirmationCode) throws SQLException {
-        Integer resId = resolveReservationIdByCode(confirmationCode);
-        if (resId == null) {
-            ui.display("❌ TABLE_RECEIVED not sent: invalid confirmationCode=" + confirmationCode);
-            return false;
-        }
-        return sendTableReceived(resId);
-    }
-
     // 6) Bill sent 
     public boolean sendBillSent(int reservationId, Bill bill) throws SQLException {
 
@@ -133,15 +124,6 @@ public class NotificationController {
                 name, null, null, null, null, null);
 
         return send(contact, msg);
-    }
-
-    public boolean sendPaymentSuccessByCode(int confirmationCode) throws SQLException {
-        Integer resId = resolveReservationIdByCode(confirmationCode);
-        if (resId == null) {
-            ui.display("❌ PAYMENT_SUCCESS not sent: invalid confirmationCode=" + confirmationCode);
-            return false;
-        }
-        return sendPaymentSuccess(resId);
     }
 
     // 8) Reservation canceled

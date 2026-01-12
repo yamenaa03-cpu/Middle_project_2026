@@ -210,19 +210,38 @@ public class ReservationController {
 	public List<Reservation> loadReservationsForCancellation(int customerId) throws SQLException {
 		return db.getCancellableReservationsByCustomerId(customerId);
 	}
-	
+
 	public Reservation getReservationForCancellationByCode(int confirmationCode) throws SQLException {
 		return db.getCancellableReservationByCode(confirmationCode);
 	}
-	
+
 	public List<Reservation> loadReservationsForReceiving(int customerId) throws SQLException {
 		return db.getReceivableReservationsByCustomerId(customerId);
 	}
-	
+
 	public Reservation getReservationForReceivingByCode(int confirmationCode) throws SQLException {
 		return db.getReceivableReservationByCode(confirmationCode);
 	}
-	
+
+	public List<Reservation> loadReservationsForCheckout(int customerId) throws SQLException {
+		return db.getPayableReservationsByCustomerId(customerId);
+	}
+
+	public Reservation getReservationForCheckoutByCode(int confirmationCode) throws SQLException {
+		return db.getPayableReservationByCode(confirmationCode);
+	}
+
+	public Bill getOrCreateBillForPaying(int reservationId) throws SQLException {
+		Bill bill = db.findBillByReservationId(reservationId);
+		if (bill == null) {
+			Reservation r = db.findReservationById(reservationId);
+			if (r == null)
+				return null;
+			bill = computeBill(r);
+		}
+		return bill;
+	}
+
 	public CancelReservationResult cancelReservation(int reservationId) throws SQLException {
 
 		String statusStr = db.getReservationStatus(reservationId);
@@ -239,7 +258,7 @@ public class ReservationController {
 
 		if (status == ReservationStatus.IN_PROGRESS)
 			return CancelReservationResult.fail("Cannot cancel in progress reservation.");
-			
+
 		boolean ok = db.updateReservationStatus(reservationId, ReservationStatus.CANCELED.name());
 		return ok ? CancelReservationResult.ok("Reservation canceled.", status)
 				: CancelReservationResult.fail("Cancel failed.");
@@ -254,7 +273,7 @@ public class ReservationController {
 		int reservationId = reservation.getReservationId();
 		String statusStr = db.getReservationStatus(reservationId);
 		ReservationStatus status = ReservationStatus.valueOf(statusStr);
-		
+
 		if (status != ReservationStatus.WAITING && status != ReservationStatus.NOTIFIED
 				&& status != ReservationStatus.ACTIVE) {
 			return CancelReservationResult.fail("Reservation cannot be canceled.");
@@ -357,7 +376,7 @@ public class ReservationController {
 		}
 		return null;
 	}
-	
+
 	public Integer notifyNextFromWaitlist() throws SQLException {
 		// 1) Get all WAITING candidates
 		List<WaitingCandidate> candidates = db.getWaitingCandidates();
@@ -385,35 +404,34 @@ public class ReservationController {
 
 	public ReceiveTableResult receiveTable(int reservationId) throws SQLException {
 
-	    if (reservationId <= 0)
-	        return ReceiveTableResult.fail("Invalid reservation id.");
+		if (reservationId <= 0)
+			return ReceiveTableResult.fail("Invalid reservation id.");
 
-	    ReservationBasicInfo info = db.getReservationBasicInfo(reservationId);
-	    if (info == null)
-	        return ReceiveTableResult.fail("Reservation not found.");
+		ReservationBasicInfo info = db.getReservationBasicInfo(reservationId);
+		if (info == null)
+			return ReceiveTableResult.fail("Reservation not found.");
 
-	    // status check
-	    String statusStr = db.getReservationStatus(reservationId);
-	    if (statusStr == null)
-	        return ReceiveTableResult.fail("Reservation not found.");
+		// status check
+		String statusStr = db.getReservationStatus(reservationId);
+		if (statusStr == null)
+			return ReceiveTableResult.fail("Reservation not found.");
 
-	    ReservationStatus status = ReservationStatus.valueOf(statusStr);
+		ReservationStatus status = ReservationStatus.valueOf(statusStr);
 
-	    if (status != ReservationStatus.ACTIVE && status != ReservationStatus.NOTIFIED) {
-	        return ReceiveTableResult.fail("Reservation status does not allow table receiving.");
-	    }
+		if (status != ReservationStatus.ACTIVE && status != ReservationStatus.NOTIFIED) {
+			return ReceiveTableResult.fail("Reservation status does not allow table receiving.");
+		}
 
-	    Integer tableId = db.assignTableNow(reservationId, info.guests, DURATION_MIN);
-	    if (tableId == null) {
-	        return ReceiveTableResult.fail("No available table right now.");
-	    }
-	    
-	    if(db.markSeatedNow(reservationId))
-	    	return ReceiveTableResult.fail("Failed to mark seated");
+		Integer tableId = db.assignTableNow(reservationId, info.guests, DURATION_MIN);
+		if (tableId == null) {
+			return ReceiveTableResult.fail("No available table right now.");
+		}
 
-	    return ReceiveTableResult.ok(tableId);
+		if (!db.markSeatedNow(reservationId))
+			return ReceiveTableResult.fail("Failed to mark seated");
+
+		return ReceiveTableResult.ok(tableId);
 	}
-
 
 	private int rand80to150() {
 		return 80 + (int) (Math.random() * 71);
@@ -431,50 +449,51 @@ public class ReservationController {
 		boolean sub = db.isCustomerSubscribed(reservation.getCustomerId());
 		double finalAmount = sub ? before * 0.9 : before;
 
-		return db.createBill(reservation.getReservationId(), before, finalAmount);
+		return db.insertBill(reservation.getReservationId(), before, finalAmount);
 	}
 
-	public PayBillResult payBillByCode(int confirmationCode) throws SQLException {
-		Reservation r = db.findReservationByConfirmationCode(confirmationCode);
+	public PayBillResult payBillbyId(int billId) throws SQLException {
+
+		if (billId <= 0) {
+			return PayBillResult.fail("Invalid bill id.");
+		}
+
+		Bill bill = db.findBillById(billId);
+		if (bill == null) {
+			return PayBillResult.fail("Bill not found.");
+		}
+
+		if (bill.isPaid()) {
+			return PayBillResult.fail("Bill already paid.");
+		}
+
+		Reservation r = db.findReservationById(bill.getReservationId());
 		if (r == null) {
-			return PayBillResult.fail("Invalid confirmation code.");
+			return PayBillResult.fail("Reservation not found for this bill.");
 		}
 
 		if (r.getStatus() != ReservationStatus.IN_PROGRESS) {
 			return PayBillResult.fail("Reservation is not in progress.");
 		}
 
-		Bill bill = db.findBillByReservationId(r.getReservationId());
-		if (bill == null)
-			bill = computeBill(r);
-
-		if (bill == null) {
-			return PayBillResult.fail("Failed to create bill.");
-		}
-
-		if (bill.isPaid())
-
-		{
-			return PayBillResult.fail("Bill already paid.");
-		}
-
-		boolean ok = db.markBillPaid(r.getReservationId());
+		boolean ok = db.markBillPaidById(billId);
 		if (!ok) {
 			return PayBillResult.fail("Payment failed.");
 		}
 
 		db.updateReservationStatus(r.getReservationId(), ReservationStatus.COMPLETED.name());
-	    
-		return PayBillResult.ok(bill.getFinalAmount(), getFreedCapacity(r));
+
+		return PayBillResult.ok(r.getReservationId(), bill.getFinalAmount(), getFreedCapacity(r));
 	}
 
 	private int getFreedCapacity(Reservation r) throws SQLException {
-	    Integer tableId = r.getTableId();
-	    if (tableId != null) {
-	        Integer cap = db.getTableCapacityById(tableId);
-	        if (cap != null && cap > 0) return cap;
-	    }
-	    return 0;
+		Integer tableId = r.getTableId();
+		if (tableId != null) {
+			Integer cap = db.getTableCapacityById(tableId);
+			if (cap != null && cap > 0)
+				return cap;
+		}
+		return 0;
 	}
 
 }

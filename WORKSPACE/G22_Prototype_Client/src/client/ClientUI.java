@@ -2,8 +2,8 @@ package client;
 
 import java.util.List;
 
-import common.dto.Authentication.CustomerAuthResponse;
 import common.dto.Reservation.ReservationResponse;
+import common.dto.UserAccount.CustomerAuthResponse;
 import common.entity.Reservation;
 
 /**

@@ -331,6 +331,25 @@ public class DBController {
 		}
 	}
 
+	public Reservation findReservationById(int reservationId) throws SQLException {
+	    String sql = """
+	        SELECT reservation_id, reservation_datetime, number_of_guests,
+	               confirmation_code, customer_id, created_at, table_id, status
+	        FROM reservation
+	        WHERE reservation_id = ?
+	        LIMIT 1
+	    """;
+	    try (Connection conn = getConnection();
+	         PreparedStatement ps = conn.prepareStatement(sql)) {
+	        ps.setInt(1, reservationId);
+	        try (ResultSet rs = ps.executeQuery()) {
+	            if (!rs.next()) return null;
+	            return mapReservation(rs);
+	        }
+	    }
+	}
+
+	
 	public int createGuestCustomer(String fullName, String phone, String email) throws SQLException {
 		String sql = "INSERT INTO customer(full_name, phone, email, is_subscribed, subscription_code) VALUES (?, ?, ?, 0, NULL)";
 		try (Connection conn = getConnection();
@@ -436,7 +455,39 @@ public class DBController {
 
 	public Reservation getReceivableReservationByCode(int confirmationCode) throws SQLException {
 		String sql = "SELECT * FROM reservation WHERE confirmation_code = ? AND status IN"
-				+ " ('ACTIVE','NOTIFIED') LIMIT 1 And reservation_datetime <= NOW()";
+				+ " ('ACTIVE','NOTIFIED') And reservation_datetime <= NOW() LIMIT 1";
+
+		Reservation reservation = null;
+		try (Connection conn = getConnection(); PreparedStatement ps = conn.prepareStatement(sql)) {
+			ps.setInt(1, confirmationCode);
+			try (ResultSet rs = ps.executeQuery()) {
+				if (rs.next()) {
+					reservation = mapReservation(rs);
+				}
+			}
+		}
+		return reservation;
+	}
+
+	public List<Reservation> getPayableReservationsByCustomerId(int customerId) throws SQLException {
+		String sql = "SELECT * FROM reservation WHERE customer_id=? AND status = 'IN_PROGRESS'"
+				+ " ORDER BY reservation_datetime DESC";
+		List<Reservation> list = new ArrayList<>();
+
+		try (Connection conn = getConnection(); PreparedStatement ps = conn.prepareStatement(sql)) {
+			ps.setInt(1, customerId);
+			try (ResultSet rs = ps.executeQuery()) {
+				while (rs.next()) {
+					Reservation r = mapReservation(rs);
+					list.add(r);
+				}
+			}
+		}
+		return list;
+	}
+
+	public Reservation getPayableReservationByCode(int confirmationCode) throws SQLException {
+		String sql = "SELECT * FROM reservation WHERE confirmation_code = ? AND status = 'IN_PROGRESS' LIMIT 1";
 
 		Reservation reservation = null;
 		try (Connection conn = getConnection(); PreparedStatement ps = conn.prepareStatement(sql)) {
@@ -665,7 +716,7 @@ public class DBController {
 		return null;
 	}
 
-	public Bill createBill(int reservationId, double amountBeforeDiscount, double finalAmount) throws SQLException {
+	public Bill insertBill(int reservationId, double amountBeforeDiscount, double finalAmount) throws SQLException {
 		String sql = """
 				    INSERT INTO bill (reservation_id, amount_before_discount, final_amount, paid)
 				    VALUES (?, ?, ?, 0)
@@ -690,20 +741,45 @@ public class DBController {
 		}
 		return null;
 	}
-
-	public boolean markBillPaid(int reservationId) throws SQLException {
-		String sql = """
-				    UPDATE bill
-				    SET paid = 1,
-				        paid_at = NOW()
-				    WHERE reservation_id = ?
-				      AND paid = 0
-				""";
-		try (Connection conn = getConnection(); PreparedStatement ps = conn.prepareStatement(sql)) {
-			ps.setInt(1, reservationId);
-			return ps.executeUpdate() == 1;
-		}
+	
+	public Bill findBillById(int billId) throws SQLException {
+	    String sql = """
+	        SELECT bill_id, reservation_id, amount_before_discount, final_amount, paid
+	        FROM bill
+	        WHERE bill_id = ?
+	        LIMIT 1
+	    """;
+	    try (Connection conn = getConnection();
+	         PreparedStatement ps = conn.prepareStatement(sql)) {
+	        ps.setInt(1, billId);
+	        try (ResultSet rs = ps.executeQuery()) {
+	            if (rs.next()) {
+	                return new Bill(
+	                    rs.getInt("bill_id"),
+	                    rs.getInt("reservation_id"),
+	                    rs.getDouble("amount_before_discount"),
+	                    rs.getDouble("final_amount"),
+	                    rs.getInt("paid") == 1
+	                );
+	            }
+	        }
+	    }
+	    return null;
 	}
+
+
+	public boolean markBillPaidById(int billId) throws SQLException {
+	    String sql = """
+	        UPDATE bill
+	        SET paid = 1, paid_at = NOW()
+	        WHERE bill_id = ? AND paid = 0
+	    """;
+	    try (Connection conn = getConnection(); PreparedStatement ps = conn.prepareStatement(sql)) {
+	        ps.setInt(1, billId);
+	        return ps.executeUpdate() == 1;
+	    }
+	}
+
 
 	public Integer getTableCapacityById(int tableId) throws SQLException {
 		String sql = "SELECT capacity FROM restaurant_table WHERE table_id = ? LIMIT 1";
@@ -858,4 +934,41 @@ public class DBController {
 		return tableId;
 	}
 
+	public String createSubscriber(String fullName, String phone, String email) throws SQLException {
+	    String sql = """
+	        INSERT INTO customer(full_name, phone, email, is_subscribed, subscription_code)
+	        VALUES (?, ?, ?, 1, ?)
+	    """;
+
+	    for (int attempt = 1; attempt <= 5; attempt++) {
+	        String code = generateSubscriptionCode();
+
+	        try (Connection conn = getConnection();
+	             PreparedStatement ps = conn.prepareStatement(sql)) {
+
+	            ps.setString(1, fullName);
+	            ps.setString(2, phone);
+	            ps.setString(3, email);
+	            ps.setString(5, code);
+
+	            int inserted = ps.executeUpdate();
+	            if (inserted == 1) return code;
+	            return null;
+
+	        } catch (SQLException e) {
+	            if (e.getErrorCode() == 1062) continue; // duplicate unique
+	            throw e;
+	        }
+	    }
+	    return null;
+	}
+
+	private String generateSubscriptionCode() {
+	    String chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
+	    StringBuilder sb = new StringBuilder();
+	    for (int i = 0; i < 8; i++)
+	        sb.append(chars.charAt((int)(Math.random() * chars.length())));
+	    return sb.toString();
+	}
+	
 }

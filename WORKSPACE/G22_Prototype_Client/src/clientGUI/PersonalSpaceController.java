@@ -1,8 +1,8 @@
 package clientGUI;
 
 import client.Client;
-import common.dto.Authentication.CustomerAuthResponse;
 import common.dto.Reservation.ReservationResponse;
+import common.dto.UserAccount.CustomerAuthResponse;
 import common.entity.Customer;
 import common.entity.Reservation;
 import common.enums.ReservationStatus;

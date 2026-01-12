@@ -25,6 +25,8 @@ public class ReservationRequest implements Serializable {
 	private LocalDateTime reservationDateTime;
 	private int numberOfGuests;
 	private int customerId;
+	
+	private int billId;
 
 	// Guest identification fields (for CREATE_GUEST_RESERVATION / JOIN_WAITLIST,
 	// etc.)
@@ -139,7 +141,7 @@ public class ReservationRequest implements Serializable {
 	public static ReservationRequest createJoinWaitlistRequest(int guests) {
 
 		ReservationRequest req = new ReservationRequest();
-		req.operation = ReservationOperation.CREATE_RESERVATION;
+		req.operation = ReservationOperation.JOIN_WAITLIST;
 		req.numberOfGuests = guests;
 		return req;
 	}
@@ -148,25 +150,38 @@ public class ReservationRequest implements Serializable {
 			String email) {
 
 		ReservationRequest req = new ReservationRequest();
-		req.operation = ReservationOperation.CREATE_RESERVATION;
+		req.operation = ReservationOperation.JOIN_WAITLIST;
 		req.numberOfGuests = guests;
 		req.fullName = fullName;
 		req.phone = phone;
 		req.email = email;
 		return req;
 	}
-
-	public static ReservationRequest createPayBillRequest(int confirmationCode) {
+	
+	public static ReservationRequest createGetPayableReservationsRequest() {
 		ReservationRequest req = new ReservationRequest();
-		req.operation = ReservationOperation.CHECKOUT;
+		req.operation = ReservationOperation.GET_CUSTOMER_RESERVATIONS_FOR_CHECKOUT;
+		return req;
+	}
+	
+	public static ReservationRequest createGetPayableReservationByConfirmationCodeRequest(int confirmationCode) {
+		ReservationRequest req = new ReservationRequest();
+		req.operation = ReservationOperation.GET_RESERVATION_By_CONFIRMATION_CODE_FOR_CHECKOUT;
 		req.confirmationCode = confirmationCode;
 		return req;
 	}
+	
+	public static ReservationRequest createGetBillForPayingRequest(int reservationId) {
+	    ReservationRequest req = new ReservationRequest();
+	    req.operation = ReservationOperation.GET_BILL_FOR_PAYING;
+	    req.reservationId = reservationId;
+	    return req;
+	}
 
-	public static ReservationRequest createPayBillByIdRequest(int reservationId) {
+	public static ReservationRequest createPayBillByIdRequest(int billId) {
 		ReservationRequest req = new ReservationRequest();
-		req.operation = ReservationOperation.CHECKOUT;
-		req.reservationId = reservationId;
+		req.operation = ReservationOperation.PAY_BILL;
+		req.billId = billId;
 		return req;
 	}
 
@@ -203,6 +218,10 @@ public class ReservationRequest implements Serializable {
 
 	public int getConfirmationCode() {
 		return confirmationCode;
+	}
+	
+	public int getBillId() {
+		return billId;
 	}
 
 }

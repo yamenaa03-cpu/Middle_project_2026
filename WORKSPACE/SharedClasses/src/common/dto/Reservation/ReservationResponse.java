@@ -4,6 +4,7 @@ import java.io.Serializable;
 import java.time.LocalDateTime;
 import java.util.List;
 
+import common.entity.Bill;
 import common.entity.Reservation;
 
 /**
@@ -20,6 +21,8 @@ public class ReservationResponse implements Serializable {
     private int reservationId;
 	private int confirmationCode;
 	private Double finalAmount;
+	private Bill bill;
+
 	
 	private List<LocalDateTime> suggestedTimes;
 
@@ -84,18 +87,12 @@ public class ReservationResponse implements Serializable {
         this.suggestedTimes = suggestedTimes;
     }
 
-    /**
-     * Response carrying a final amount (for billing flows).
-     *
-     * @param success whether the operation succeeded
-     * @param message message describing the result
-     * @param finalAmount computed final amount
-     */
-    public ReservationResponse(boolean success, String message, Double finalAmount) {
+    public ReservationResponse(boolean success, String message, Bill bill) {
         this.success = success;
         this.message = message;
-        this.finalAmount = finalAmount;
+        this.bill = bill;
     }
+
     
     /**
      * Whether the operation succeeded.
@@ -145,4 +142,7 @@ public class ReservationResponse implements Serializable {
      * @return final amount or null
      */
     public Double getFinalAmount() { return finalAmount; }
+    
+    public Bill getBill() { return bill; }
+
 }

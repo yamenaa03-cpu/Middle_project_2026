@@ -3,6 +3,7 @@ package controllers;
 import java.sql.SQLException;
 
 import common.dto.Authentication.SubscriberAuthResult;
+import common.entity.Customer;
 import dbController.DBController;
 
 public class AuthenticationController {
@@ -19,14 +20,20 @@ public class AuthenticationController {
             return SubscriberAuthResult.fail("Subscription code is required.");
         }
 
-        Integer subscriberId = db.findCustomerIdBySubscriptionCode(code.trim());
-        if (subscriberId == null) {
+        Integer customerId = db.findCustomerIdBySubscriptionCode(code.trim());
+        if (customerId == null) {
             return SubscriberAuthResult.fail("Invalid subscription code.");
         }
-        
-        String fullName = db.getFullNameByCustomerId(subscriberId);
-        
-        return SubscriberAuthResult.ok(subscriberId, "Login successful.", fullName);
+
+        return SubscriberAuthResult.ok(customerId, "Login successful.");
+    }
+    
+    public Customer getProfile(int customerId) throws SQLException {
+        return db.getCustomerById(customerId);
+    }
+
+    public boolean updateProfile(int customerId, String fullName, String phone, String email) throws SQLException {
+        return db.updateCustomerProfile(customerId, fullName, phone, email);
     }
 
 }

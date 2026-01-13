@@ -16,11 +16,14 @@ import common.dto.Reservation.ReservationRequest;
 import common.dto.Reservation.ReservationResponse;
 import common.dto.UserAccount.UserAccountRequest;
 import common.dto.UserAccount.UserAccountResponse;
-import common.dto.UserAccount.LogInResult;
+import common.dto.UserAccount.SubscriberLogInResult;
+import common.dto.UserAccount.EmployeeLogInResult;
 import common.dto.UserAccount.RegisterSubscriberResult;
 import common.entity.Bill;
+import common.entity.Customer;
 import common.entity.Reservation;
 import common.enums.UserAccountOperation;
+import common.enums.EmployeeRole;
 import common.enums.LoggedInStatus;
 import common.enums.ReservationOperation;
 import common.enums.ReservationStatus;
@@ -31,6 +34,9 @@ import serverGUI.ServerFrameController;
 import controllers.UserAccountController;
 import controllers.NotificationController;
 import controllers.ReservationController;
+import controllers.RestaurantManagementController;
+import common.dto.RestaurantManagement.RestaurantManagementRequest;
+import common.dto.RestaurantManagement.RestaurantManagementResponse;
 
 /**
  * Main class that extends AbstractServer OCSF server class that handles client
@@ -69,6 +75,12 @@ public class Server extends AbstractServer {
 
 	private NotificationController notificationController;
 
+	private RestaurantManagementController restaurantManagementController;
+
+	private static final String SESSION_SUBSCRIBER_ID = "subscriberId";
+	private static final String SESSION_EMPLOYEE_ID = "employeeId";
+	private static final String SESSION_EMPLOYEE_ROLE = "employeeRole";
+
 	/* server constructor */
 	public Server(int port, ServerFrameController ui) {
 		super(port);
@@ -85,8 +97,34 @@ public class Server extends AbstractServer {
 	}
 
 	// Returns Logged In Subscriber ID
-	private Integer getSessionsubscriberId(ConnectionToClient client) {
-		return (Integer) client.getInfo("subscriberId");
+	private Integer getSessionSubscriberId(ConnectionToClient client) {
+		return (Integer) client.getInfo(SESSION_SUBSCRIBER_ID);
+	}
+
+	private void setSessionSubscriberId(ConnectionToClient client, Integer sid) {
+		client.setInfo(SESSION_SUBSCRIBER_ID, sid);
+	}
+
+	private Integer getSessionEmployeeId(ConnectionToClient client) {
+		return (Integer) client.getInfo(SESSION_EMPLOYEE_ID);
+	}
+
+	private void setSessionEmployeeId(ConnectionToClient client, Integer empid) {
+		client.setInfo(SESSION_EMPLOYEE_ID, empid);
+	}
+
+	private EmployeeRole getSessionEmployeeRole(ConnectionToClient client) {
+		return (EmployeeRole) client.getInfo(SESSION_EMPLOYEE_ROLE);
+	}
+
+	private void setSessionEmployeeRole(ConnectionToClient client, EmployeeRole empRole) {
+		client.setInfo(SESSION_EMPLOYEE_ROLE, empRole);
+	}
+
+	private void clearSession(ConnectionToClient client) {
+		client.setInfo(SESSION_SUBSCRIBER_ID, null);
+		client.setInfo(SESSION_EMPLOYEE_ID, null);
+		client.setInfo(SESSION_EMPLOYEE_ROLE, null);
 	}
 
 	/*
@@ -101,10 +139,19 @@ public class Server extends AbstractServer {
 		try {
 			// if DB not initialized
 			if (db == null) {
-				client.sendToClient(new ReservationResponse(false, "Database not configured!"));
+				client.sendToClient(ReservationResponse.fail("Database not configured!"));
 				ui.display("Client attempted Request but DB not configured.");
 				return;
 			}
+
+			Integer sessionSubscriberId = getSessionSubscriberId(client);
+			Integer sessionEmployeeId = getSessionEmployeeId(client);
+			EmployeeRole sessionEmployeeRole = getSessionEmployeeRole(client);
+
+			boolean isSubscriberLoggedIn = (sessionSubscriberId != null);
+			boolean isEmployeeLoggedIn = (sessionEmployeeId != null && sessionEmployeeRole != null);
+			boolean isRepresentativeLoggedIn = isEmployeeLoggedIn && sessionEmployeeRole == EmployeeRole.REPRESENTATIVE;
+			boolean isManagerLoggedIn = isEmployeeLoggedIn && sessionEmployeeRole == EmployeeRole.MANAGER;
 
 			if (msg instanceof UserAccountRequest) {
 
@@ -115,51 +162,112 @@ public class Server extends AbstractServer {
 				switch (userReq.getOperation()) {
 
 				case LOGOUT:
-					if (client.getInfo("subscriberId") == null)
-						userResp = new UserAccountResponse(false, "Already logged out", null,
-								LoggedInStatus.NOT_LOGGED_IN);
-					else {
-						client.setInfo("subscriberId", null);
-
-						userResp = new UserAccountResponse(true, "Logged out successfully.", null,
-								LoggedInStatus.NOT_LOGGED_IN);
+					if (sessionSubscriberId == null && sessionEmployeeId == null) {
+						userResp = UserAccountResponse.alreadyLoggedOut();
+					} else {
+						clearSession(client);
+						userResp = UserAccountResponse.logoutOk();
 					}
-
 					break;
 
-				case SUBSCRIPTION_CODE:
-					LogInResult r;
-					r = userAccountController.LogInBySubscriptionCode(userReq.getSubscriptionCode());
+				case SUBSCRIBER_LOG_IN:
+					clearSession(client);
 
-					if (r.isSuccess())
-						client.setInfo("subscriberId", r.getSubscriberId());
+					SubscriberLogInResult slir = userAccountController
+							.LogInBySubscriptionCode(userReq.getSubscriptionCode());
 
-					userResp = new UserAccountResponse(r.isSuccess(), r.getMessage(), r.getFullName(),
-							LoggedInStatus.SUBSCRIBER);
+					if (slir.isSuccess()) {
+						setSessionSubscriberId(client, slir.getSubscriberId());
+						userResp = UserAccountResponse.loginOk(slir.getSubscriberId(), slir.getFullName());
+					} else {
+						userResp = UserAccountResponse.loginFail(slir.getMessage());
+					}
+					break;
 
+				case EMPLOYEE_LOG_IN:
+					clearSession(client);
+
+					EmployeeLogInResult elir = userAccountController.employeeLogIn(userReq.getUsername(),
+							userReq.getPassword());
+					if (elir.isSuccess()) {
+						setSessionEmployeeId(client, elir.getEmployeeId());
+						setSessionEmployeeRole(client, elir.getRole());
+						userResp = UserAccountResponse.employeeLoginOk(elir.getEmployeeId(), elir.getRole(),
+								elir.getFullName());
+					} else {
+						userResp = UserAccountResponse.employeeLoginFail(elir.getMessage());
+					}
 					break;
 
 				case REGISTER_SUBSCRIBER:
 					RegisterSubscriberResult rsr = userAccountController.registerSubscriber(userReq.getFullName(),
 							userReq.getPhone(), userReq.getEmail());
 
-					if (rsr.isSuccess())
-						userResp = new UserAccountResponse(true, rsr.getMessage(), rsr.getSubscriptionCode());
-					else
-						userResp = new UserAccountResponse(false, rsr.getMessage(), null);
+					userResp = rsr.isSuccess() ? UserAccountResponse.registerOk(rsr.getSubscriptionCode())
+							: UserAccountResponse.registerFail(rsr.getMessage());
 					break;
 
 				case LOGGED_IN_STATUS:
-					if (client.getInfo("subscriberId") == null)
-						userResp = new UserAccountResponse(true, "Not logged in", null, LoggedInStatus.NOT_LOGGED_IN);
-					else
-						userResp = new UserAccountResponse(true, "Subscriber is logged in", null,
-								LoggedInStatus.SUBSCRIBER);
+					if (sessionSubscriberId != null) {
+						userResp = UserAccountResponse.statusSubscriber(sessionSubscriberId,
+								userAccountController.getFullNameBySubscriberId(sessionSubscriberId));
 
+					} else if (sessionEmployeeId != null && sessionEmployeeRole != null) {
+
+						if (sessionEmployeeRole == EmployeeRole.MANAGER)
+							userResp = UserAccountResponse.statusManager(sessionEmployeeId,
+									userAccountController.getFullNameByEmployeeId(sessionEmployeeId));
+						else
+							userResp = UserAccountResponse.statusRep(sessionEmployeeId,
+									userAccountController.getFullNameByEmployeeId(sessionEmployeeId));
+
+					} else
+						userResp = UserAccountResponse.statusNotLoggedIn();
+					break;
+
+				case GET_SUBSCRIBER_PROFILE:
+					if (sessionSubscriberId == null) {
+						userResp = UserAccountResponse.fail("Not logged in.");
+					} else {
+						Customer c = db.getSubscribedCustomerById(sessionSubscriberId);
+						userResp = (c != null) ? UserAccountResponse.subscriberProfileOk(c)
+								: UserAccountResponse.subscriberProfileFail("Subscriber not found.");
+					}
+					break;
+
+				case LOOKUP_CUSTOMER_BY_SUBSCRIPTION_CODE:
+					if (!isEmployeeLoggedIn) {
+						userResp = UserAccountResponse.fail("Not authorized. Employee login required.");
+					} else {
+						Customer cByCode = userAccountController
+								.lookupCustomerBySubscriptionCode(userReq.getSubscriptionCode());
+						userResp = (cByCode != null) ? UserAccountResponse.customerFound(cByCode)
+								: UserAccountResponse.customerNotFound("Customer not found by subscription code.");
+					}
+					break;
+
+				case LOOKUP_CUSTOMER_BY_PHONE:
+					if (!isEmployeeLoggedIn) {
+						userResp = UserAccountResponse.fail("Not authorized. Employee login required.");
+					} else {
+						Customer cByPhone = userAccountController.lookupCustomerByPhone(userReq.getPhone());
+						userResp = (cByPhone != null) ? UserAccountResponse.customerFound(cByPhone)
+								: UserAccountResponse.customerNotFound("Customer not found by phone.");
+					}
+					break;
+
+				case LOOKUP_CUSTOMER_BY_EMAIL:
+					if (!isEmployeeLoggedIn) {
+						userResp = UserAccountResponse.fail("Not authorized. Employee login required.");
+					} else {
+						Customer cByEmail = userAccountController.lookupCustomerByEmail(userReq.getEmail());
+						userResp = (cByEmail != null) ? UserAccountResponse.customerFound(cByEmail)
+								: UserAccountResponse.customerNotFound("Customer not found by email.");
+					}
 					break;
 
 				default:
-					userResp = new UserAccountResponse(false, "Invalid Operation!", null, null);
+					userResp = UserAccountResponse.fail("Invalid Operation!");
 				}
 				client.sendToClient(userResp);// returns response to the client
 				return;
@@ -168,23 +276,48 @@ public class Server extends AbstractServer {
 			if (msg instanceof ReservationRequest) {
 				ReservationRequest resReq = (ReservationRequest) msg;
 
-				Integer sessionSubscriberId = (Integer) client.getInfo("subscriberId");
-
 				ReservationResponse resResp;
+
+				// Determine effective customer ID: employee on-behalf or logged-in subscriber
+				Integer effectiveCustomerId = null;
+				boolean isOnBehalf = false;
+
+				if (isEmployeeLoggedIn && resReq.getTargetCustomerId() > 0) {
+					// Employee acting on behalf of customer
+					effectiveCustomerId = resReq.getTargetCustomerId();
+					isOnBehalf = true;
+				} else if (sessionSubscriberId != null) {
+					// Regular logged-in subscriber
+					effectiveCustomerId = sessionSubscriberId;
+				}
 
 				switch (resReq.getOperation()) {
 
 				case GET_ALL_RESERVATIONS:
-					resResp = new ReservationResponse(true, "Reservations loaded.",
+					if (!isEmployeeLoggedIn) {
+						resResp = ReservationResponse.fail("Not authorized.");
+						break;
+					}
+					resResp = ReservationResponse.withReservations(true, "Reservations loaded.",
 							reservationController.getAllReservations());
+					break;
+
+				case GET_WAITLIST:
+					if (!isEmployeeLoggedIn) {
+						resResp = ReservationResponse.fail("Not authorized.");
+						break;
+					}
+					resResp = ReservationResponse.withReservations(true, "Waitlist loaded.",
+							reservationController.getWaitlistReservations());
 					break;
 
 				case UPDATE_RESERVATION_FIELDS:
 					boolean ok = reservationController.updateReservation(resReq.getReservationId(),
 							resReq.getReservationDateTime(), resReq.getNumberOfGuests());
 
-					resResp = new ReservationResponse(ok, ok ? "Reservation updated." : "Reservation not found.",
+					resResp = ReservationResponse.updated(ok, "Reservation updated.", "Reservation not found.",
 							reservationController.getAllReservations());
+
 					// checks if the Reservation was updated correctly and returns a response
 					// according to the result
 					break;
@@ -192,7 +325,7 @@ public class Server extends AbstractServer {
 				case CREATE_RESERVATION:
 					CreateReservationResult r;
 
-					if (sessionSubscriberId != null) {
+					if (effectiveCustomerId != null) {
 						r = reservationController.createReservation(sessionSubscriberId,
 								resReq.getReservationDateTime(), resReq.getNumberOfGuests());
 					} else {
@@ -201,44 +334,37 @@ public class Server extends AbstractServer {
 					}
 
 					if (r.isSuccess()) {
-						resResp = new ReservationResponse(true, r.getMessage(), r.getReservationId(),
-								r.getConfirmationCode(), List.of());
+						resResp = ReservationResponse.created(r.getReservationId(), r.getConfirmationCode(),
+								r.getMessage());
 
 						notificationController.sendReservationConfirmation(r.getReservationId());
 					} else
-						resResp = new ReservationResponse(false, r.getMessage(), null, null, r.getSuggestions());
+						resResp = ReservationResponse.createFailedWithSuggestions(r.getMessage(), r.getSuggestions());
 
 					break;
 
 				case RESEND_CONFIRMATION_CODE:
 					List<Reservation> resList = db.findReservationsByPhoneOrEmail(resReq.getPhone(), resReq.getEmail());
 					int sentCount = 0;
-					if (resList == null || resList.isEmpty())
-						resResp = new ReservationResponse(false, "No reservations found.", null, null, null);
-					else {
+
+					if (resList != null) {
 						for (Reservation res : resList) {
 							if (notificationController.resendReservationConfirmation(res.getReservationId()))
 								sentCount++;
 						}
-						if (sentCount > 0)
-							resResp = new ReservationResponse(true, "Sent " + sentCount + "code/s.", null, null, null);
-						else
-							resResp = new ReservationResponse(false, "No reservations found.", null, null, null);
 					}
+
+					resResp = ReservationResponse.resendResult(sentCount);
 					break;
 
 				case GET_CUSTOMER_RESERVATIONS_FOR_CANCELLATION:
-					if (sessionSubscriberId == null)
-						resResp = new ReservationResponse(false, "Please enter confirmation code.", List.of());
-					else {
+					if (effectiveCustomerId == null) {
+						resResp = ReservationResponse.emptyListFail("Please enter confirmation code.");
+					} else {
 						List<Reservation> canList = reservationController
-								.loadReservationsForCancellation(sessionSubscriberId);
-
-						if (canList == null || canList.isEmpty()) {
-							resResp = new ReservationResponse(false, "No reservations found.", List.of());
-						} else {
-							resResp = new ReservationResponse(true, "Your reservations loaded.", canList);
-						}
+								.loadReservationsForCancellation(effectiveCustomerId);
+						resResp = ReservationResponse.loadedOrEmpty(canList, "Your reservations loaded.",
+								"No reservations found.");
 					}
 					break;
 
@@ -246,10 +372,10 @@ public class Server extends AbstractServer {
 					Reservation canReservation = reservationController
 							.getReservationForCancellationByCode(resReq.getConfirmationCode());
 
-					if (canReservation != null)
-						resResp = new ReservationResponse(true, "Your reservation loaded.", List.of(canReservation));
-					else
-						resResp = new ReservationResponse(false, "No reservations found.", List.of());
+					resResp = (canReservation != null)
+							? ReservationResponse.withReservations(true, "Your reservation loaded.",
+									List.of(canReservation))
+							: ReservationResponse.withReservations(false, "No reservations found.", List.of());
 					break;
 
 				case CANCEL_RESERVATION:
@@ -257,11 +383,11 @@ public class Server extends AbstractServer {
 
 					cr = reservationController.cancelReservation(resReq.getReservationId());
 
-					if (sessionSubscriberId != null) {
-						resResp = new ReservationResponse(cr.isSuccess(), cr.getMessage(),
-								reservationController.loadReservationsForCancellation(sessionSubscriberId));
+					if (effectiveCustomerId != null) {
+						resResp = ReservationResponse.withReservations(cr.isSuccess(), cr.getMessage(),
+								reservationController.loadReservationsForCancellation(effectiveCustomerId));
 					} else {
-						resResp = new ReservationResponse(cr.isSuccess(), cr.getMessage(), List.of());
+						resResp = ReservationResponse.withReservations(cr.isSuccess(), cr.getMessage(), List.of());
 					}
 
 					if (cr.isSuccess() && (cr.getReservationStatusBefore() == ReservationStatus.ACTIVE
@@ -277,36 +403,29 @@ public class Server extends AbstractServer {
 				case JOIN_WAITLIST:
 					CreateReservationResult jwr;
 
-					if (sessionSubscriberId != null) {
-						// Subscriber path
-						jwr = reservationController.joinWaitlist(sessionSubscriberId, resReq.getNumberOfGuests());
+					if (effectiveCustomerId != null) {
+						jwr = reservationController.joinWaitlist(effectiveCustomerId, resReq.getNumberOfGuests());
 					} else {
-						// Guest path (no session saved)
 						jwr = reservationController.joinWaitlistAsGuest(resReq.getNumberOfGuests(),
 								resReq.getFullName(), resReq.getPhone(), resReq.getEmail());
 					}
 
 					if (jwr.isSuccess()) {
-						resResp = new ReservationResponse(true, jwr.getMessage(), jwr.getReservationId(),
-								jwr.getConfirmationCode(), List.of());
-
+						resResp = ReservationResponse.created(jwr.getReservationId(), jwr.getConfirmationCode(),
+								jwr.getMessage());
 					} else {
-						resResp = new ReservationResponse(false, jwr.getMessage(), null, null, List.of());
+						resResp = ReservationResponse.fail(jwr.getMessage());
 					}
 					break;
 
 				case GET_CUSTOMER_RESERVATIONS_FOR_RECEIVING:
-					if (sessionSubscriberId == null)
-						resResp = new ReservationResponse(false, "Please enter confirmation code.", List.of());
-					else {
+					if (effectiveCustomerId == null) {
+						resResp = ReservationResponse.emptyListFail("Please enter confirmation code.");
+					} else {
 						List<Reservation> recList = reservationController
-								.loadReservationsForReceiving(sessionSubscriberId);
-
-						if (recList == null || recList.isEmpty()) {
-							resResp = new ReservationResponse(false, "No reservations found.", List.of());
-						} else {
-							resResp = new ReservationResponse(true, "Your reservations loaded.", recList);
-						}
+								.loadReservationsForReceiving(effectiveCustomerId);
+						resResp = ReservationResponse.loadedOrEmpty(recList, "Your reservations loaded.",
+								"No reservations found.");
 					}
 					break;
 
@@ -314,34 +433,29 @@ public class Server extends AbstractServer {
 					Reservation recReservation = reservationController
 							.getReservationForReceivingByCode(resReq.getConfirmationCode());
 
-					if (recReservation != null)
-						resResp = new ReservationResponse(true, "Your reservation loaded.", List.of(recReservation));
-					else
-						resResp = new ReservationResponse(false, "No reservations found.", List.of());
-
+					resResp = (recReservation != null)
+							? ReservationResponse.withReservations(true, "Your reservation loaded.",
+									List.of(recReservation))
+							: ReservationResponse.withReservations(false, "No reservations found.", List.of());
 					break;
 
 				case RECEIVE_TABLE:
 					ReceiveTableResult rtr = reservationController.receiveTable(resReq.getReservationId());
-					resResp = new ReservationResponse(rtr.isSuccess(), rtr.getMessage(), List.of());
+					resResp = rtr.isSuccess() ? ReservationResponse.ok(rtr.getMessage())
+							: ReservationResponse.fail(rtr.getMessage());
 
 					if (rtr.isSuccess())
 						notificationController.sendTableReceived(resReq.getReservationId());
-
 					break;
 
 				case GET_CUSTOMER_RESERVATIONS_FOR_CHECKOUT:
-					if (sessionSubscriberId == null)
-						resResp = new ReservationResponse(false, "Please enter confirmation code.", List.of());
-					else {
+					if (effectiveCustomerId == null) {
+						resResp = ReservationResponse.emptyListFail("Please enter confirmation code.");
+					} else {
 						List<Reservation> payList = reservationController
-								.loadReservationsForCheckout(sessionSubscriberId);
-
-						if (payList == null || payList.isEmpty()) {
-							resResp = new ReservationResponse(false, "No reservations found.", List.of());
-						} else {
-							resResp = new ReservationResponse(true, "Your reservations loaded.", payList);
-						}
+								.loadReservationsForCheckout(effectiveCustomerId);
+						resResp = ReservationResponse.loadedOrEmpty(payList, "Your reservations loaded.",
+								"No reservations found.");
 					}
 					break;
 
@@ -349,27 +463,22 @@ public class Server extends AbstractServer {
 					Reservation payReservation = reservationController
 							.getReservationForCheckoutByCode(resReq.getConfirmationCode());
 
-					if (payReservation != null)
-						resResp = new ReservationResponse(true, "Your reservation loaded.", List.of(payReservation));
-					else
-						resResp = new ReservationResponse(false, "No reservations found.", List.of());
-
+					resResp = (payReservation != null)
+							? ReservationResponse.withReservations(true, "Your reservation loaded.",
+									List.of(payReservation))
+							: ReservationResponse.withReservations(false, "No reservations found.", List.of());
 					break;
 
 				case GET_BILL_FOR_PAYING:
 					Bill bill = reservationController.getOrCreateBillForPaying(resReq.getReservationId());
-
-					if (bill != null) {
-						resResp = new ReservationResponse(true, "Bill loaded.", bill);
-					} else {
-						resResp = new ReservationResponse(false, "No bill found.", (Bill) null);
-					}
+					resResp = ReservationResponse.billLoaded(bill, "Bill loaded.");
 					break;
 
 				case PAY_BILL:
 					PayBillResult pbr = reservationController.payBillbyId(resReq.getBillId());
 
-					resResp = new ReservationResponse(pbr.isSuccess(), pbr.getMessage(), List.of());
+					resResp = pbr.isSuccess() ? ReservationResponse.ok(pbr.getMessage())
+							: ReservationResponse.fail(pbr.getMessage());
 
 					if (pbr.isSuccess() && pbr.getFreedCapacity() > 0)
 						runNotifyCheck(pbr.getFreedCapacity());
@@ -380,10 +489,104 @@ public class Server extends AbstractServer {
 					break;
 
 				default:
-					resResp = new ReservationResponse(false, "Unknown operation");
+					resResp = ReservationResponse.fail("Unknown operation");
 
 				}
 				client.sendToClient(resResp);// returns response to the client
+				return;
+			}
+
+			if (msg instanceof RestaurantManagementRequest) {
+				RestaurantManagementRequest mgrReq = (RestaurantManagementRequest) msg;
+				RestaurantManagementResponse mgrResp;
+
+				if (!isEmployeeLoggedIn) {
+					mgrResp = RestaurantManagementResponse.fail("Not authorized. Employee login required.");
+					client.sendToClient(mgrResp);
+					return;
+				}
+
+				switch (mgrReq.getOperation()) {
+				// Table operations
+				case GET_ALL_TABLES:
+					mgrResp = RestaurantManagementResponse.tablesLoaded(restaurantManagementController.getAllTables());
+					break;
+
+				case ADD_TABLE:
+					int newTableNum = restaurantManagementController.addTable(mgrReq.getSeats());
+					mgrResp = newTableNum > 0
+							? RestaurantManagementResponse.tableAdded(newTableNum,
+									restaurantManagementController.getAllTables())
+							: RestaurantManagementResponse.fail("Failed to add table.");
+					break;
+
+				case UPDATE_TABLE:
+					boolean tableUpdated = restaurantManagementController.updateTable(mgrReq.getTableNumber(),
+							mgrReq.getSeats());
+					mgrResp = tableUpdated
+							? RestaurantManagementResponse.tableUpdated(restaurantManagementController.getAllTables())
+							: RestaurantManagementResponse.fail("Table not found.");
+					break;
+
+				case DELETE_TABLE:
+					boolean tableDeleted = restaurantManagementController.deleteTable(mgrReq.getTableNumber());
+					mgrResp = tableDeleted
+							? RestaurantManagementResponse.tableDeleted(restaurantManagementController.getAllTables())
+							: RestaurantManagementResponse.fail("Table not found or in use.");
+					break;
+
+				// Hours operations
+				case GET_OPENING_HOURS:
+					mgrResp = RestaurantManagementResponse
+							.hoursLoaded(restaurantManagementController.getOpeningHours());
+					break;
+
+				case UPDATE_OPENING_HOURS:
+					boolean hoursUpdated = restaurantManagementController.updateOpeningHours(mgrReq.getDayOfWeek(),
+							mgrReq.getOpenTime(), mgrReq.getCloseTime(), mgrReq.isClosed());
+					mgrResp = hoursUpdated
+							? RestaurantManagementResponse
+									.hoursUpdated(restaurantManagementController.getOpeningHours())
+							: RestaurantManagementResponse.fail("Failed to update hours.");
+					break;
+
+				// Date override operations
+				case GET_DATE_OVERRIDES:
+					mgrResp = RestaurantManagementResponse
+							.overridesLoaded(restaurantManagementController.getDateOverrides());
+					break;
+
+				case ADD_DATE_OVERRIDE:
+					int ovId = restaurantManagementController.addDateOverride(mgrReq.getOverrideDate(),
+							mgrReq.getOpenTime(), mgrReq.getCloseTime(), mgrReq.isClosed(), mgrReq.getReason());
+					mgrResp = ovId > 0
+							? RestaurantManagementResponse
+									.overrideAdded(restaurantManagementController.getDateOverrides())
+							: RestaurantManagementResponse.fail("Failed to add override.");
+					break;
+
+				case UPDATE_DATE_OVERRIDE:
+					boolean ovUpdated = restaurantManagementController.updateDateOverride(mgrReq.getOverrideId(),
+							mgrReq.getOverrideDate(), mgrReq.getOpenTime(), mgrReq.getCloseTime(), mgrReq.isClosed(),
+							mgrReq.getReason());
+					mgrResp = ovUpdated
+							? RestaurantManagementResponse
+									.overrideUpdated(restaurantManagementController.getDateOverrides())
+							: RestaurantManagementResponse.fail("Override not found.");
+					break;
+
+				case DELETE_DATE_OVERRIDE:
+					boolean ovDeleted = restaurantManagementController.deleteDateOverride(mgrReq.getOverrideId());
+					mgrResp = ovDeleted
+							? RestaurantManagementResponse
+									.overrideDeleted(restaurantManagementController.getDateOverrides())
+							: RestaurantManagementResponse.fail("Override not found.");
+					break;
+
+				default:
+					mgrResp = RestaurantManagementResponse.fail("Unknown operation.");
+				}
+				client.sendToClient(mgrResp);
 				return;
 			}
 
@@ -391,7 +594,7 @@ public class Server extends AbstractServer {
 			ui.display("SQL Error: " + e.getMessage());
 			e.printStackTrace();
 			try {
-				client.sendToClient(new ReservationResponse(false, "Database error occurred"));
+				client.sendToClient(ReservationResponse.fail("Database error occurred"));
 			} catch (Exception ignored) {
 			}
 		} catch (Exception e) {

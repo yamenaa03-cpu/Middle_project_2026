@@ -7,142 +7,135 @@ import java.util.List;
 import common.entity.Bill;
 import common.entity.Reservation;
 
-/**
- * Response wrapper for reservation-related operations. Carries a success flag,
- * message and optional payload fields depending on the operation performed.
- */
 public class ReservationResponse implements Serializable {
 
     private static final long serialVersionUID = 1L;
 
-    private boolean success;
-    private String message;
-    private List<Reservation> reservations;  
-    private int reservationId;
-	private int confirmationCode;
-	private Double finalAmount;
-	private Bill bill;
+    private final boolean success;
+    private final String message;
 
-	
-	private List<LocalDateTime> suggestedTimes;
+    // payloads (optional)
+    private final List<Reservation> reservations;
+    private final Integer reservationId;
+    private final Integer confirmationCode;
+    private final List<LocalDateTime> suggestedTimes;
 
-	/**
-	 * Basic response carrying success and message.
-	 *
-	 * @param success whether the operation succeeded
-	 * @param message human-readable message
-	 */
-	public ReservationResponse(boolean success, String message) {
-	    this.success = success;
-	    this.message = message;
-	    this.reservations = null;
-	}
+    private final Bill bill;
+    private final Double finalAmount;
 
-
-    /**
-     * Response including a list of reservations.
-     *
-     * @param success whether the operation succeeded
-     * @param message message describing the result
-     * @param reservations list of reservations returned
-     */
-    public ReservationResponse(boolean success, String message, List<Reservation> reservations) {
+    private ReservationResponse(boolean success, String message,
+                                List<Reservation> reservations,
+                                Integer reservationId,
+                                Integer confirmationCode,
+                                List<LocalDateTime> suggestedTimes,
+                                Bill bill,
+                                Double finalAmount) {
         this.success = success;
         this.message = message;
         this.reservations = reservations;
-    }
-    
-    /**
-     * Response including reservations and the id of a created reservation.
-     *
-     * @param success whether the operation succeeded
-     * @param message message describing the result
-     * @param reservations list of reservations returned
-     * @param createdReservationId created reservation id
-     */
-    public ReservationResponse(boolean success, String message, List<Reservation> reservations, int createdReservationId) {
-        this.success = success;
-        this.message = message;
-        this.reservations = reservations;
-        this.reservationId = createdReservationId;
-    }
-    
-    /**
-     * Response used for create operations that may include suggestions.
-     *
-     * @param success whether the operation succeeded
-     * @param message message describing the result
-     * @param reservationId created reservation id (nullable)
-     * @param confirmationCode confirmation code (nullable)
-     * @param suggestedTimes optional alternative time suggestions
-     */
-    public ReservationResponse(boolean success, String message,
-                               Integer reservationId,
-                               Integer confirmationCode,
-                               List<LocalDateTime> suggestedTimes) {
-        this.success = success;
-        this.message = message;
         this.reservationId = reservationId;
         this.confirmationCode = confirmationCode;
         this.suggestedTimes = suggestedTimes;
-    }
-
-    public ReservationResponse(boolean success, String message, Bill bill) {
-        this.success = success;
-        this.message = message;
         this.bill = bill;
+        this.finalAmount = finalAmount;
     }
 
-    
-    /**
-     * Whether the operation succeeded.
-     *
-     * @return true when successful
-     */
-    public boolean isSuccess() { return success; }
+    /* ---------------- Factories ---------------- */
 
-    /**
-     * Human readable message describing the response.
-     *
-     * @return message string
-     */
+    // generic ok/fail
+    public static ReservationResponse ok(String message) {
+        return new ReservationResponse(true, safeMsg(message, "OK"),
+                null, null, null, null, null, null);
+    }
+
+    public static ReservationResponse fail(String message) {
+        return new ReservationResponse(false, safeMsg(message, "Operation failed."),
+                null, null, null, null, null, null);
+    }
+
+    // list payload
+    public static ReservationResponse withReservations(boolean success, String message, List<Reservation> reservations) {
+        return new ReservationResponse(success, safeMsg(message, success ? "OK" : "Operation failed."),
+                reservations, null, null, null, null, null);
+    }
+
+    // create/join waitlist success (id + code)
+    public static ReservationResponse created(int reservationId, int confirmationCode, String message) {
+        return new ReservationResponse(true, safeMsg(message, "Created successfully."),
+                null, reservationId, confirmationCode, null, null, null);
+    }
+
+    // create failure with suggestions
+    public static ReservationResponse createFailedWithSuggestions(String message, List<LocalDateTime> suggestedTimes) {
+        return new ReservationResponse(false, safeMsg(message, "No availability."),
+                null, null, null, suggestedTimes, null, null);
+    }
+
+    // bill payload
+    public static ReservationResponse billLoaded(Bill bill, String message) {
+        if (bill == null) return fail("No bill found.");
+        return new ReservationResponse(true, safeMsg(message, "Bill loaded."),
+                null, null, null, null, bill, null);
+    }
+
+    // payment success (optional final amount)
+    public static ReservationResponse paymentOk(String message, Double finalAmount) {
+        return new ReservationResponse(true, safeMsg(message, "Payment successful."),
+                null, null, null, null, null, finalAmount);
+    }
+
+    // one helper
+    private static String safeMsg(String msg, String fallback) {
+        return (msg == null || msg.isBlank()) ? fallback : msg;
+    }
+    
+ // update result + return fresh list 
+    public static ReservationResponse updated(boolean ok, String okMsg, String failMsg, List<Reservation> reservations) {
+        return withReservations(ok, ok ? okMsg : failMsg, reservations);
+    }
+
+    // success/fail + empty list payload
+    public static ReservationResponse emptyListFail(String message) {
+        return withReservations(false, message, List.of());
+    }
+    public static ReservationResponse emptyListOk(String message) {
+        return withReservations(true, message, List.of());
+    }
+
+    // "Your reservations loaded" / "No reservations found"
+    public static ReservationResponse loadedOrEmpty(List<Reservation> list, String okMsg, String emptyMsg) {
+        if (list == null || list.isEmpty()) {
+            return withReservations(false, emptyMsg, List.of());
+        }
+        return withReservations(true, okMsg, list);
+    }
+
+    // resend confirmation: return success without payload
+    public static ReservationResponse resendResult(int sentCount) {
+        if (sentCount <= 0) return fail("No reservations found.");
+        return ok("Sent " + sentCount + " code/s.");
+    }
+
+    // when you want id+code but no suggestions
+    public static ReservationResponse createdOrFailed(CreateReservationResult r) {
+        if (r == null) return fail("Operation failed.");
+        if (r.isSuccess()) return created(r.getReservationId(), r.getConfirmationCode(), r.getMessage());
+        return createFailedWithSuggestions(r.getMessage(), r.getSuggestions());
+    }
+
+
+    /* ---------------- Getters ---------------- */
+
+    public boolean isSuccess() { return success; }
     public String getMessage() { return message; }
 
-    /**
-     * Returns reservations payload when present.
-     *
-     * @return list of reservations or null
-     */
     public List<Reservation> getReservations() { return reservations; }
 
-    /**
-     * Returns the reservation id included in the response when applicable.
-     *
-     * @return reservation id
-     */
-    public int getReservationId() { return reservationId; }
+    public Integer getReservationId() { return reservationId; }
+    public Integer getConfirmationCode() { return confirmationCode; }
 
-    /**
-     * Returns the confirmation code included in create responses.
-     *
-     * @return confirmation code
-     */
-    public int getConfirmationCode() { return confirmationCode; }
-
-    /**
-     * Returns suggested alternative times when applicable.
-     *
-     * @return list of suggested LocalDateTime values
-     */
     public List<LocalDateTime> getSuggestedTimes() { return suggestedTimes; }
 
-    /**
-     * Returns final amount related to billing flows.
-     *
-     * @return final amount or null
-     */
-    public Double getFinalAmount() { return finalAmount; }
-    
     public Bill getBill() { return bill; }
-
+    public Double getFinalAmount() { return finalAmount; }
 }

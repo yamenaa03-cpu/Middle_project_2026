@@ -4,6 +4,7 @@ import java.io.Serializable;
 import java.time.LocalDateTime;
 
 import common.enums.ReservationStatus;
+import common.enums.ReservationType;
 
 /**
  * Represents a single Reservation entity stored in the database. Shared between
@@ -14,129 +15,150 @@ import common.enums.ReservationStatus;
  */
 public class Reservation implements Serializable {
 
-	private static final long serialVersionUID = 1L;
+        private static final long serialVersionUID = 1L;
 
-	// Core fields
-	private final int reservationId; // PK
-	private final LocalDateTime reservationDateTime; // reservation time (and can be used as seated_at when IN_PROGRESS)
-	private final int numberOfGuests;
-	private final int confirmationCode;
-	private final int customerId; // FK to customer
-	private final LocalDateTime createdAt; // created timestamp
-	private final Integer tableId; // nullable
+        // Core fields
+        private final int reservationId; // PK
+        private final LocalDateTime reservationDateTime; // reservation time (and can be used as seated_at when IN_PROGRESS)
+        private final int numberOfGuests;
+        private final int confirmationCode;
+        private final int customerId; // FK to customer
+        private final LocalDateTime createdAt; // created timestamp
+        private final Integer tableId; // nullable
 
-	// Lifecycle field
-	private final ReservationStatus status; // IMPORTANT
+        // Lifecycle field
+        private final ReservationStatus status; // IMPORTANT
+
+        // Type field - ADVANCE (booked ahead) or WALKIN (from waitlist)
+        private final ReservationType type;
 
 
-	public Reservation(int reservationId, LocalDateTime reservationDateTime, int numberOfGuests, int confirmationCode,
-			int customerId, LocalDateTime createdAt, Integer tableId, ReservationStatus status) {
-		this.reservationId = reservationId;
-		this.reservationDateTime = reservationDateTime;
-		this.numberOfGuests = numberOfGuests;
-		this.confirmationCode = confirmationCode;
-		this.customerId = customerId;
-		this.createdAt = createdAt;
-		this.tableId = tableId;
-		this.status = status;
-	}
+        public Reservation(int reservationId, LocalDateTime reservationDateTime, int numberOfGuests, int confirmationCode,
+                        int customerId, LocalDateTime createdAt, Integer tableId, ReservationStatus status, ReservationType type) {
+                this.reservationId = reservationId;
+                this.reservationDateTime = reservationDateTime;
+                this.numberOfGuests = numberOfGuests;
+                this.confirmationCode = confirmationCode;
+                this.customerId = customerId;
+                this.createdAt = createdAt;
+                this.tableId = tableId;
+                this.status = status;
+                this.type = type;
+        }
 
-	/**
-	 * Construct a Reservation entity.
-	 *
-	 * @param reservationId unique identifier of the reservation
-	 * @param reservationDateTime date and time of the reservation
-	 * @param numberOfGuests number of guests for the reservation
-	 * @param confirmationCode numeric confirmation code given to the customer
-	 * @param customerId id of the customer who made the reservation
-	 * @param createdAt timestamp when the reservation was created
-	 * @param tableId optional table id assigned to the reservation (nullable)
-	 * @param status current lifecycle status of the reservation
-	 */
-	public int getReservationId() {
-		return reservationId;
-	}
+        // Constructor for backward compatibility (defaults to ADVANCE)
+        public Reservation(int reservationId, LocalDateTime reservationDateTime, int numberOfGuests, int confirmationCode,
+                        int customerId, LocalDateTime createdAt, Integer tableId, ReservationStatus status) {
+                this(reservationId, reservationDateTime, numberOfGuests, confirmationCode,
+                        customerId, createdAt, tableId, status, ReservationType.ADVANCE);
+        }
 
-	/**
-	 * Returns the reservation identifier.
-	 *
-	 * @return reservation id
-	 */
+        /**
+         * Construct a Reservation entity.
+         *
+         * @param reservationId unique identifier of the reservation
+         * @param reservationDateTime date and time of the reservation
+         * @param numberOfGuests number of guests for the reservation
+         * @param confirmationCode numeric confirmation code given to the customer
+         * @param customerId id of the customer who made the reservation
+         * @param createdAt timestamp when the reservation was created
+         * @param tableId optional table id assigned to the reservation (nullable)
+         * @param status current lifecycle status of the reservation
+         */
+        public int getReservationId() {
+                return reservationId;
+        }
 
-	public LocalDateTime getReservationDateTime() {
-		return reservationDateTime;
-	}
+        /**
+         * Returns the reservation identifier.
+         *
+         * @return reservation id
+         */
 
-	/**
-	 * Returns the date and time of the reservation.
-	 *
-	 * @return reservation date and time
-	 */
+        public LocalDateTime getReservationDateTime() {
+                return reservationDateTime;
+        }
 
-	public int getNumberOfGuests() {
-		return numberOfGuests;
-	}
+        /**
+         * Returns the date and time of the reservation.
+         *
+         * @return reservation date and time
+         */
 
-	/**
-	 * Returns the number of guests for this reservation.
-	 *
-	 * @return number of guests
-	 */
+        public int getNumberOfGuests() {
+                return numberOfGuests;
+        }
 
-	public int getConfirmationCode() {
-		return confirmationCode;
-	}
+        /**
+         * Returns the number of guests for this reservation.
+         *
+         * @return number of guests
+         */
 
-	/**
-	 * Returns the numeric confirmation code provided to the customer.
-	 *
-	 * @return confirmation code
-	 */
+        public int getConfirmationCode() {
+                return confirmationCode;
+        }
 
-	public int getCustomerId() {
-		return customerId;
-	}
+        /**
+         * Returns the numeric confirmation code provided to the customer.
+         *
+         * @return confirmation code
+         */
 
-	/**
-	 * Returns the id of the customer who created the reservation.
-	 *
-	 * @return customer id
-	 */
+        public int getCustomerId() {
+                return customerId;
+        }
 
-	public LocalDateTime getCreatedAt() {
-		return createdAt;
-	}
+        /**
+         * Returns the id of the customer who created the reservation.
+         *
+         * @return customer id
+         */
 
-	/**
-	 * Returns the creation timestamp for the reservation.
-	 *
-	 * @return creation timestamp
-	 */
+        public LocalDateTime getCreatedAt() {
+                return createdAt;
+        }
 
-	public Integer getTableId() {
-		return tableId;
-	}
+        /**
+         * Returns the creation timestamp for the reservation.
+         *
+         * @return creation timestamp
+         */
 
-	/**
-	 * Returns the assigned table id, or null if none assigned.
-	 *
-	 * @return table id or null
-	 */
+        public Integer getTableId() {
+                return tableId;
+        }
 
-	public ReservationStatus getStatus() {
-		return status;
-	}
+        /**
+         * Returns the assigned table id, or null if none assigned.
+         *
+         * @return table id or null
+         */
 
-	/**
-	 * Returns the current lifecycle status of the reservation.
-	 *
-	 * @return reservation status
-	 */
+        public ReservationStatus getStatus() {
+                return status;
+        }
 
-	@Override
-	public String toString() {
-		return "Reservation #" + reservationId + " | status=" + status + " | dateTime=" + reservationDateTime
-				+ " | guests=" + numberOfGuests + " | confirmationCode=" + confirmationCode + " | customerId="
-				+ customerId + " | createdAt=" + createdAt + " | tableId=" + tableId;
-	}
+        /**
+         * Returns the current lifecycle status of the reservation.
+         *
+         * @return reservation status
+         */
+
+        public ReservationType getType() {
+                return type;
+        }
+
+        /**
+         * Returns the reservation type (ADVANCE or WALKIN).
+         *
+         * @return reservation type
+         */
+
+        @Override
+        public String toString() {
+                return "Reservation #" + reservationId + " | type=" + type + " | status=" + status + " | dateTime=" + reservationDateTime
+                                + " | guests=" + numberOfGuests + " | confirmationCode=" + confirmationCode + " | customerId="
+                                + customerId + " | createdAt=" + createdAt + " | tableId=" + tableId;
+        }
 }

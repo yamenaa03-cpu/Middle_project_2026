@@ -24,8 +24,8 @@ public class ReservationRequest implements Serializable {
 	private int reservationId;
 	private LocalDateTime reservationDateTime;
 	private int numberOfGuests;
-	private int customerId;
-	
+	private Integer targetCustomerId;
+
 	private int billId;
 
 	// Guest identification fields (for CREATE_GUEST_RESERVATION / JOIN_WAITLIST,
@@ -34,6 +34,9 @@ public class ReservationRequest implements Serializable {
 	private String phone;
 	private String email;
 	private int confirmationCode;
+
+	// target customer identification (for employee actions)
+	private String targetSubscriptionCode;
 
 	/*
 	 * identify the request as an instance of Reservation request class and saves
@@ -44,6 +47,12 @@ public class ReservationRequest implements Serializable {
 		req.operation = ReservationOperation.GET_ALL_RESERVATIONS;
 		return req;
 	}
+	
+	public static ReservationRequest createGetWaitlistRequest() {
+        ReservationRequest req = new ReservationRequest();
+        req.operation = ReservationOperation.GET_WAITLIST;
+        return req;
+}
 
 	/*
 	 * identify the request as an instance of Reservation request class and saves
@@ -157,30 +166,102 @@ public class ReservationRequest implements Serializable {
 		req.email = email;
 		return req;
 	}
-	
+
 	public static ReservationRequest createGetPayableReservationsRequest() {
 		ReservationRequest req = new ReservationRequest();
 		req.operation = ReservationOperation.GET_CUSTOMER_RESERVATIONS_FOR_CHECKOUT;
 		return req;
 	}
-	
+
 	public static ReservationRequest createGetPayableReservationByConfirmationCodeRequest(int confirmationCode) {
 		ReservationRequest req = new ReservationRequest();
 		req.operation = ReservationOperation.GET_RESERVATION_By_CONFIRMATION_CODE_FOR_CHECKOUT;
 		req.confirmationCode = confirmationCode;
 		return req;
 	}
-	
+
 	public static ReservationRequest createGetBillForPayingRequest(int reservationId) {
-	    ReservationRequest req = new ReservationRequest();
-	    req.operation = ReservationOperation.GET_BILL_FOR_PAYING;
-	    req.reservationId = reservationId;
-	    return req;
+		ReservationRequest req = new ReservationRequest();
+		req.operation = ReservationOperation.GET_BILL_FOR_PAYING;
+		req.reservationId = reservationId;
+		return req;
 	}
 
 	public static ReservationRequest createPayBillByIdRequest(int billId) {
 		ReservationRequest req = new ReservationRequest();
 		req.operation = ReservationOperation.PAY_BILL;
+		req.billId = billId;
+		return req;
+	}
+
+	// Employee on-behalf factory methods
+	public static ReservationRequest createCreateReservationOnBehalfRequest(int targetCustomerId,
+			LocalDateTime dateTime, int guests) {
+		ReservationRequest req = new ReservationRequest();
+		req.operation = ReservationOperation.CREATE_RESERVATION;
+		req.targetCustomerId = targetCustomerId;
+		req.reservationDateTime = dateTime;
+		req.numberOfGuests = guests;
+		return req;
+	}
+
+	public static ReservationRequest createJoinWaitlistOnBehalfRequest(int targetCustomerId, int guests) {
+		ReservationRequest req = new ReservationRequest();
+		req.operation = ReservationOperation.JOIN_WAITLIST;
+		req.targetCustomerId = targetCustomerId;
+		req.numberOfGuests = guests;
+		return req;
+	}
+
+	public static ReservationRequest createGetCancellableReservationsOnBehalfRequest(int targetCustomerId) {
+		ReservationRequest req = new ReservationRequest();
+		req.operation = ReservationOperation.GET_CUSTOMER_RESERVATIONS_FOR_CANCELLATION;
+		req.targetCustomerId = targetCustomerId;
+		return req;
+	}
+
+	public static ReservationRequest createCancelReservationOnBehalfRequest(int targetCustomerId, int reservationId) {
+		ReservationRequest req = new ReservationRequest();
+		req.operation = ReservationOperation.CANCEL_RESERVATION;
+		req.targetCustomerId = targetCustomerId;
+		req.reservationId = reservationId;
+		return req;
+	}
+
+	public static ReservationRequest createGetReceivableReservationsOnBehalfRequest(int targetCustomerId) {
+		ReservationRequest req = new ReservationRequest();
+		req.operation = ReservationOperation.GET_CUSTOMER_RESERVATIONS_FOR_RECEIVING;
+		req.targetCustomerId = targetCustomerId;
+		return req;
+	}
+
+	public static ReservationRequest createReceiveTableOnBehalfRequest(int targetCustomerId, int reservationId) {
+		ReservationRequest req = new ReservationRequest();
+		req.operation = ReservationOperation.RECEIVE_TABLE;
+		req.targetCustomerId = targetCustomerId;
+		req.reservationId = reservationId;
+		return req;
+	}
+
+	public static ReservationRequest createGetPayableReservationsOnBehalfRequest(int targetCustomerId) {
+		ReservationRequest req = new ReservationRequest();
+		req.operation = ReservationOperation.GET_CUSTOMER_RESERVATIONS_FOR_CHECKOUT;
+		req.targetCustomerId = targetCustomerId;
+		return req;
+	}
+
+	public static ReservationRequest createGetBillForPayingOnBehalfRequest(int targetCustomerId, int reservationId) {
+		ReservationRequest req = new ReservationRequest();
+		req.operation = ReservationOperation.GET_BILL_FOR_PAYING;
+		req.targetCustomerId = targetCustomerId;
+		req.reservationId = reservationId;
+		return req;
+	}
+
+	public static ReservationRequest createPayBillOnBehalfRequest(int targetCustomerId, int billId) {
+		ReservationRequest req = new ReservationRequest();
+		req.operation = ReservationOperation.PAY_BILL;
+		req.targetCustomerId = targetCustomerId;
 		req.billId = billId;
 		return req;
 	}
@@ -219,9 +300,16 @@ public class ReservationRequest implements Serializable {
 	public int getConfirmationCode() {
 		return confirmationCode;
 	}
-	
+
 	public int getBillId() {
 		return billId;
 	}
 
+	public String getTargetSubscriptionCode() {
+		return targetSubscriptionCode;
+	}
+	
+	public Integer getTargetCustomerId() {
+		return targetCustomerId;
+	}
 }

@@ -35,6 +35,10 @@ public class ReservationController {
 		return db.getAllReservations();
 	}
 
+public List<Reservation> getWaitlistReservations() throws SQLException {
+        return db.getWaitlistReservations();
+}
+
 	public boolean updateReservation(int reservationId, LocalDateTime newDateTime, int newGuests) throws SQLException {
 
 		if (reservationId <= 0)

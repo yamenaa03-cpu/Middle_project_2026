@@ -7,6 +7,7 @@ import java.io.Serializable;
  */
 public enum ReservationOperation implements Serializable  {
     GET_ALL_RESERVATIONS,
+    GET_WAITLIST,
     UPDATE_RESERVATION_FIELDS,
     CREATE_RESERVATION,
     CANCEL_RESERVATION,
@@ -18,7 +19,6 @@ public enum ReservationOperation implements Serializable  {
     GET_RESERVATION_By_CONFIRMATION_CODE_FOR_RECEIVING,
     GET_RESERVATION_By_CONFIRMATION_CODE_FOR_CHECKOUT,
     JOIN_WAITLIST,
-    JOIN_GUEST,WAITLIST,
     RECEIVE_TABLE,
     GET_BILL_FOR_PAYING,
     PAY_BILL

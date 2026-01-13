@@ -1,7 +1,7 @@
 package clientGUI;
 
 import client.Client;
-import common.dto.Authentication.CustomerAuthResponse;
+import common.dto.Authentication.SubscriberAuthResponse;
 import common.dto.Reservation.ReservationResponse;
 import common.entity.Customer;
 import common.entity.Reservation;
@@ -140,7 +140,7 @@ public class PersonalSpaceController {
     // ===================== RESPONSES FROM MAIN CONTROLLER =====================
 
     // Profile comes via CustomerAuthResponse (GET_PROFILE / UPDATE_PROFILE)
-    public void onAuthResponse(CustomerAuthResponse resp) {
+    public void onAuthResponse(SubscriberAuthResponse resp) {
         Platform.runLater(() -> {
             if (!resp.isSuccess()) {
                 infoStatusLabel.setText(resp.getMessage());

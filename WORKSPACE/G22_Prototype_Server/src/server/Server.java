@@ -110,7 +110,6 @@ public class Server extends AbstractServer {
 				SubscriberAuthRequest authReq = (SubscriberAuthRequest) msg;
 
 				SubscriberAuthResponse authResp;
-
 				switch (authReq.getOperation()) {
 
 				case LOGOUT:
@@ -148,10 +147,10 @@ public class Server extends AbstractServer {
 
 				default:
 					authResp = new SubscriberAuthResponse(false, "Invalid Operation!", null, null);
-
 					client.sendToClient(authResp);// returns response to the client
 					return;
 				}
+				client.sendToClient(authResp);// returns response to the client
 			}
 
 			if (msg instanceof ReservationRequest) {

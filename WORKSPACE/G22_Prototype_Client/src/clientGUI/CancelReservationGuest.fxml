@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.Button?>
+<?import javafx.scene.control.Hyperlink?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.control.TextField?>
+<?import javafx.scene.layout.BorderPane?>
+<?import javafx.scene.layout.HBox?>
+<?import javafx.scene.layout.VBox?>
+
+<BorderPane prefHeight="520.0" prefWidth="820.0" style="-fx-background-color: #ffffff;" xmlns="http://javafx.com/javafx/21" xmlns:fx="http://javafx.com/fxml/1" fx:controller="clientGUI.CancelReservationController">
+
+    <!-- ===== TOP: back to menu ===== -->
+    <top>
+        <HBox alignment="CENTER_LEFT" spacing="8" style="-fx-padding: 18 22 8 22;">
+            <Hyperlink fx:id="backToMenuLink" onAction="#onBackToMenu" style="-fx-text-fill: #7a7a7a; -fx-font-size: 12px; -fx-underline: false;" text="← Back to Menu" />
+        </HBox>
+    </top>
+
+    <!-- ===== CENTER CONTENT ===== -->
+    <center>
+        <VBox alignment="TOP_CENTER" spacing="18" style="-fx-padding: 25 0 0 0;">
+
+            <Label style="-fx-font-size: 30px; -fx-font-weight: 800; -fx-text-fill: #222222;" text="Cancel Reservation" />
+
+            <VBox alignment="CENTER" prefWidth="520" spacing="10">
+                <Label style="-fx-text-fill: #777777; -fx-font-size: 12px;" text="Confirmation Code" />
+
+                <!-- text field with rounded border like the screenshot -->
+                <TextField fx:id="codeField" prefHeight="46" prefWidth="520" promptText="XXXXXX" style="-fx-background-color: #f7f7f7;                                   -fx-background-radius: 14;                                   -fx-border-color: #dedede;                                   -fx-border-radius: 14;                                   -fx-border-width: 1;                                   -fx-padding: 0 14 0 14;                                   -fx-font-size: 14px;" />
+
+                <Hyperlink fx:id="forgotCodeLink" onAction="#onForgotCode" style="-fx-text-fill: #8b8b8b; -fx-font-size: 12px; -fx-underline: true;" text="Forgot your code?" />
+            </VBox>
+
+            <!-- Buttons row (Back + Continue) -->
+            <HBox alignment="CENTER" prefWidth="520" spacing="16">
+                <padding>
+                    <Insets bottom="0" left="0" right="0" top="10" />
+                </padding>
+
+                <Button fx:id="continueBtn" onAction="#onContinue" prefHeight="40" prefWidth="380.0" style="-fx-background-color: #5a3a3a;                                -fx-background-radius: 14;                                -fx-text-fill: white;                                -fx-font-size: 13px;                                -fx-font-weight: 800;" text="Continue" />
+            </HBox>
+
+            <!-- status label (optional) -->
+            <Label fx:id="statusLabel" prefWidth="520" style="-fx-text-fill: #b00020; -fx-font-size: 12px;" text="" wrapText="true" />
+
+        </VBox>
+    </center>
+
+</BorderPane>

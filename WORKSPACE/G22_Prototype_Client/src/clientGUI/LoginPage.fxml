@@ -16,11 +16,16 @@
             <padding>
                 <Insets bottom="18" left="18" right="18" top="18" />
             </padding>
-
-            <Label prefHeight="32.0" prefWidth="162.0" style="-fx-font-size: 22px; -fx-font-weight: bold;" text="BISTRO LOGIN">
-            <font>
-               <Font size="20.0" />
-            </font></Label>
+         <BorderPane prefWidth="484.0">
+            <center>
+      
+                  <Label prefHeight="32.0" prefWidth="162.0" style="-fx-font-size: 22px; -fx-font-weight: bold;" text="BISTRO LOGIN">
+                  <font>
+                     <Font size="20.0" />
+                  </font>
+               </Label>
+            </center>
+         </BorderPane>
 
             <HBox alignment="CENTER" spacing="12" />
 
@@ -29,7 +34,7 @@
                 <Label text="Membership code" />
                 <TextField fx:id="membershipCodeField" promptText="Enter subscription code" />
             </VBox>
-<Button mnemonicParsing="false" onAction="#onLogin" prefHeight="45.0" prefWidth="234.0" style="-fx-font: 20px Arial;" text="Log In">
+<Button mnemonicParsing="false" onAction="#onLogin" prefHeight="45.0" prefWidth="234.0" style="-fx-font: 20px Arial;" styleClass="topButton" stylesheets="@bistro.css" text="Log In">
     <font>
         <Font name="System Bold" size="20.0" />
     </font>

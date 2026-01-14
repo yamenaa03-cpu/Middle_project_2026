@@ -64,21 +64,21 @@ public class UserAccountRequest implements Serializable {
 		return r;
 	}
 	
-	public static UserAccountRequest lookupCustomerBySubscriptionCode(String subscriptionCode) {
+	public static UserAccountRequest createLookupCustomerBySubscriptionCodeRequest(String subscriptionCode) {
         UserAccountRequest r = new UserAccountRequest();
         r.operation = UserAccountOperation.LOOKUP_CUSTOMER_BY_SUBSCRIPTION_CODE;
         r.subscriptionCode = subscriptionCode;
         return r;
     }
 
-    public static UserAccountRequest lookupCustomerByPhone(String phone) {
+    public static UserAccountRequest createLookupCustomerByPhoneRequest(String phone) {
         UserAccountRequest r = new UserAccountRequest();
         r.operation = UserAccountOperation.LOOKUP_CUSTOMER_BY_PHONE;
         r.phone = phone;
         return r;
     }
 
-    public static UserAccountRequest lookupCustomerByEmail(String email) {
+    public static UserAccountRequest createLookupCustomerByEmailRequest(String email) {
         UserAccountRequest r = new UserAccountRequest();
         r.operation = UserAccountOperation.LOOKUP_CUSTOMER_BY_EMAIL;
         r.email = email;

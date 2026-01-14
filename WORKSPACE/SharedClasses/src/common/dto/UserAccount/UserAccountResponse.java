@@ -5,6 +5,7 @@ import java.io.Serializable;
 import common.entity.Customer;
 import common.enums.EmployeeRole;
 import common.enums.LoggedInStatus;
+import common.enums.UserAccountOperation;
 
 public class UserAccountResponse implements Serializable {
 	private static final long serialVersionUID = 1L;
@@ -25,9 +26,11 @@ public class UserAccountResponse implements Serializable {
 	private final Integer employeeId;
 	private final EmployeeRole employeeRole;
 
+	private final UserAccountOperation operation;
+
 	private UserAccountResponse(boolean success, String message, Integer subscriberId, String fullName,
 			LoggedInStatus status, String subscriptionCode, Customer customer, Integer employeeId,
-			EmployeeRole employeeRole) {
+			EmployeeRole employeeRole, UserAccountOperation operation) {
 		this.success = success;
 		this.message = message;
 		this.subscriberId = subscriberId;
@@ -37,6 +40,7 @@ public class UserAccountResponse implements Serializable {
 		this.customer = customer;
 		this.employeeId = employeeId;
 		this.employeeRole = employeeRole;
+		this.operation = operation;
 	}
 
 	/* ---------- Factories ---------- */
@@ -44,69 +48,69 @@ public class UserAccountResponse implements Serializable {
 	// LOGIN success
 	public static UserAccountResponse loginOk(Integer subscriberId, String fullName) {
 		return new UserAccountResponse(true, "Login successful.", subscriberId, fullName, LoggedInStatus.SUBSCRIBER,
-				null, null, null, null);
+				null, null, null, null, UserAccountOperation.SUBSCRIBER_LOG_IN);
 	}
 
 	// LOGIN fail
 	public static UserAccountResponse loginFail(String message) {
 		return new UserAccountResponse(false, safeMsg(message, "Login failed."), null, null,
-				LoggedInStatus.NOT_LOGGED_IN, null, null, null, null);
+				LoggedInStatus.NOT_LOGGED_IN, null, null, null, null, UserAccountOperation.SUBSCRIBER_LOG_IN);
 	}
 
 	// STATUS: not logged in
 	public static UserAccountResponse statusNotLoggedIn() {
 		return new UserAccountResponse(true, "Not logged in.", null, null, LoggedInStatus.NOT_LOGGED_IN, null, null,
-				null, null);
+				null, null, UserAccountOperation.LOGGED_IN_STATUS);
 	}
 
 	// STATUS: subscriber logged in
 	public static UserAccountResponse statusSubscriber(Integer subscriberId, String fullName) {
 		return new UserAccountResponse(true, "Subscriber is logged in.", subscriberId, fullName,
-				LoggedInStatus.SUBSCRIBER, null, null, null, null);
+				LoggedInStatus.SUBSCRIBER, null, null, null, null, UserAccountOperation.LOGGED_IN_STATUS);
 	}
-	
+
 	public static UserAccountResponse statusManager(Integer employeeId, String fullName) {
-		return new UserAccountResponse(true, "Manager is logged in.", null, fullName,
-				LoggedInStatus.MANAGER, null, null, employeeId, EmployeeRole.MANAGER);
+		return new UserAccountResponse(true, "Manager is logged in.", null, fullName, LoggedInStatus.MANAGER, null,
+				null, employeeId, EmployeeRole.MANAGER, UserAccountOperation.LOGGED_IN_STATUS);
 	}
-	
+
 	public static UserAccountResponse statusRep(Integer employeeId, String fullName) {
-		return new UserAccountResponse(true, "Rep is logged in.", null, fullName,
-				LoggedInStatus.REPRESENTATIVE, null, null, employeeId, EmployeeRole.REPRESENTATIVE);
+		return new UserAccountResponse(true, "Rep is logged in.", null, fullName, LoggedInStatus.REPRESENTATIVE, null,
+				null, employeeId, EmployeeRole.REPRESENTATIVE, UserAccountOperation.LOGGED_IN_STATUS);
 	}
 
 	// LOGOUT success
 	public static UserAccountResponse logoutOk() {
 		return new UserAccountResponse(true, "Logged out successfully.", null, null, LoggedInStatus.NOT_LOGGED_IN, null,
-				null, null, null);
+				null, null, null, UserAccountOperation.LOGOUT);
 	}
 
 	// LOGOUT already logged out
 	public static UserAccountResponse alreadyLoggedOut() {
 		return new UserAccountResponse(false, "Already logged out.", null, null, LoggedInStatus.NOT_LOGGED_IN, null,
-				null, null, null);
+				null, null, null, UserAccountOperation.LOGOUT);
 	}
 
 	// REGISTER success
 	public static UserAccountResponse registerOk(String subscriptionCode) {
 		return new UserAccountResponse(true, "Subscriber registered successfully.", null, null, null, subscriptionCode,
-				null, null, null);
+				null, null, null, UserAccountOperation.REGISTER_SUBSCRIBER);
 	}
 
 	// REGISTER fail
 	public static UserAccountResponse registerFail(String message) {
 		return new UserAccountResponse(false, safeMsg(message, "Subscriber registration failed."), null, null, null,
-				null, null, null, null);
+				null, null, null, null, UserAccountOperation.REGISTER_SUBSCRIBER);
 	}
 
 	public static UserAccountResponse subscriberProfileOk(Customer c) {
 		return new UserAccountResponse(true, "Subscriber profile loaded.", c.getCustomerId(), c.getFullName(),
-				LoggedInStatus.SUBSCRIBER, null, c, null, null);
+				LoggedInStatus.SUBSCRIBER, null, c, null, null, UserAccountOperation.GET_SUBSCRIBER_PROFILE);
 	}
 
 	public static UserAccountResponse subscriberProfileFail(String msg) {
 		return new UserAccountResponse(false, safeMsg(msg, "Profile not found."), null, null, null, null, null, null,
-				null);
+				null, UserAccountOperation.GET_SUBSCRIBER_PROFILE);
 	}
 
 	public static UserAccountResponse employeeLoginOk(int employeeId, EmployeeRole employeeRole, String fullName) {
@@ -114,28 +118,28 @@ public class UserAccountResponse implements Serializable {
 				: LoggedInStatus.REPRESENTATIVE;
 
 		return new UserAccountResponse(true, "Employee login successful.", null, fullName, st, null, null, employeeId,
-				employeeRole);
+				employeeRole, UserAccountOperation.EMPLOYEE_LOG_IN);
 	}
 
 	public static UserAccountResponse employeeLoginFail(String msg) {
 		return new UserAccountResponse(false, safeMsg(msg, "Employee login failed."), null, null,
-				LoggedInStatus.NOT_LOGGED_IN, null, null, null, null);
+				LoggedInStatus.NOT_LOGGED_IN, null, null, null, null, UserAccountOperation.EMPLOYEE_LOG_IN);
 	}
-	
-    public static UserAccountResponse customerFound(Customer c) {
-        return new UserAccountResponse(true, "Customer found.", c.getCustomerId(), c.getFullName(),
-                null, null, c, null, null);
-    }
 
-    public static UserAccountResponse customerNotFound(String msg) {
-        return new UserAccountResponse(false, safeMsg(msg, "Customer not found."), null, null, null, null, null, null,
-                null);
-    }
+	public static UserAccountResponse customerFound(Customer c, UserAccountOperation operation) {
+		return new UserAccountResponse(true, "Customer found.", c.getCustomerId(), c.getFullName(), null, null, c, null,
+				null, operation);
+	}
+
+	public static UserAccountResponse customerNotFound(String msg, UserAccountOperation operation) {
+		return new UserAccountResponse(false, safeMsg(msg, "Customer not found."), null, null, null, null, null, null,
+				null, operation);
+	}
 
 	// generic fail (fallback)
-	public static UserAccountResponse fail(String message) {
+	public static UserAccountResponse fail(String message, UserAccountOperation operation) {
 		return new UserAccountResponse(false, safeMsg(message, "Operation failed."), null, null, null, null, null, null,
-				null);
+				null, operation);
 	}
 
 	private static String safeMsg(String msg, String fallback) {
@@ -178,6 +182,10 @@ public class UserAccountResponse implements Serializable {
 
 	public EmployeeRole getEmployeeRole() {
 		return employeeRole;
+	}
+
+	public UserAccountOperation getOperation() {
+		return operation;
 	}
 
 }

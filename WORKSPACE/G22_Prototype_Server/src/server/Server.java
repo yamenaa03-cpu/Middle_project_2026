@@ -139,7 +139,7 @@ public class Server extends AbstractServer {
 		try {
 			// if DB not initialized
 			if (db == null) {
-				client.sendToClient(ReservationResponse.fail("Database not configured!"));
+				client.sendToClient(ReservationResponse.fail("Database not configured!", null));
 				ui.display("Client attempted Request but DB not configured.");
 				return;
 			}
@@ -227,7 +227,7 @@ public class Server extends AbstractServer {
 
 				case GET_SUBSCRIBER_PROFILE:
 					if (sessionSubscriberId == null) {
-						userResp = UserAccountResponse.fail("Not logged in.");
+						userResp = UserAccountResponse.fail("Not logged in.", userReq.getOperation());
 					} else {
 						Customer c = db.getSubscribedCustomerById(sessionSubscriberId);
 						userResp = (c != null) ? UserAccountResponse.subscriberProfileOk(c)
@@ -237,37 +237,46 @@ public class Server extends AbstractServer {
 
 				case LOOKUP_CUSTOMER_BY_SUBSCRIPTION_CODE:
 					if (!isEmployeeLoggedIn) {
-						userResp = UserAccountResponse.fail("Not authorized. Employee login required.");
+						userResp = UserAccountResponse.fail("Not authorized. Employee login required.",
+								userReq.getOperation());
 					} else {
 						Customer cByCode = userAccountController
 								.lookupCustomerBySubscriptionCode(userReq.getSubscriptionCode());
-						userResp = (cByCode != null) ? UserAccountResponse.customerFound(cByCode)
-								: UserAccountResponse.customerNotFound("Customer not found by subscription code.");
+						userResp = (cByCode != null)
+								? UserAccountResponse.customerFound(cByCode, userReq.getOperation())
+								: UserAccountResponse.customerNotFound("Customer not found by subscription code.",
+										userReq.getOperation());
 					}
 					break;
 
 				case LOOKUP_CUSTOMER_BY_PHONE:
 					if (!isEmployeeLoggedIn) {
-						userResp = UserAccountResponse.fail("Not authorized. Employee login required.");
+						userResp = UserAccountResponse.fail("Not authorized. Employee login required.",
+								userReq.getOperation());
 					} else {
 						Customer cByPhone = userAccountController.lookupCustomerByPhone(userReq.getPhone());
-						userResp = (cByPhone != null) ? UserAccountResponse.customerFound(cByPhone)
-								: UserAccountResponse.customerNotFound("Customer not found by phone.");
+						userResp = (cByPhone != null)
+								? UserAccountResponse.customerFound(cByPhone, userReq.getOperation())
+								: UserAccountResponse.customerNotFound("Customer not found by phone.",
+										userReq.getOperation());
 					}
 					break;
 
 				case LOOKUP_CUSTOMER_BY_EMAIL:
 					if (!isEmployeeLoggedIn) {
-						userResp = UserAccountResponse.fail("Not authorized. Employee login required.");
+						userResp = UserAccountResponse.fail("Not authorized. Employee login required.",
+								userReq.getOperation());
 					} else {
 						Customer cByEmail = userAccountController.lookupCustomerByEmail(userReq.getEmail());
-						userResp = (cByEmail != null) ? UserAccountResponse.customerFound(cByEmail)
-								: UserAccountResponse.customerNotFound("Customer not found by email.");
+						userResp = (cByEmail != null)
+								? UserAccountResponse.customerFound(cByEmail, userReq.getOperation())
+								: UserAccountResponse.customerNotFound("Customer not found by email.",
+										userReq.getOperation());
 					}
 					break;
 
 				default:
-					userResp = UserAccountResponse.fail("Invalid Operation!");
+					userResp = UserAccountResponse.fail("Invalid Operation!", userReq.getOperation());
 				}
 				client.sendToClient(userResp);// returns response to the client
 				return;
@@ -295,20 +304,20 @@ public class Server extends AbstractServer {
 
 				case GET_ALL_RESERVATIONS:
 					if (!isEmployeeLoggedIn) {
-						resResp = ReservationResponse.fail("Not authorized.");
+						resResp = ReservationResponse.fail("Not authorized.", resReq.getOperation());
 						break;
 					}
 					resResp = ReservationResponse.withReservations(true, "Reservations loaded.",
-							reservationController.getAllReservations());
+							reservationController.getAllReservations(), resReq.getOperation());
 					break;
 
 				case GET_WAITLIST:
 					if (!isEmployeeLoggedIn) {
-						resResp = ReservationResponse.fail("Not authorized.");
+						resResp = ReservationResponse.fail("Not authorized.", resReq.getOperation());
 						break;
 					}
 					resResp = ReservationResponse.withReservations(true, "Waitlist loaded.",
-							reservationController.getWaitlistReservations());
+							reservationController.getWaitlistReservations(), resReq.getOperation());
 					break;
 
 				case UPDATE_RESERVATION_FIELDS:
@@ -316,7 +325,7 @@ public class Server extends AbstractServer {
 							resReq.getReservationDateTime(), resReq.getNumberOfGuests());
 
 					resResp = ReservationResponse.updated(ok, "Reservation updated.", "Reservation not found.",
-							reservationController.getAllReservations());
+							reservationController.getAllReservations(), resReq.getOperation());
 
 					// checks if the Reservation was updated correctly and returns a response
 					// according to the result
@@ -335,11 +344,12 @@ public class Server extends AbstractServer {
 
 					if (r.isSuccess()) {
 						resResp = ReservationResponse.created(r.getReservationId(), r.getConfirmationCode(),
-								r.getMessage());
+								r.getMessage(), resReq.getOperation());
 
 						notificationController.sendReservationConfirmation(r.getReservationId());
 					} else
-						resResp = ReservationResponse.createFailedWithSuggestions(r.getMessage(), r.getSuggestions());
+						resResp = ReservationResponse.createFailedWithSuggestions(r.getMessage(), r.getSuggestions(),
+								resReq.getOperation());
 
 					break;
 
@@ -354,17 +364,18 @@ public class Server extends AbstractServer {
 						}
 					}
 
-					resResp = ReservationResponse.resendResult(sentCount);
+					resResp = ReservationResponse.resendResult(sentCount, resReq.getOperation());
 					break;
 
 				case GET_CUSTOMER_RESERVATIONS_FOR_CANCELLATION:
 					if (effectiveCustomerId == null) {
-						resResp = ReservationResponse.emptyListFail("Please enter confirmation code.");
+						resResp = ReservationResponse.emptyListFail("Please enter confirmation code.",
+								resReq.getOperation());
 					} else {
 						List<Reservation> canList = reservationController
 								.loadReservationsForCancellation(effectiveCustomerId);
 						resResp = ReservationResponse.loadedOrEmpty(canList, "Your reservations loaded.",
-								"No reservations found.");
+								"No reservations found.", resReq.getOperation());
 					}
 					break;
 
@@ -374,8 +385,9 @@ public class Server extends AbstractServer {
 
 					resResp = (canReservation != null)
 							? ReservationResponse.withReservations(true, "Your reservation loaded.",
-									List.of(canReservation))
-							: ReservationResponse.withReservations(false, "No reservations found.", List.of());
+									List.of(canReservation), resReq.getOperation())
+							: ReservationResponse.withReservations(false, "No reservations found.", List.of(),
+									resReq.getOperation());
 					break;
 
 				case CANCEL_RESERVATION:
@@ -385,9 +397,11 @@ public class Server extends AbstractServer {
 
 					if (effectiveCustomerId != null) {
 						resResp = ReservationResponse.withReservations(cr.isSuccess(), cr.getMessage(),
-								reservationController.loadReservationsForCancellation(effectiveCustomerId));
+								reservationController.loadReservationsForCancellation(effectiveCustomerId),
+								resReq.getOperation());
 					} else {
-						resResp = ReservationResponse.withReservations(cr.isSuccess(), cr.getMessage(), List.of());
+						resResp = ReservationResponse.withReservations(cr.isSuccess(), cr.getMessage(), List.of(),
+								resReq.getOperation());
 					}
 
 					if (cr.isSuccess() && (cr.getReservationStatusBefore() == ReservationStatus.ACTIVE
@@ -412,20 +426,21 @@ public class Server extends AbstractServer {
 
 					if (jwr.isSuccess()) {
 						resResp = ReservationResponse.created(jwr.getReservationId(), jwr.getConfirmationCode(),
-								jwr.getMessage());
+								jwr.getMessage(), resReq.getOperation());
 					} else {
-						resResp = ReservationResponse.fail(jwr.getMessage());
+						resResp = ReservationResponse.fail(jwr.getMessage(), resReq.getOperation());
 					}
 					break;
 
 				case GET_CUSTOMER_RESERVATIONS_FOR_RECEIVING:
 					if (effectiveCustomerId == null) {
-						resResp = ReservationResponse.emptyListFail("Please enter confirmation code.");
+						resResp = ReservationResponse.emptyListFail("Please enter confirmation code.",
+								resReq.getOperation());
 					} else {
 						List<Reservation> recList = reservationController
 								.loadReservationsForReceiving(effectiveCustomerId);
 						resResp = ReservationResponse.loadedOrEmpty(recList, "Your reservations loaded.",
-								"No reservations found.");
+								"No reservations found.", resReq.getOperation());
 					}
 					break;
 
@@ -435,14 +450,15 @@ public class Server extends AbstractServer {
 
 					resResp = (recReservation != null)
 							? ReservationResponse.withReservations(true, "Your reservation loaded.",
-									List.of(recReservation))
-							: ReservationResponse.withReservations(false, "No reservations found.", List.of());
+									List.of(recReservation), resReq.getOperation())
+							: ReservationResponse.withReservations(false, "No reservations found.", List.of(),
+									resReq.getOperation());
 					break;
 
 				case RECEIVE_TABLE:
 					ReceiveTableResult rtr = reservationController.receiveTable(resReq.getReservationId());
-					resResp = rtr.isSuccess() ? ReservationResponse.ok(rtr.getMessage())
-							: ReservationResponse.fail(rtr.getMessage());
+					resResp = rtr.isSuccess() ? ReservationResponse.ok(rtr.getMessage(), resReq.getOperation())
+							: ReservationResponse.fail(rtr.getMessage(), resReq.getOperation());
 
 					if (rtr.isSuccess())
 						notificationController.sendTableReceived(resReq.getReservationId());
@@ -450,12 +466,13 @@ public class Server extends AbstractServer {
 
 				case GET_CUSTOMER_RESERVATIONS_FOR_CHECKOUT:
 					if (effectiveCustomerId == null) {
-						resResp = ReservationResponse.emptyListFail("Please enter confirmation code.");
+						resResp = ReservationResponse.emptyListFail("Please enter confirmation code.",
+								resReq.getOperation());
 					} else {
 						List<Reservation> payList = reservationController
 								.loadReservationsForCheckout(effectiveCustomerId);
 						resResp = ReservationResponse.loadedOrEmpty(payList, "Your reservations loaded.",
-								"No reservations found.");
+								"No reservations found.", resReq.getOperation());
 					}
 					break;
 
@@ -465,20 +482,21 @@ public class Server extends AbstractServer {
 
 					resResp = (payReservation != null)
 							? ReservationResponse.withReservations(true, "Your reservation loaded.",
-									List.of(payReservation))
-							: ReservationResponse.withReservations(false, "No reservations found.", List.of());
+									List.of(payReservation), resReq.getOperation())
+							: ReservationResponse.withReservations(false, "No reservations found.", List.of(),
+									resReq.getOperation());
 					break;
 
 				case GET_BILL_FOR_PAYING:
 					Bill bill = reservationController.getOrCreateBillForPaying(resReq.getReservationId());
-					resResp = ReservationResponse.billLoaded(bill, "Bill loaded.");
+					resResp = ReservationResponse.billLoaded(bill, "Bill loaded.", resReq.getOperation());
 					break;
 
 				case PAY_BILL:
 					PayBillResult pbr = reservationController.payBillbyId(resReq.getBillId());
 
-					resResp = pbr.isSuccess() ? ReservationResponse.ok(pbr.getMessage())
-							: ReservationResponse.fail(pbr.getMessage());
+					resResp = pbr.isSuccess() ? ReservationResponse.ok(pbr.getMessage(), resReq.getOperation())
+							: ReservationResponse.fail(pbr.getMessage(), resReq.getOperation());
 
 					if (pbr.isSuccess() && pbr.getFreedCapacity() > 0)
 						runNotifyCheck(pbr.getFreedCapacity());
@@ -489,7 +507,7 @@ public class Server extends AbstractServer {
 					break;
 
 				default:
-					resResp = ReservationResponse.fail("Unknown operation");
+					resResp = ReservationResponse.fail("Unknown operation", resReq.getOperation());
 
 				}
 				client.sendToClient(resResp);// returns response to the client
@@ -594,7 +612,7 @@ public class Server extends AbstractServer {
 			ui.display("SQL Error: " + e.getMessage());
 			e.printStackTrace();
 			try {
-				client.sendToClient(ReservationResponse.fail("Database error occurred"));
+				client.sendToClient(ReservationResponse.fail("Database error occurred", null));
 			} catch (Exception ignored) {
 			}
 		} catch (Exception e) {

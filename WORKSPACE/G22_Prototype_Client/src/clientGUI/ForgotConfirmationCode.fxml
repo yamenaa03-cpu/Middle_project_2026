@@ -1,0 +1,80 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.Button?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.control.TextField?>
+<?import javafx.scene.layout.BorderPane?>
+<?import javafx.scene.layout.HBox?>
+<?import javafx.scene.layout.Region?>
+<?import javafx.scene.layout.VBox?>
+
+<BorderPane prefHeight="420.0" prefWidth="520.0" style="-fx-background-color: transparent;"
+            xmlns="http://javafx.com/javafx/21" xmlns:fx="http://javafx.com/fxml/1"
+            fx:controller="clientGUI.ForgotConfirmationCodeController">
+
+    <center>
+        <VBox spacing="14"
+              style="-fx-background-color: #ffffff; -fx-border-color: #e5e7eb;
+                     -fx-border-radius: 14; -fx-background-radius: 14;
+                     -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.18), 18, 0.2, 0, 6);">
+            <padding>
+                <Insets top="18" right="18" bottom="18" left="18"/>
+            </padding>
+
+            <HBox alignment="CENTER_LEFT">
+                <VBox spacing="4">
+                    <Label style="-fx-font-size: 18px; -fx-font-weight: 800; -fx-text-fill: #111827;"
+                           text="Forgot Your Code?"/>
+                    <Label style="-fx-font-size: 12.5px; -fx-text-fill: #6b7280;"
+                           text="Enter your phone number or email to receive your confirmation code"
+                           wrapText="true"/>
+                </VBox>
+
+                <Region HBox.hgrow="ALWAYS"/>
+
+                <Button fx:id="closeBtn" onAction="#onClose"
+                        style="-fx-background-color: transparent; -fx-text-fill: #6b7280;
+                               -fx-font-size: 14px; -fx-font-weight: 700;"
+                        text="✕"/>
+            </HBox>
+
+            <VBox spacing="6">
+                <Label style="-fx-font-size: 12px; -fx-text-fill: #374151; -fx-font-weight: 700;"
+                       text="Phone Number"/>
+                <TextField fx:id="phoneField" promptText="+1 (555) 000-0000"
+                           style="-fx-background-radius: 10; -fx-border-radius: 10;
+                                  -fx-border-color: #e5e7eb; -fx-padding: 10 12;"/>
+            </VBox>
+
+            <Label style="-fx-font-size: 12px; -fx-text-fill: #9ca3af;" text="and / or"/>
+
+            <VBox spacing="6">
+                <Label style="-fx-font-size: 12px; -fx-text-fill: #374151; -fx-font-weight: 700;"
+                       text="Email Address"/>
+                <TextField fx:id="emailField" promptText="you@example.com"
+                           style="-fx-background-radius: 10; -fx-border-radius: 10;
+                                  -fx-border-color: #e5e7eb; -fx-padding: 10 12;"/>
+            </VBox>
+
+            <HBox alignment="CENTER" spacing="18">
+                <padding>
+                    <Insets top="8" right="0" bottom="0" left="0"/>
+                </padding>
+
+                <Button fx:id="cancelBtn" onAction="#onCancel" prefHeight="25.0" prefWidth="237.0"
+                        style="-fx-background-color: transparent; -fx-text-fill: #6b7280; -fx-font-weight: 700;"
+                        text="Cancel"/>
+
+                <Region HBox.hgrow="ALWAYS"/>
+
+                <Button fx:id="resendBtn" onAction="#onResendCode" prefHeight="37.0" prefWidth="221.0"
+                        style="-fx-background-color: #6b3f3f; -fx-text-fill: white; -fx-font-weight: 800;
+                               -fx-background-radius: 10; -fx-padding: 10 18;"
+                        text="Resend Code"/>
+            </HBox>
+
+            <Label fx:id="statusLabel" style="-fx-font-size: 12.5px; -fx-text-fill: #b91c1c;" text=""/>
+        </VBox>
+    </center>
+</BorderPane>

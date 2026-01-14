@@ -8,15 +8,17 @@
 <?import javafx.scene.image.Image?>
 <?import javafx.scene.image.ImageView?>
 <?import javafx.scene.layout.BorderPane?>
+<?import javafx.scene.layout.ColumnConstraints?>
+<?import javafx.scene.layout.GridPane?>
 <?import javafx.scene.layout.HBox?>
 <?import javafx.scene.layout.Pane?>
+<?import javafx.scene.layout.RowConstraints?>
 <?import javafx.scene.layout.VBox?>
 <?import javafx.scene.paint.Color?>
 <?import javafx.scene.paint.RadialGradient?>
 <?import javafx.scene.paint.Stop?>
 <?import javafx.scene.shape.Line?>
 <?import javafx.scene.shape.Rectangle?>
-<?import javafx.scene.text.Font?>
 
 <BorderPane prefHeight="900" prefWidth="1200" style="-fx-background-color: #ffffff;" xmlns="http://javafx.com/javafx/21" xmlns:fx="http://javafx.com/fxml/1" fx:controller="clientGUI.ClientController">
 
@@ -29,106 +31,125 @@
                 <Button fx:id="SignInButton" onAction="#onSignIn" styleClass="topButton" text="Sign In" />
             </HBox>
 
-            <Pane HBox.hgrow="ALWAYS" />
+            <Pane HBox.hgrow="ALWAYS">
+            <children>
+                    <!-- Site Logo -->
+                    <Label layoutX="417.0" layoutY="-6.0" style="-fx-font-family: 'Didot'; -fx-font-size:28px; -fx-text-fill:black;" text="BISTRO" />
+            </children></Pane>
 
             <Pane HBox.hgrow="ALWAYS">
             <children>
-               <Button layoutX="649.0" layoutY="1.0" mnemonicParsing="false" styleClass="topButton" text="leave waiting list" />
-               <Button layoutX="527.0" layoutY="2.0" mnemonicParsing="false" styleClass="topButton" text="Pay Bill" />
-      
-                  <!-- Site Logo -->
-                  <Label layoutX="315.0" layoutY="-6.0" style="-fx-font-family: 'Didot'; -fx-font-size:28px; -fx-text-fill:black;" text="BISTRO" />
+               <Button fx:id="logoutBtn" layoutX="250.0" mnemonicParsing="false" onAction="#onLogout" styleClass="topButton" stylesheets="@bistro.css" text="Logout" />
             </children></Pane>
 
             <!-- Menu -->
             <MenuButton styleClass="topButton" text="≡">
-
-    <items>
-        <MenuItem text="Add Member" />
-        <MenuItem onAction="#onEmployeeDashboard" text="Employee Dashboard" />
-        <MenuItem text="Statistic" />
-    </items>
-
-</MenuButton>
+                <items>
+                    <MenuItem text="Add Member" />
+                    <MenuItem onAction="#onEmployeeDashboard" text="Employee Dashboard" />
+                    <MenuItem text="Statistic" />
+                </items>
+            </MenuButton>
         </HBox>
     </top>
-
 
     <!-- ======================= MAIN PAGE CONTENT ======================= -->
     <center>
         <ScrollPane fitToWidth="true" hbarPolicy="NEVER" pannable="true">
             <content>
-
                 <VBox alignment="TOP_CENTER" spacing="60" style="-fx-padding: 40 0 40 0;">
 
                     <!-- ===== HERO SECTION (BIG IMAGE PLACE) ===== -->
-        <ImageView fitHeight="400" fitWidth="1700" preserveRatio="true" smooth="true">
-            <image>
-                <Image url="@../images/bistrohomepage.png" />
-            </image>
-        </ImageView>
-               <Line endX="100.0" startX="-1172.3768310546875" startY="-2.8990681171417236" strokeWidth="2.0">
-                  <stroke>
-                     <RadialGradient centerX="0.511037527593819" centerY="0.5" radius="0.5">
-                        <stops>
-                           <Stop>
-                              <color>
-                                 <Color red="1.0" green="0.7392592430114746" blue="0.02222222276031971" />
-                              </color>
-                           </Stop>
-                           <Stop offset="0.39060402684563755">
-                              <color>
-                                 <Color red="1.0" green="0.7392592430114746" blue="0.02222222276031971" />
-                              </color>
-                           </Stop>
-                           <Stop offset="1.0">
-                              <color>
-                                 <Color red="1.0" green="1.0" blue="1.0" />
-                              </color>
-                           </Stop>
-                        </stops>
-                     </RadialGradient>
-                  </stroke>
-               </Line>
-               <Button id="ReservatioButton" onAction="#onLoadClientReservation" prefHeight="70.0" prefWidth="282.0" style="-fx-border-color: gold; -fx-border-radius: 200;" styleClass="topButton" text="Make A Reservation">
-                  <font>
-                     <Font name="Franklin Gothic Medium Cond" size="25.0" />
-                  </font>
-               </Button>
+                    <ImageView fitHeight="400" fitWidth="1700" preserveRatio="true" smooth="true">
+                        <image>
+                            <Image url="@../images/bistrohomepage.png" />
+                        </image>
+                    </ImageView>
+
+                    <Line endX="100.0" startX="-1172.3768310546875" startY="-2.8990681171417236" strokeWidth="2.0">
+                        <stroke>
+                            <RadialGradient centerX="0.511037527593819" centerY="0.5" radius="0.5">
+                                <stops>
+                                    <Stop>
+                                        <color>
+                                            <Color red="1.0" green="0.7392592430114746" blue="0.02222222276031971" />
+                                        </color>
+                                    </Stop>
+                                    <Stop offset="0.39060402684563755">
+                                        <color>
+                                            <Color red="1.0" green="0.7392592430114746" blue="0.02222222276031971" />
+                                        </color>
+                                    </Stop>
+                                    <Stop offset="1.0">
+                                        <color>
+                                            <Color red="1.0" green="1.0" blue="1.0" />
+                                        </color>
+                                    </Stop>
+                                </stops>
+                            </RadialGradient>
+                        </stroke>
+                    </Line>
+
+                    <!-- ===== ACTION BUTTONS (2x2 SQUARE GRID) ===== -->
+                    <HBox alignment="CENTER">
+                        <GridPane alignment="CENTER" hgap="20" vgap="20">
+
+                            <columnConstraints>
+                                <ColumnConstraints prefWidth="220" />
+                                <ColumnConstraints prefWidth="220" />
+                            </columnConstraints>
+                            <rowConstraints>
+                                <RowConstraints prefHeight="220" />
+                                <RowConstraints prefHeight="220" />
+                            </rowConstraints>
+
+                            <!-- (1) Leave waiting list -->
+                            <Button styleClass="squareAction" text="Join Waiting List" GridPane.columnIndex="0" GridPane.rowIndex="0" />
+
+                            <!-- (2) Pay bill -->
+                            <Button styleClass="squareAction" text="CheckOut" GridPane.columnIndex="1" GridPane.rowIndex="0" />
+
+                            <!-- (3) Make reservation -->
+                            <Button id="ReservatioButton" onAction="#onLoadClientReservation" styleClass="squareAction" text="Make A Reservation" GridPane.columnIndex="0" GridPane.rowIndex="1" />
+
+                            <!-- (4) Delete reservation -->
+                            <Button onAction="#onDeleteReservation" styleClass="squareAction" text="Cancel Reservation" GridPane.columnIndex="1" GridPane.rowIndex="1" />
+
+                        </GridPane>
+                    </HBox>
 
                     <!-- ===== FOOD GALLERY SECTION ===== -->
-<VBox alignment="CENTER">
-    <Label style="-fx-font-size:26px; -fx-font-weight:bold;" text="התפריט שלנו" />
+                    <VBox alignment="CENTER">
+                        <Label style="-fx-font-size:26px; -fx-font-weight:bold;" text="התפריט שלנו" />
 
-    <HBox spacing="150">
+                        <HBox spacing="150">
 
-        <ImageView fitHeight="200" fitWidth="280" preserveRatio="true" smooth="true">
-            <image>
-                <Image url="@../images/food1.png" />
-            </image>
-        </ImageView>
+                            <ImageView fitHeight="200" fitWidth="280" preserveRatio="true" smooth="true">
+                                <image>
+                                    <Image url="@../images/food1.png" />
+                                </image>
+                            </ImageView>
 
-        <ImageView fitHeight="200" fitWidth="280" preserveRatio="true" smooth="true">
-            <image>
-                <Image url="@../images/food2.png" />
-            </image>
-        </ImageView>
+                            <ImageView fitHeight="200" fitWidth="280" preserveRatio="true" smooth="true">
+                                <image>
+                                    <Image url="@../images/food2.png" />
+                                </image>
+                            </ImageView>
 
-        <ImageView fitHeight="200" fitWidth="280" preserveRatio="true" smooth="true">
-            <image>
-                <Image url="@../images/food3.png" />
-            </image>
-        </ImageView>
-        
-        <ImageView fitHeight="200" fitWidth="280" preserveRatio="true" smooth="true">
-            <image>
-                <Image url="@../images/food4.png" />
-            </image>
-        </ImageView>
+                            <ImageView fitHeight="200" fitWidth="280" preserveRatio="true" smooth="true">
+                                <image>
+                                    <Image url="@../images/food3.png" />
+                                </image>
+                            </ImageView>
 
-    </HBox>
-</VBox>
+                            <ImageView fitHeight="200" fitWidth="280" preserveRatio="true" smooth="true">
+                                <image>
+                                    <Image url="@../images/food4.png" />
+                                </image>
+                            </ImageView>
 
+                        </HBox>
+                    </VBox>
 
                     <!-- ===== OUR STORY SECTION ===== -->
                     <VBox alignment="CENTER" spacing="20">
@@ -138,30 +159,25 @@
 
                         <Label maxWidth="700" style="-fx-font-size:16px; -fx-text-alignment:center;" text="כאן תוכל לכתוב סיפור קצר ומרגש על המסעדה Bistro..." wrapText="true" />
                     </VBox>
-                            <VBox alignment="CENTER" spacing="15" style="-fx-padding: 25; -fx-background-color: #111111;">
 
-            <!-- Social Icons Placeholders -->
-            <HBox alignment="CENTER" spacing="25">
-        <ImageView fitHeight="30" fitWidth="60" preserveRatio="true" smooth="true">
-            <image>
-                <Image url="@/images/socials.png" />
-            </image>
-        </ImageView>
-            </HBox>
+                    <!-- ===== FOOTER ===== -->
+                    <VBox alignment="CENTER" spacing="15" style="-fx-padding: 25; -fx-background-color: #111111;">
+                        <HBox alignment="CENTER" spacing="25">
+                            <ImageView fitHeight="30" fitWidth="60" preserveRatio="true" smooth="true">
+                                <image>
+                                    <Image url="@/images/socials.png" />
+                                </image>
+                            </ImageView>
+                        </HBox>
 
-            <!-- Working Hours -->
-            <Label style="-fx-text-fill:white; -fx-font-size:14px;" text="שעות פעילות: 10:00 - 00:00" />
-			<Label style="-fx-text-fill:white; -fx-font-size:14px;" text="Phone -1234567890-" />
-            <!-- Small Footer Text -->
-            <Label style="-fx-text-fill:#c9a24b; -fx-font-size:16px;" text="𝔹𝕀𝕊𝕋ℝ𝕆 — Since 2025" />
-        </VBox>
+                        <Label style="-fx-text-fill:white; -fx-font-size:14px;" text="שעות פעילות: 10:00 - 00:00" />
+                        <Label style="-fx-text-fill:white; -fx-font-size:14px;" text="Phone -1234567890-" />
+                        <Label style="-fx-text-fill:#c9a24b; -fx-font-size:16px;" text="𝔹𝕀𝕊𝕋ℝ𝕆 — Since 2025" />
+                    </VBox>
 
                 </VBox>
-
             </content>
         </ScrollPane>
     </center>
-
-
 
 </BorderPane>

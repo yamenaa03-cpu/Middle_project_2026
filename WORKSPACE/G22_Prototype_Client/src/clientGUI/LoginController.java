@@ -2,12 +2,14 @@ package clientGUI;
 
 import client.Client;
 import client.ClientUI;
-import common.dto.UserAccount.UserAccountRequest;
-import common.dto.UserAccount.UserAccountResponse;
-import common.enums.UserAccountOperation;
+import common.dto.Authentication.SubscriberAuthRequest;
+import common.dto.Authentication.SubscriberAuthResponse;
+import common.enums.AuthOperation;
+import javafx.application.Platform;
 import javafx.fxml.FXML;
 import javafx.scene.control.Label;
 import javafx.scene.control.TextField;
+import javafx.stage.Stage;
 
 public class LoginController {
 
@@ -28,26 +30,31 @@ public class LoginController {
 	        statusLabel.setText("Please enter your membership code.");
 	        return;
 	    }
-
-	    UserAccountRequest req = UserAccountRequest.createAuthRequest(code);
+//	    if(code.length() != 6) {
+//	        statusLabel.setText("membership code Should be of lenght 6.");
+//	        return;
+//	    }
+	   
 
 	    try {
-	        client.sendToServer(req); // replace with your actual client instance
 	        statusLabel.setText("Logging in...");
+		    client.requestLoginBySubscriptionCode(code);
 	    } catch (Exception e) {
 	        statusLabel.setText("Could not reach server.");
 	        e.printStackTrace();
 	    }
 	}
-	public void onAuthResponse(UserAccountResponse resp) {
-	    System.out.println("Login success = " + resp.isSuccess());
+	public void onAuthResponse(SubscriberAuthResponse resp) {
+		Platform.runLater(() -> {
+		System.out.println("Login success = " + resp.isSuccess());
 
 	    statusLabel.setText("success = " + resp.isSuccess() + " | " + resp.getMessage());
 
 	    if (resp.isSuccess()) {
 	        // close if you want:
-	        // ((Stage) membershipCodeField.getScene().getWindow()).close();
+	         ((Stage) membershipCodeField.getScene().getWindow()).close();
 	    }
+	
+	});
 	}
-
 }

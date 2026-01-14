@@ -6,10 +6,10 @@ import java.io.IOException;
 import java.time.LocalDateTime;
 import java.util.List;
 
+import common.dto.Authentication.SubscriberAuthRequest;
+import common.dto.Authentication.SubscriberAuthResponse;
 import common.dto.Reservation.ReservationRequest;
 import common.dto.Reservation.ReservationResponse;
-import common.dto.UserAccount.CustomerAuthRequest;
-import common.dto.UserAccount.CustomerAuthResponse;
 import common.entity.Reservation;
 /**
  * The Client class extends the OCSF AbstractClient framework.
@@ -24,10 +24,15 @@ import common.entity.Reservation;
 public class Client extends AbstractClient {
 
     private ClientUI ui;
+    private boolean loggedin;
 
     public Client(String host, int port, ClientUI ui) {
         super(host, port);
         this.ui = ui;
+    }
+    
+    public boolean getLoginStatus() {
+    		return loggedin;
     }
     /**
      * This method automatically runs whenever the server sends a message.
@@ -40,8 +45,12 @@ public class Client extends AbstractClient {
     @Override
     protected void handleMessageFromServer(Object msg) {
 
-        if (msg instanceof CustomerAuthResponse authResp) {
-        		ui.displayMessage(authResp.getMessage());
+        if (msg instanceof SubscriberAuthResponse ) {
+        		SubscriberAuthResponse authResp = (SubscriberAuthResponse)msg;
+        		if(authResp.isSuccess()) {
+        			String StringRes = "Wellcome back " + authResp.getMessage();
+        			ui.displayMessage(StringRes);
+        				}
             ui.handleAuthResponse(authResp);
             return;
         }
@@ -54,14 +63,38 @@ public class Client extends AbstractClient {
 
         ui.displayMessage("Unknown message from server: " + msg);
     }
-    
+    // *********************AUTHINTICATION*********************
+    //request login for the subscriber
     public void requestLoginBySubscriptionCode(String code) {
         try {
-            sendToServer(common.dto.UserAccount.dto.Authentication.CustomerAuthRequest.subscription(code));
+            sendToServer(SubscriberAuthRequest.createAuthRequest(code));
         } catch (IOException e) {
             ui.displayMessage("Error sending login request: " + e.getMessage());
         }
     }
+    
+    
+    public void requestLoggedInStatus() {
+    		try {
+    			sendToServer(SubscriberAuthRequest.createLoggedInStatusRequest());
+    		}catch (IOException e) {
+                ui.displayMessage("Error Checking login Status: " + e.getMessage());
+            }
+    }
+    		
+        	public void requestLogout() {
+        		try {
+        			sendToServer(SubscriberAuthRequest.createLoggedInStatusRequest());
+        		}catch (IOException e) {
+                    ui.displayMessage("Error sending logOut request: " + e.getMessage());
+                }
+    	
+        	}
+        	
+    
+    
+    
+    //*************************************************************
     
     /**
      * Sends a request to retrieve all reservations from the database.
@@ -97,34 +130,32 @@ public class Client extends AbstractClient {
         sendRequest(req);
     }
     
-    public void requestCreateGuestReservation(LocalDateTime dateTime, int guests,
-            String fullName, String phone, String email) {
-		ReservationRequest req =
-		ReservationRequest.createGuestCreateReservationRequest(dateTime, guests, fullName, phone, email);
+	public void requestCreateGuestReservation(LocalDateTime reservationDateTime, int guestCount, String name,
+			String phone, String email) {
+        ReservationRequest req = ReservationRequest.createCreateGuestReservationRequest(reservationDateTime, guestCount, name, phone, email);
+        sendRequest(req);
+		
+	}
+    /**
+     * Sends a request (to the sever) to Get the Cancellable reservations for a guest accourding to confirmation code.
+     *
+     * @param code The Confirmation code
+
+     */
+	public void requestGetCancellableReservationByConfirmationCode(int code) {
+		ReservationRequest req = ReservationRequest.createGetCancellableReservationByConfirmationCodeRequest(code);
 		sendRequest(req);
 	}
-    
-    public void requestCustomerProfile() {
-        try {
-            sendToServer(CustomerAuthRequest.getProfile());
-        } catch (IOException e) {
-            ui.displayMessage("Error: " + e.getMessage());
-        }
-    }
-
-    public void requestUpdateCustomerProfile(String fullName, String phone, String email) {
-        try {
-            sendToServer(CustomerAuthRequest.updateProfile(fullName, phone, email));
-        } catch (IOException e) {
-            ui.displayMessage("Error: " + e.getMessage());
-        }
-    }
-
-    
-   
-    public void requestCustomerReservations() { sendRequest(ReservationRequest.createGetCustomerReservationsRequest()); }
- 
-    public void requestCancelReservation(int reservationId, int confirmationCode) {
+	public void requstGetCancellableReservationsRequest() {
+		ReservationRequest req = ReservationRequest.createGetCancellableReservationsRequest();
+		sendRequest(req);		
+	}
+	
+	public void requestResendConfirmationCodeRequest(String phone, String email) {
+		ReservationRequest req = ReservationRequest.createResendConfirmationCodeRequest(phone, email);
+		sendRequest(req);
+	}
+    public void requestCancelReservation(int reservationId) {
         sendRequest(ReservationRequest.createCancelReservationRequest(reservationId));
     }
     public void requestCheckout(int confirmationCode) {
@@ -146,5 +177,11 @@ public class Client extends AbstractClient {
             ui.displayMessage("Error sending request: " + e.getMessage());
         }
     }
+
+
+
+
+
+
 
 }

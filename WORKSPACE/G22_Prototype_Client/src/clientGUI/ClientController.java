@@ -1,69 +1,12 @@
-/*
-package clientGUI;
 
-import javafx.event.ActionEvent;
-import javafx.fxml.FXML;
-import javafx.fxml.FXMLLoader;
-import javafx.scene.Node;
-import javafx.scene.Parent;
-import javafx.scene.Scene;
-import javafx.stage.Modality;
-import javafx.stage.Stage;
-
-import java.io.IOException;
-
-import client.Client;
-
-public class ClientController {
-	
-	 private Client client;   //Client object that handles clients activity 
-	 
-    // ================= INITIALIZATION =================
-    @FXML
-    public void initialize() {
-        System.out.println("ClientFrameController loaded ✔");
-    }
-
-    // ================= BUTTON ACTION =================
-    @FXML
-    private void onLoadClientReservation(ActionEvent event) {
-
-        try {
-            FXMLLoader loader = new FXMLLoader(
-                    getClass().getResource("/clientGUI/ReservationPage.fxml")
-            );
-
-            Parent popupRoot = loader.load();
-
-            Stage popupStage = new Stage();
-            popupStage.setTitle("Make Reservation");
-            
-
-            popupStage.initModality(Modality.APPLICATION_MODAL);
-            popupStage.initOwner(
-                    ((Node) event.getSource()).getScene().getWindow()
-            );
-            popupStage.setHeight(550);
-            popupStage.setWidth(300);
-            popupStage.setScene(new Scene(popupRoot));
-            popupStage.setResizable(false);
-            popupStage.showAndWait(); // BLOCKS background
-
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-    }
-
-}
-
-*/
 package clientGUI;
 
 import client.Client;
 import client.ClientUI;
+import common.dto.Authentication.SubscriberAuthResponse;
 import common.dto.Reservation.ReservationResponse;
-import common.dto.UserAccount.CustomerAuthResponse;
 import common.entity.Reservation;
+import common.enums.AuthOperation;
 import javafx.animation.PauseTransition;
 import javafx.animation.RotateTransition;
 import javafx.animation.TranslateTransition;
@@ -110,8 +53,13 @@ public class ClientController implements ClientUI{
     private Integer currentSubscriberId = null;//subscriber id if the client is connected
     private ReservationController activeReservationController;
     private PersonalSpaceController activePersonalSpaceController;
+    private CancelReservationController ActiveCancelReservationGuestController;
+    private CancelReservationConfirmController ActiveCancelReservationConfirmController;
+    private boolean waitingSubscriberReservationsForCancel = false;
+
 
     @FXML private Button SignInButton;
+    @FXML private Button logoutBtn;
 
     // ==========================================================
     // INITIALIZATION
@@ -144,6 +92,18 @@ public class ClientController implements ClientUI{
     public void setActiveLoginController(LoginController c) {
         this.activeLoginController = c;
     }
+    
+    public void setActiveCancelReservationGuestController(CancelReservationController Crc) {
+        this.ActiveCancelReservationGuestController = Crc;
+    }
+    
+    public void setActiveCancelReservationConfirmController(CancelReservationConfirmController Crcc) {
+        this.ActiveCancelReservationConfirmController = Crcc;
+    }
+    
+    
+    
+    
 
     /**
      * Allows another controller (or Main class)
@@ -165,6 +125,8 @@ public class ClientController implements ClientUI{
     public void logoutLocal() {
         currentSubscriberId = null;
     }
+    
+    
 
     // ==========================================================
     // OPEN RESERVATION POPUP
@@ -201,7 +163,69 @@ public class ClientController implements ClientUI{
         }
     }
 
-    
+    @FXML
+    private void onDeleteReservation(ActionEvent event) {
+
+        if (client == null || !client.isConnected()) {
+            displayMessage("Not connected to server.");
+            return;
+        }
+
+        if (isLoggedIn()) {
+            try {
+                FXMLLoader loader = new FXMLLoader(getClass().getResource("/clientGUI/CancelReservationFinalConfir.fxml"));
+                Parent popupRoot = loader.load();
+
+                CancelReservationConfirmController confirmCtrl = loader.getController();
+                confirmCtrl.setClient(client);
+                confirmCtrl.setMainController(this);
+                setActiveCancelReservationConfirmController(confirmCtrl);
+
+                Stage popupStage = new Stage();
+                popupStage.setTitle("Cancel Reservation");
+                popupStage.initModality(Modality.APPLICATION_MODAL);
+                popupStage.initOwner(((Node) event.getSource()).getScene().getWindow());
+                popupStage.setScene(new Scene(popupRoot));
+                popupStage.setResizable(false);
+
+                waitingSubscriberReservationsForCancel = true;
+                client.requstGetCancellableReservationsRequest();
+
+                popupStage.showAndWait();
+
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        
+
+        } else {
+
+            try {
+                FXMLLoader loader = new FXMLLoader(getClass().getResource("/clientGUI/CancelReservationGuest.fxml"));
+                Parent popupRoot = loader.load();
+
+                CancelReservationController guestCtrl = loader.getController();
+                guestCtrl.setClient(client);
+                guestCtrl.setMainController(this);
+                setActiveCancelReservationGuestController(guestCtrl);
+
+                Stage popupStage = new Stage();
+                popupStage.setTitle("Cancel Reservation");
+                popupStage.initModality(Modality.APPLICATION_MODAL);
+                popupStage.initOwner(((Node) event.getSource()).getScene().getWindow());
+                popupStage.setScene(new Scene(popupRoot));
+                popupStage.setResizable(false);
+                popupStage.sizeToScene();
+                popupStage.centerOnScreen();
+                popupStage.showAndWait();
+
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
+    }
+
+
     @FXML
     public void onSignIn() {
     	 try {
@@ -223,6 +247,7 @@ public class ClientController implements ClientUI{
     	        popupStage.initOwner(SignInButton.getScene().getWindow());
     	        popupStage.setResizable(false);
     	        popupStage.setScene(scene);
+    	        
     	        LoginController lc = loader.getController();   // ✅ LoginController only
     	        lc.setClient(client);
     	        setActiveLoginController(lc);
@@ -234,6 +259,12 @@ public class ClientController implements ClientUI{
     	    } catch (Exception e) {
     	        e.printStackTrace();
     	    }
+    }
+    @FXML
+    public void onLogout() {
+    		client.requestLogout();
+    	    Stage stage = (Stage) logoutBtn.getScene().getWindow();
+    	    stage.close();
     }
     
     public void onPersonalSpace() {
@@ -342,7 +373,7 @@ public class ClientController implements ClientUI{
 	}
 
 	@Override
-	public void handleAuthResponse(CustomerAuthResponse resp) {
+	public void handleAuthResponse(SubscriberAuthResponse resp) {
 
 	    if (resp.isSuccess()) {
 	        currentSubscriberId = resp.getSubscriberId();  // ✅ save login state
@@ -361,20 +392,63 @@ public class ClientController implements ClientUI{
 	    }
 	}
 	@Override
-	public void handleReservationResponse(common.dto.Reservation.ReservationResponse resp) {
-	    // Always jump to FX thread before touching any controller UI
+	public void handleReservationResponse(ReservationResponse resp) {
 	    Platform.runLater(() -> {
+
+	        // 1) Subscriber cancel flow: load list into table
+	        if (waitingSubscriberReservationsForCancel) {
+	            waitingSubscriberReservationsForCancel = false;
+
+	            if (ActiveCancelReservationConfirmController != null) {
+	                ActiveCancelReservationConfirmController.setReservations(resp.getReservations());
+	            } else {
+	                displayMessage("Cancel page is not open.");
+	            }
+	            return;
+	        }
+
+	        // 2) Guest flow (lookup by confirmation code)
+	        if (ActiveCancelReservationGuestController != null) {
+	            ActiveCancelReservationGuestController.onReservationResponse(resp);
+	        }
+
+	        // 3) Reservation page
 	        if (activeReservationController != null) {
 	            activeReservationController.onReservationResponse(resp);
-	        } else {
-	            // fallback if popup isn't open
-	            displayMessage(resp.getMessage());
 	        }
+
+	        // 4) Personal space
 	        if (activePersonalSpaceController != null) {
 	            activePersonalSpaceController.onReservationResponse(resp);
 	        }
+
+	        // 5) If confirm page is open and it sent cancel request
+	        if (ActiveCancelReservationConfirmController != null) {
+	            ActiveCancelReservationConfirmController.onReservationResponse(resp);
+	        }
 	    });
 	}
+
+	private Reservation pickCancellable(List<Reservation> list) {
+	    if (list == null) return null;
+
+	    for (Reservation r : list) {
+	        if (r == null || r.getStatus() == null) continue;
+
+	        switch (r.getStatus()) {
+	            case ACTIVE:
+	            case WAITING:
+	            case NOTIFIED:
+	            case IN_PROGRESS:
+	                return r;
+	            default:
+	                break;
+	        }
+	    }
+	    return null;
+	}
+
+
 
 
 

@@ -14,11 +14,13 @@ import common.dto.Reservation.PayBillResult;
 import common.dto.Reservation.ReceiveTableResult;
 import common.dto.Reservation.ReservationRequest;
 import common.dto.Reservation.ReservationResponse;
+import common.dto.Reservation.UpdateReservationResult;
 import common.dto.UserAccount.UserAccountRequest;
 import common.dto.UserAccount.UserAccountResponse;
 import common.dto.UserAccount.SubscriberLogInResult;
 import common.dto.UserAccount.EmployeeLogInResult;
 import common.dto.UserAccount.RegisterSubscriberResult;
+import common.dto.UserAccount.CustomerLookupResult;
 import common.entity.Bill;
 import common.entity.Customer;
 import common.entity.Reservation;
@@ -37,6 +39,10 @@ import controllers.ReservationController;
 import controllers.RestaurantManagementController;
 import common.dto.RestaurantManagement.RestaurantManagementRequest;
 import common.dto.RestaurantManagement.RestaurantManagementResponse;
+import common.dto.RestaurantManagement.RestaurantManagementResult;
+import common.dto.Report.ReportResponse;
+import common.dto.Report.TimeReportEntry;
+import common.dto.Report.SubscriberReportEntry;
 
 /**
  * Main class that extends AbstractServer OCSF server class that handles client
@@ -229,9 +235,23 @@ public class Server extends AbstractServer {
 					if (sessionSubscriberId == null) {
 						userResp = UserAccountResponse.fail("Not logged in.", userReq.getOperation());
 					} else {
-						Customer c = db.getSubscribedCustomerById(sessionSubscriberId);
-						userResp = (c != null) ? UserAccountResponse.subscriberProfileOk(c)
-								: UserAccountResponse.subscriberProfileFail("Subscriber not found.");
+						CustomerLookupResult profileResult = userAccountController
+								.getSubscriberProfile(sessionSubscriberId);
+						userResp = profileResult.isSuccess()
+								? UserAccountResponse.subscriberProfileOk(profileResult.getCustomer())
+								: UserAccountResponse.subscriberProfileFail(profileResult.getMessage());
+					}
+					break;
+
+				case UPDATE_SUBSCRIBER_PROFILE:
+					if (sessionSubscriberId == null) {
+						userResp = UserAccountResponse.updateProfileFail("Not logged in.");
+					} else {
+						CustomerLookupResult updateResult = userAccountController.updateSubscriberProfile(
+								sessionSubscriberId, userReq.getFullName(), userReq.getPhone(), userReq.getEmail());
+						userResp = updateResult.isSuccess()
+								? UserAccountResponse.updateProfileOk(updateResult.getCustomer())
+								: UserAccountResponse.updateProfileFail(updateResult.getMessage());
 					}
 					break;
 
@@ -240,12 +260,11 @@ public class Server extends AbstractServer {
 						userResp = UserAccountResponse.fail("Not authorized. Employee login required.",
 								userReq.getOperation());
 					} else {
-						Customer cByCode = userAccountController
+						CustomerLookupResult codeResult = userAccountController
 								.lookupCustomerBySubscriptionCode(userReq.getSubscriptionCode());
-						userResp = (cByCode != null)
-								? UserAccountResponse.customerFound(cByCode, userReq.getOperation())
-								: UserAccountResponse.customerNotFound("Customer not found by subscription code.",
-										userReq.getOperation());
+						userResp = codeResult.isSuccess()
+								? UserAccountResponse.customerFound(codeResult.getCustomer(), userReq.getOperation())
+								: UserAccountResponse.customerNotFound(codeResult.getMessage(), userReq.getOperation());
 					}
 					break;
 
@@ -254,10 +273,11 @@ public class Server extends AbstractServer {
 						userResp = UserAccountResponse.fail("Not authorized. Employee login required.",
 								userReq.getOperation());
 					} else {
-						Customer cByPhone = userAccountController.lookupCustomerByPhone(userReq.getPhone());
-						userResp = (cByPhone != null)
-								? UserAccountResponse.customerFound(cByPhone, userReq.getOperation())
-								: UserAccountResponse.customerNotFound("Customer not found by phone.",
+						CustomerLookupResult phoneResult = userAccountController
+								.lookupCustomerByPhone(userReq.getPhone());
+						userResp = phoneResult.isSuccess()
+								? UserAccountResponse.customerFound(phoneResult.getCustomer(), userReq.getOperation())
+								: UserAccountResponse.customerNotFound(phoneResult.getMessage(),
 										userReq.getOperation());
 					}
 					break;
@@ -267,11 +287,42 @@ public class Server extends AbstractServer {
 						userResp = UserAccountResponse.fail("Not authorized. Employee login required.",
 								userReq.getOperation());
 					} else {
-						Customer cByEmail = userAccountController.lookupCustomerByEmail(userReq.getEmail());
-						userResp = (cByEmail != null)
-								? UserAccountResponse.customerFound(cByEmail, userReq.getOperation())
-								: UserAccountResponse.customerNotFound("Customer not found by email.",
+						CustomerLookupResult emailResult = userAccountController
+								.lookupCustomerByEmail(userReq.getEmail());
+						userResp = emailResult.isSuccess()
+								? UserAccountResponse.customerFound(emailResult.getCustomer(), userReq.getOperation())
+								: UserAccountResponse.customerNotFound(emailResult.getMessage(),
 										userReq.getOperation());
+					}
+					break;
+
+				case GET_ALL_SUBSCRIBERS:
+					if (!isEmployeeLoggedIn) {
+						userResp = UserAccountResponse.fail("Not authorized. Employee login required.",
+								userReq.getOperation());
+					} else {
+						try {
+							List<Customer> subscribers = userAccountController.getAllSubscribers();
+							userResp = UserAccountResponse.subscribersLoaded(subscribers);
+						} catch (SQLException e) {
+							e.printStackTrace();
+							userResp = UserAccountResponse.subscribersLoadFail("Failed to load subscribers.");
+						}
+					}
+					break;
+
+				case GET_CURRENT_DINERS:
+					if (!isEmployeeLoggedIn) {
+						userResp = UserAccountResponse.fail("Not authorized. Employee login required.",
+								userReq.getOperation());
+					} else {
+						try {
+							List<Customer> diners = userAccountController.getCurrentDiners();
+							userResp = UserAccountResponse.dinersLoaded(diners);
+						} catch (SQLException e) {
+							e.printStackTrace();
+							userResp = UserAccountResponse.dinersLoadFail("Failed to load current diners.");
+						}
 					}
 					break;
 
@@ -321,14 +372,12 @@ public class Server extends AbstractServer {
 					break;
 
 				case UPDATE_RESERVATION_FIELDS:
-					boolean ok = reservationController.updateReservation(resReq.getReservationId(),
-							resReq.getReservationDateTime(), resReq.getNumberOfGuests());
+					UpdateReservationResult updateResult = reservationController.updateReservation(
+							resReq.getReservationId(), resReq.getReservationDateTime(), resReq.getNumberOfGuests());
 
-					resResp = ReservationResponse.updated(ok, "Reservation updated.", "Reservation not found.",
-							reservationController.getAllReservations(), resReq.getOperation());
-
-					// checks if the Reservation was updated correctly and returns a response
-					// according to the result
+					resResp = ReservationResponse.updated(updateResult.isSuccess(), updateResult.getMessage(),
+							updateResult.getMessage(), reservationController.getAllReservations(),
+							resReq.getOperation());
 					break;
 
 				case CREATE_RESERVATION:
@@ -354,12 +403,14 @@ public class Server extends AbstractServer {
 					break;
 
 				case RESEND_CONFIRMATION_CODE:
-					List<Reservation> resList = db.findReservationsByPhoneOrEmail(resReq.getPhone(), resReq.getEmail());
+					List<Reservation> resList = reservationController.findReservationsByPhoneOrEmail(resReq.getPhone(),
+							resReq.getEmail());
 					int sentCount = 0;
 
 					if (resList != null) {
 						for (Reservation res : resList) {
-							if (notificationController.resendReservationConfirmation(res.getReservationId()))
+							if (notificationController.resendReservationConfirmation(res.getReservationId())
+									.isSuccess())
 								sentCount++;
 						}
 					}
@@ -506,6 +557,39 @@ public class Server extends AbstractServer {
 
 					break;
 
+				case GET_SUBSCRIBER_HISTORY:
+					if (sessionSubscriberId == null) {
+						resResp = ReservationResponse.emptyListFail("Please log in to view history.",
+								resReq.getOperation());
+					} else {
+						List<Reservation> historyList = reservationController.getSubscriberHistory(sessionSubscriberId);
+						resResp = ReservationResponse.loadedOrEmpty(historyList, "Your reservation history loaded.",
+								"No reservations found.", resReq.getOperation());
+					}
+					break;
+
+				case GET_TIME_REPORT:
+					if (!isManagerLoggedIn) {
+						client.sendToClient(ReportResponse.fail("Manager login required.", resReq.getOperation()));
+						return;
+					}
+					List<TimeReportEntry> timeEntries = reservationController.getTimeReport(resReq.getReportYear(),
+							resReq.getReportMonth());
+					client.sendToClient(
+							ReportResponse.timeReport(timeEntries, resReq.getReportYear(), resReq.getReportMonth()));
+					return;
+
+				case GET_SUBSCRIBER_REPORT:
+					if (!isManagerLoggedIn) {
+						client.sendToClient(ReportResponse.fail("Manager login required.", resReq.getOperation()));
+						return;
+					}
+					List<SubscriberReportEntry> subEntries = reservationController
+							.getSubscriberReport(resReq.getReportYear(), resReq.getReportMonth());
+					client.sendToClient(ReportResponse.subscriberReport(subEntries, resReq.getReportYear(),
+							resReq.getReportMonth()));
+					return;
+
 				default:
 					resResp = ReservationResponse.fail("Unknown operation", resReq.getOperation());
 
@@ -519,7 +603,8 @@ public class Server extends AbstractServer {
 				RestaurantManagementResponse mgrResp;
 
 				if (!isEmployeeLoggedIn) {
-					mgrResp = RestaurantManagementResponse.fail("Not authorized. Employee login required.");
+					mgrResp = RestaurantManagementResponse.fail("Not authorized. Employee login required.",
+							mgrReq.getOperation());
 					client.sendToClient(mgrResp);
 					return;
 				}
@@ -531,26 +616,27 @@ public class Server extends AbstractServer {
 					break;
 
 				case ADD_TABLE:
-					int newTableNum = restaurantManagementController.addTable(mgrReq.getSeats());
-					mgrResp = newTableNum > 0
-							? RestaurantManagementResponse.tableAdded(newTableNum,
+					RestaurantManagementResult addResult = restaurantManagementController.addTable(mgrReq.getSeats());
+					mgrResp = addResult.isSuccess()
+							? RestaurantManagementResponse.tableAdded(addResult.getNewTableNumber(),
 									restaurantManagementController.getAllTables())
-							: RestaurantManagementResponse.fail("Failed to add table.");
+							: RestaurantManagementResponse.fail(addResult.getMessage(), mgrReq.getOperation());
 					break;
 
 				case UPDATE_TABLE:
-					boolean tableUpdated = restaurantManagementController.updateTable(mgrReq.getTableNumber(),
-							mgrReq.getSeats());
-					mgrResp = tableUpdated
+					RestaurantManagementResult updateResult = restaurantManagementController
+							.updateTable(mgrReq.getTableNumber(), mgrReq.getSeats());
+					mgrResp = updateResult.isSuccess()
 							? RestaurantManagementResponse.tableUpdated(restaurantManagementController.getAllTables())
-							: RestaurantManagementResponse.fail("Table not found.");
+							: RestaurantManagementResponse.fail(updateResult.getMessage(), mgrReq.getOperation());
 					break;
 
 				case DELETE_TABLE:
-					boolean tableDeleted = restaurantManagementController.deleteTable(mgrReq.getTableNumber());
-					mgrResp = tableDeleted
+					RestaurantManagementResult deleteResult = restaurantManagementController
+							.deleteTable(mgrReq.getTableNumber());
+					mgrResp = deleteResult.isSuccess()
 							? RestaurantManagementResponse.tableDeleted(restaurantManagementController.getAllTables())
-							: RestaurantManagementResponse.fail("Table not found or in use.");
+							: RestaurantManagementResponse.fail(deleteResult.getMessage(), mgrReq.getOperation());
 					break;
 
 				// Hours operations
@@ -560,12 +646,12 @@ public class Server extends AbstractServer {
 					break;
 
 				case UPDATE_OPENING_HOURS:
-					boolean hoursUpdated = restaurantManagementController.updateOpeningHours(mgrReq.getDayOfWeek(),
-							mgrReq.getOpenTime(), mgrReq.getCloseTime(), mgrReq.isClosed());
-					mgrResp = hoursUpdated
+					RestaurantManagementResult hoursResult = restaurantManagementController.updateOpeningHours(
+							mgrReq.getDayOfWeek(), mgrReq.getOpenTime(), mgrReq.getCloseTime(), mgrReq.isClosed());
+					mgrResp = hoursResult.isSuccess()
 							? RestaurantManagementResponse
 									.hoursUpdated(restaurantManagementController.getOpeningHours())
-							: RestaurantManagementResponse.fail("Failed to update hours.");
+							: RestaurantManagementResponse.fail(hoursResult.getMessage(), mgrReq.getOperation());
 					break;
 
 				// Date override operations
@@ -575,34 +661,36 @@ public class Server extends AbstractServer {
 					break;
 
 				case ADD_DATE_OVERRIDE:
-					int ovId = restaurantManagementController.addDateOverride(mgrReq.getOverrideDate(),
-							mgrReq.getOpenTime(), mgrReq.getCloseTime(), mgrReq.isClosed(), mgrReq.getReason());
-					mgrResp = ovId > 0
+					RestaurantManagementResult addOvResult = restaurantManagementController.addDateOverride(
+							mgrReq.getOverrideDate(), mgrReq.getOpenTime(), mgrReq.getCloseTime(), mgrReq.isClosed(),
+							mgrReq.getReason());
+					mgrResp = addOvResult.isSuccess()
 							? RestaurantManagementResponse
 									.overrideAdded(restaurantManagementController.getDateOverrides())
-							: RestaurantManagementResponse.fail("Failed to add override.");
+							: RestaurantManagementResponse.fail(addOvResult.getMessage(), mgrReq.getOperation());
 					break;
 
 				case UPDATE_DATE_OVERRIDE:
-					boolean ovUpdated = restaurantManagementController.updateDateOverride(mgrReq.getOverrideId(),
-							mgrReq.getOverrideDate(), mgrReq.getOpenTime(), mgrReq.getCloseTime(), mgrReq.isClosed(),
-							mgrReq.getReason());
-					mgrResp = ovUpdated
+					RestaurantManagementResult updateOvResult = restaurantManagementController.updateDateOverride(
+							mgrReq.getOverrideId(), mgrReq.getOverrideDate(), mgrReq.getOpenTime(),
+							mgrReq.getCloseTime(), mgrReq.isClosed(), mgrReq.getReason());
+					mgrResp = updateOvResult.isSuccess()
 							? RestaurantManagementResponse
 									.overrideUpdated(restaurantManagementController.getDateOverrides())
-							: RestaurantManagementResponse.fail("Override not found.");
+							: RestaurantManagementResponse.fail(updateOvResult.getMessage(), mgrReq.getOperation());
 					break;
 
 				case DELETE_DATE_OVERRIDE:
-					boolean ovDeleted = restaurantManagementController.deleteDateOverride(mgrReq.getOverrideId());
-					mgrResp = ovDeleted
+					RestaurantManagementResult deleteOvResult = restaurantManagementController
+							.deleteDateOverride(mgrReq.getOverrideId());
+					mgrResp = deleteOvResult.isSuccess()
 							? RestaurantManagementResponse
 									.overrideDeleted(restaurantManagementController.getDateOverrides())
-							: RestaurantManagementResponse.fail("Override not found.");
+							: RestaurantManagementResponse.fail(deleteOvResult.getMessage(), mgrReq.getOperation());
 					break;
 
 				default:
-					mgrResp = RestaurantManagementResponse.fail("Unknown operation.");
+					mgrResp = RestaurantManagementResponse.fail("Unknown operation.", mgrReq.getOperation());
 				}
 				client.sendToClient(mgrResp);
 				return;
@@ -730,13 +818,13 @@ public class Server extends AbstractServer {
 	}
 
 	private void runNoShowCheck() throws SQLException {
-		List<Integer> ids = db.getNoShowReservationIds();
+		List<Integer> ids = reservationController.getNoShowReservationIds();
 		if (ids.isEmpty())
 			return;
 
 		int canceledCount = 0;
 		for (Integer id : ids) {
-			boolean ok = db.updateReservationStatus(id, ReservationStatus.CANCELED.name());
+			boolean ok = reservationController.cancelNoShowReservation(id);
 			if (ok) {
 				canceledCount++;
 				notificationController.sendReservationCanceled(id);
@@ -751,18 +839,18 @@ public class Server extends AbstractServer {
 	}
 
 	private void runReminderCheck() throws SQLException {
-		List<Integer> ids = db.getReservationsForReminder();
+		List<Integer> ids = reservationController.getReservationsForReminder();
 		if (ids.isEmpty())
 			return;
 
 		for (Integer id : ids) {
 			notificationController.sendReservationReminder(id);
-			db.markReminderSent(id);
+			reservationController.markReminderSent(id);
 		}
 	}
 
 	private void runBillingCheck() throws SQLException {
-		List<Reservation> res = db.getReservationsForBilling();
+		List<Reservation> res = reservationController.getReservationsForBilling();
 		if (res.isEmpty())
 			return;
 

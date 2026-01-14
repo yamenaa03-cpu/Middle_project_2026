@@ -1,6 +1,8 @@
 package controllers;
 
 import java.sql.SQLException;
+import java.time.DayOfWeek;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.util.ArrayList;
@@ -13,8 +15,11 @@ import common.dto.Reservation.InsertReservationResult;
 import common.dto.Reservation.PayBillResult;
 import common.dto.Reservation.ReceiveTableResult;
 import common.dto.Reservation.ReservationBasicInfo;
+import common.dto.Reservation.UpdateReservationResult;
 import common.dto.Reservation.WaitingCandidate;
 import common.entity.Bill;
+import common.entity.DateOverride;
+import common.entity.OpeningHours;
 import common.entity.Reservation;
 import common.enums.ReservationStatus;
 import dbController.DBController;
@@ -23,9 +28,11 @@ public class ReservationController {
 
 	private final DBController db;
 
-	private static final LocalTime OPEN = LocalTime.of(10, 0);
-	private static final LocalTime CLOSE = LocalTime.of(2, 0); // next day
 	private static final int DURATION_MIN = 120;
+
+	// Default hours if database has no data
+	private static final LocalTime DEFAULT_OPEN = LocalTime.of(10, 0);
+	private static final LocalTime DEFAULT_CLOSE = LocalTime.of(2, 0); // next day
 
 	public ReservationController(DBController db) {
 		this.db = db;
@@ -35,20 +42,41 @@ public class ReservationController {
 		return db.getAllReservations();
 	}
 
-public List<Reservation> getWaitlistReservations() throws SQLException {
-        return db.getWaitlistReservations();
-}
+	public List<Reservation> getWaitlistReservations() throws SQLException {
+		return db.getWaitlistReservations();
+	}
 
-	public boolean updateReservation(int reservationId, LocalDateTime newDateTime, int newGuests) throws SQLException {
+	public List<Reservation> getSubscriberHistory(int customerId) throws SQLException {
+		if (customerId <= 0)
+			return new ArrayList<>();
+		return db.getReservationHistoryByCustomerId(customerId);
+	}
+
+	public UpdateReservationResult updateReservation(int reservationId, LocalDateTime newDateTime, int newGuests)
+			throws SQLException {
 
 		if (reservationId <= 0)
-			return false;
+			return UpdateReservationResult.fail("Invalid reservation ID.");
 		if (newDateTime == null)
-			return false;
+			return UpdateReservationResult.fail("Date and time is required.");
 		if (newGuests <= 0)
-			return false;
+			return UpdateReservationResult.fail("Number of guests must be positive.");
 
-		return db.updateReservationFields(reservationId, newDateTime, newGuests);
+		// Validate opening hours for new date/time
+		String hoursError = validateOpeningHours(newDateTime);
+		if (hoursError != null)
+			return UpdateReservationResult.fail(hoursError);
+
+		// Validate time constraints (30-min slots)
+		int m = newDateTime.getMinute();
+		if (m != 0 && m != 30)
+			return UpdateReservationResult.fail("Time must be in 30-minute intervals.");
+
+		boolean updated = db.updateReservationFields(reservationId, newDateTime, newGuests);
+		if (!updated)
+			return UpdateReservationResult.fail("Reservation not found or could not be updated.");
+
+		return UpdateReservationResult.ok(reservationId);
 	}
 
 	public CreateReservationResult createGuestReservation(LocalDateTime dateTime, int guests, String fullName,
@@ -92,7 +120,7 @@ public List<Reservation> getWaitlistReservations() throws SQLException {
 		return CreateReservationResult.ok(r.getReservationId(), r.getConfirmationCode());
 	}
 
-	private String validateRequest(LocalDateTime start, int guests) {
+	private String validateRequest(LocalDateTime start, int guests) throws SQLException {
 		if (start == null)
 			return "Missing date/time.";
 		if (guests <= 0)
@@ -113,30 +141,73 @@ public List<Reservation> getWaitlistReservations() throws SQLException {
 		if (m != 0 && m != 30)
 			return "Time must be in 30-minute intervals.";
 
-		// opening hours across midnight
-		if (!isWithinOpeningHours(start))
-			return "Restaurant is closed at that time.";
+		// opening hours from database
+		String hoursError = validateOpeningHours(start);
+		if (hoursError != null)
+			return hoursError;
 
 		return null; // OK
 	}
 
-	private boolean isWithinOpeningHours(LocalDateTime start) {
-		LocalDateTime end = start.plusMinutes(DURATION_MIN);
+	private String validateOpeningHours(LocalDateTime start) throws SQLException {
+		LocalDate date = start.toLocalDate();
+		LocalTime time = start.toLocalTime();
+		LocalTime endTime = start.plusMinutes(DURATION_MIN).toLocalTime();
 
-		LocalTime s = start.toLocalTime();
-		LocalTime e = end.toLocalTime();
-
-		// Case 1: between 10:00 and midnight
-		if (!s.isBefore(OPEN)) {
-			return true; // start OK, end will still be <= 02:00 next day
+		// First check for date override (holidays, special events)
+		DateOverride override = db.getDateOverrideForDate(date);
+		if (override != null) {
+			if (override.isClosed()) {
+				String reason = override.getReason();
+				return "Restaurant is closed on " + date + (reason != null ? " (" + reason + ")" : "") + ".";
+			}
+			return validateTimeRange(time, endTime, override.getOpenTime(), override.getCloseTime());
 		}
 
-		// Case 2: after midnight until 02:00
-		if (s.isBefore(CLOSE)) {
-			return e.isBefore(CLOSE) || e.equals(CLOSE);
+		// Otherwise use regular opening hours for this day of week
+		DayOfWeek dayOfWeek = date.getDayOfWeek();
+		OpeningHours hours = db.getOpeningHoursForDay(dayOfWeek);
+		if (hours != null) {
+			if (hours.isClosed()) {
+				return "Restaurant is closed on " + dayOfWeek + "s.";
+			}
+			return validateTimeRange(time, endTime, hours.getOpenTime(), hours.getCloseTime());
 		}
 
-		return false;
+		// Fallback to default hours if no database entry
+		return validateTimeRange(time, endTime, DEFAULT_OPEN, DEFAULT_CLOSE);
+	}
+
+	private String validateTimeRange(LocalTime start, LocalTime end, LocalTime open, LocalTime close) {
+		if (open == null || close == null) {
+			return "Restaurant hours not configured.";
+		}
+
+		// Handle hours that cross midnight (e.g., 10:00 - 02:00)
+		boolean crossesMidnight = close.isBefore(open);
+
+		if (crossesMidnight) {
+			// Valid times: from open until midnight, OR from midnight until close
+			boolean startOk = !start.isBefore(open) || start.isBefore(close);
+			boolean endOk = !end.isBefore(open) || end.isBefore(close) || end.equals(close);
+
+			// Handle case where reservation itself crosses midnight
+			if (end.isBefore(start)) {
+				// Reservation crosses midnight - end must be before close
+				endOk = end.isBefore(close) || end.equals(close);
+			}
+
+			if (!startOk || !endOk) {
+				return "Restaurant is closed at that time (open " + open + " - " + close + ").";
+			}
+		} else {
+			// Normal hours (e.g., 10:00 - 22:00)
+			if (start.isBefore(open) || end.isAfter(close)) {
+				return "Restaurant is closed at that time (open " + open + " - " + close + ").";
+			}
+		}
+
+		return null; // OK
 	}
 
 	private boolean feasible(List<Integer> tableCaps, List<Integer> reservationGuests) {
@@ -195,8 +266,8 @@ public List<Reservation> getWaitlistReservations() throws SQLException {
 		if (m != 0 && m != 30)
 			return false;
 
-		// opening hours across midnight (the important part)
-		if (!isWithinOpeningHours(cand))
+		// opening hours from database
+		if (validateOpeningHours(cand) != null)
 			return false;
 
 		// time window rule
@@ -498,6 +569,48 @@ public List<Reservation> getWaitlistReservations() throws SQLException {
 				return cap;
 		}
 		return 0;
+	}
+
+	// ======================== RESEND CONFIRMATION CODE ========================
+
+	public List<Reservation> findReservationsByPhoneOrEmail(String phone, String email) throws SQLException {
+		if ((phone == null || phone.isBlank()) && (email == null || email.isBlank())) {
+			return new ArrayList<>();
+		}
+		return db.findReservationsByPhoneOrEmail(phone, email);
+	}
+
+	// ======================== NO-SHOW & REMINDER OPERATIONS
+	// ========================
+
+	public List<Integer> getNoShowReservationIds() throws SQLException {
+		return db.getNoShowReservationIds();
+	}
+
+	public boolean cancelNoShowReservation(int reservationId) throws SQLException {
+		return db.updateReservationStatus(reservationId, ReservationStatus.CANCELED.name());
+	}
+
+	public List<Integer> getReservationsForReminder() throws SQLException {
+		return db.getReservationsForReminder();
+	}
+
+	public void markReminderSent(int reservationId) throws SQLException {
+		db.markReminderSent(reservationId);
+	}
+
+	public List<Reservation> getReservationsForBilling() throws SQLException {
+		return db.getReservationsForBilling();
+	}
+
+	// ======================== MANAGER REPORTS ========================
+
+	public List<common.dto.Report.TimeReportEntry> getTimeReport(int year, int month) throws SQLException {
+		return db.getTimeReportForMonth(year, month);
+	}
+
+	public List<common.dto.Report.SubscriberReportEntry> getSubscriberReport(int year, int month) throws SQLException {
+		return db.getSubscriberReportForMonth(year, month);
 	}
 
 }

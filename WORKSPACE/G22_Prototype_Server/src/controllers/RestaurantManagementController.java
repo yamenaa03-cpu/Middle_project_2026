@@ -9,6 +9,7 @@ import java.util.List;
 import common.entity.Table;
 import common.entity.DateOverride;
 import common.entity.OpeningHours;
+import common.dto.RestaurantManagement.RestaurantManagementResult;
 import dbController.DBController;
 
 public class RestaurantManagementController {
@@ -25,25 +26,40 @@ public class RestaurantManagementController {
 		return db.getAllTables();
 	}
 
-	public int addTable(int seats) throws SQLException {
+	public RestaurantManagementResult addTable(int seats) throws SQLException {
 		if (seats <= 0) {
-			throw new IllegalArgumentException("Seats must be positive.");
+			return RestaurantManagementResult.fail("Seats must be a positive number.");
 		}
-		return db.addTable(seats);
+		int newTableNumber = db.addTable(seats);
+		if (newTableNumber > 0) {
+			return RestaurantManagementResult.tableAdded(newTableNumber, "Table " + newTableNumber + " added successfully.");
+		}
+		return RestaurantManagementResult.fail("Failed to add table.");
 	}
 
-	public boolean updateTable(int tableNumber, int newSeats) throws SQLException {
-		if (tableNumber <= 0 || newSeats <= 0) {
-			return false;
-		}
-		return db.updateTableSeats(tableNumber, newSeats);
-	}
-
-	public boolean deleteTable(int tableNumber) throws SQLException {
+	public RestaurantManagementResult updateTable(int tableNumber, int newSeats) throws SQLException {
 		if (tableNumber <= 0) {
-			return false;
+			return RestaurantManagementResult.fail("Invalid table number.");
 		}
-		return db.deleteTable(tableNumber);
+		if (newSeats <= 0) {
+			return RestaurantManagementResult.fail("Seats must be a positive number.");
+		}
+		boolean updated = db.updateTableSeats(tableNumber, newSeats);
+		if (updated) {
+			return RestaurantManagementResult.ok("Table " + tableNumber + " updated to " + newSeats + " seats.");
+		}
+		return RestaurantManagementResult.fail("Table " + tableNumber + " not found.");
+	}
+
+	public RestaurantManagementResult deleteTable(int tableNumber) throws SQLException {
+		if (tableNumber <= 0) {
+			return RestaurantManagementResult.fail("Invalid table number.");
+		}
+		boolean deleted = db.deleteTable(tableNumber);
+		if (deleted) {
+			return RestaurantManagementResult.ok("Table " + tableNumber + " deleted successfully.");
+		}
+		return RestaurantManagementResult.fail("Table " + tableNumber + " not found or currently in use.");
 	}
 
 	// ======================== HOURS OPERATIONS ========================
@@ -52,14 +68,19 @@ public class RestaurantManagementController {
 		return db.getOpeningHours();
 	}
 
-	public boolean updateOpeningHours(DayOfWeek day, LocalTime openTime, LocalTime closeTime, boolean closed) throws SQLException {
+	public RestaurantManagementResult updateOpeningHours(DayOfWeek day, LocalTime openTime, LocalTime closeTime, boolean closed) throws SQLException {
 		if (day == null) {
-			return false;
+			return RestaurantManagementResult.fail("Day of week is required.");
 		}
 		if (!closed && (openTime == null || closeTime == null)) {
-			return false;
+			return RestaurantManagementResult.fail("Open and close times are required for non-closed days.");
 		}
-		return db.updateOpeningHours(day, openTime, closeTime, closed);
+		boolean updated = db.updateOpeningHours(day, openTime, closeTime, closed);
+		if (updated) {
+			String status = closed ? "marked as closed" : "updated to " + openTime + " - " + closeTime;
+			return RestaurantManagementResult.ok(day + " " + status + ".");
+		}
+		return RestaurantManagementResult.fail("Failed to update hours for " + day + ".");
 	}
 
 	// ======================== DATE OVERRIDE OPERATIONS ========================
@@ -68,30 +89,45 @@ public class RestaurantManagementController {
 		return db.getDateOverrides();
 	}
 
-	public int addDateOverride(LocalDate date, LocalTime openTime, LocalTime closeTime, boolean closed, String reason) throws SQLException {
+	public RestaurantManagementResult addDateOverride(LocalDate date, LocalTime openTime, LocalTime closeTime, boolean closed, String reason) throws SQLException {
 		if (date == null) {
-			throw new IllegalArgumentException("Date is required.");
+			return RestaurantManagementResult.fail("Date is required.");
 		}
 		if (!closed && (openTime == null || closeTime == null)) {
-			throw new IllegalArgumentException("Open and close times required for non-closed dates.");
+			return RestaurantManagementResult.fail("Open and close times are required for non-closed dates.");
 		}
-		return db.addDateOverride(date, openTime, closeTime, closed, reason);
+		int overrideId = db.addDateOverride(date, openTime, closeTime, closed, reason);
+		if (overrideId > 0) {
+			return RestaurantManagementResult.overrideAdded(overrideId, "Override for " + date + " added successfully.");
+		}
+		return RestaurantManagementResult.fail("Failed to add override. Date may already exist.");
 	}
 
-	public boolean updateDateOverride(int id, LocalDate date, LocalTime openTime, LocalTime closeTime, boolean closed, String reason) throws SQLException {
-		if (id <= 0 || date == null) {
-			return false;
-		}
-		if (!closed && (openTime == null || closeTime == null)) {
-			return false;
-		}
-		return db.updateDateOverride(id, date, openTime, closeTime, closed, reason);
-	}
-
-	public boolean deleteDateOverride(int id) throws SQLException {
+	public RestaurantManagementResult updateDateOverride(int id, LocalDate date, LocalTime openTime, LocalTime closeTime, boolean closed, String reason) throws SQLException {
 		if (id <= 0) {
-			return false;
+			return RestaurantManagementResult.fail("Invalid override ID.");
 		}
-		return db.deleteDateOverride(id);
+		if (date == null) {
+			return RestaurantManagementResult.fail("Date is required.");
+		}
+		if (!closed && (openTime == null || closeTime == null)) {
+			return RestaurantManagementResult.fail("Open and close times are required for non-closed dates.");
+		}
+		boolean updated = db.updateDateOverride(id, date, openTime, closeTime, closed, reason);
+		if (updated) {
+			return RestaurantManagementResult.ok("Override for " + date + " updated successfully.");
+		}
+		return RestaurantManagementResult.fail("Override not found.");
+	}
+
+	public RestaurantManagementResult deleteDateOverride(int id) throws SQLException {
+		if (id <= 0) {
+			return RestaurantManagementResult.fail("Invalid override ID.");
+		}
+		boolean deleted = db.deleteDateOverride(id);
+		if (deleted) {
+			return RestaurantManagementResult.ok("Override deleted successfully.");
+		}
+		return RestaurantManagementResult.fail("Override not found.");
 	}
 }

@@ -84,6 +84,15 @@ public class UserAccountRequest implements Serializable {
         r.email = email;
         return r;
     }
+    
+    public static UserAccountRequest createUpdateSubscriberProfileRequest(String fullName, String phone, String email) {
+        UserAccountRequest r = new UserAccountRequest();
+        r.operation = UserAccountOperation.UPDATE_SUBSCRIBER_PROFILE;
+        r.fullName = fullName;
+        r.phone = phone;
+        r.email = email;
+        return r;
+    }
 
 	public UserAccountOperation getOperation() {
 		return operation;

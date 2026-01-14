@@ -21,5 +21,8 @@ public enum ReservationOperation implements Serializable  {
     JOIN_WAITLIST,
     RECEIVE_TABLE,
     GET_BILL_FOR_PAYING,
-    PAY_BILL
+    PAY_BILL,
+    GET_SUBSCRIBER_HISTORY,
+    GET_TIME_REPORT,
+    GET_SUBSCRIBER_REPORT
 }

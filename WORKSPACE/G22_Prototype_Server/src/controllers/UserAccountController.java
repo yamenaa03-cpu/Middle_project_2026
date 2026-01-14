@@ -1,8 +1,10 @@
 package controllers;
 
 import java.sql.SQLException;
+import java.util.List;
 
 import common.dto.UserAccount.SubscriberLogInResult;
+import common.dto.UserAccount.CustomerLookupResult;
 import common.entity.Customer;
 import common.enums.EmployeeRole;
 import common.dto.UserAccount.EmployeeLogInResult;
@@ -17,7 +19,8 @@ public class UserAccountController {
 		this.db = db;
 	}
 
-	// 1) Subscription customers
+	// ======================== LOGIN OPERATIONS ========================
+
 	public SubscriberLogInResult LogInBySubscriptionCode(String code) throws SQLException {
 		if (code == null || code.isBlank()) {
 			return SubscriberLogInResult.fail("Subscription code is required.");
@@ -32,6 +35,24 @@ public class UserAccountController {
 
 		return SubscriberLogInResult.ok(subscriberId, "Login successful.", fullName);
 	}
+
+	public EmployeeLogInResult employeeLogIn(String username, String password) throws SQLException {
+		if (username == null || username.isBlank())
+			return EmployeeLogInResult.fail("Username required.");
+		if (password == null || password.isBlank())
+			return EmployeeLogInResult.fail("Password required.");
+
+		Integer empId = db.findEmployeeIdByCredentials(username.trim(), password);
+		if (empId == null)
+			return EmployeeLogInResult.fail("Invalid credentials.");
+
+		String fullName = db.getEmployeeNameById(empId);
+		EmployeeRole empRole = db.getEmployeeRoleById(empId);
+
+		return EmployeeLogInResult.ok(empId, empRole, fullName, "Login successful.");
+	}
+
+	// ======================== REGISTRATION ========================
 
 	public RegisterSubscriberResult registerSubscriber(String fullName, String phone, String email)
 			throws SQLException {
@@ -55,48 +76,100 @@ public class UserAccountController {
 		return RegisterSubscriberResult.ok(subCode);
 	}
 
-	public String getFullNameBySubscriberId(int subscriberId) throws SQLException {
-		return db.getFullNameByCustomerId(subscriberId);
+	// ======================== PROFILE OPERATIONS ========================
+
+	public CustomerLookupResult getSubscriberProfile(int subscriberId) throws SQLException {
+		if (subscriberId <= 0) {
+			return CustomerLookupResult.fail("Invalid subscriber ID.");
+		}
+		Customer c = db.getSubscribedCustomerById(subscriberId);
+		if (c == null) {
+			return CustomerLookupResult.notFound("Subscriber not found.");
+		}
+		return CustomerLookupResult.found(c);
 	}
 
-	public EmployeeLogInResult employeeLogIn(String username, String password) throws SQLException {
-		if (username == null || username.isBlank())
-			return EmployeeLogInResult.fail("Username required.");
-		if (password == null || password.isBlank())
-			return EmployeeLogInResult.fail("Password required.");
-
-		Integer empId = db.findEmployeeIdByCredentials(username.trim(), password);
-		if (empId == null)
-			return EmployeeLogInResult.fail("Invalid credentials.");
-
-		String fullName = db.getEmployeeNameById(empId);
-		EmployeeRole empRole = db.getEmployeeRoleById(empId);
-
-		return EmployeeLogInResult.ok(empId, empRole, fullName, "Login successful.");
+	public String getFullNameBySubscriberId(int subscriberId) throws SQLException {
+		return db.getFullNameByCustomerId(subscriberId);
 	}
 
 	public String getFullNameByEmployeeId(int employeeId) throws SQLException {
 		return db.getEmployeeNameById(employeeId);
 	}
 
-	public Customer lookupCustomerBySubscriptionCode(String subscriptionCode) throws SQLException {
+	// ======================== CUSTOMER LOOKUP (FOR EMPLOYEES)
+	// ========================
+
+	public CustomerLookupResult lookupCustomerBySubscriptionCode(String subscriptionCode) throws SQLException {
 		if (subscriptionCode == null || subscriptionCode.isBlank()) {
-			return null;
+			return CustomerLookupResult.fail("Subscription code is required.");
 		}
-		return db.findCustomerBySubscriptionCode(subscriptionCode.trim());
+		Customer c = db.findCustomerBySubscriptionCode(subscriptionCode.trim());
+		if (c == null) {
+			return CustomerLookupResult.notFound("Customer not found by subscription code.");
+		}
+		return CustomerLookupResult.found(c);
 	}
 
-	public Customer lookupCustomerByPhone(String phone) throws SQLException {
+	public CustomerLookupResult lookupCustomerByPhone(String phone) throws SQLException {
 		if (phone == null || phone.isBlank()) {
-			return null;
+			return CustomerLookupResult.fail("Phone number is required.");
 		}
-		return db.findCustomerByPhone(phone.trim());
+		Customer c = db.findCustomerByPhone(phone.trim());
+		if (c == null) {
+			return CustomerLookupResult.notFound("Customer not found by phone.");
+		}
+		return CustomerLookupResult.found(c);
 	}
 
-	public Customer lookupCustomerByEmail(String email) throws SQLException {
+	public CustomerLookupResult lookupCustomerByEmail(String email) throws SQLException {
 		if (email == null || email.isBlank()) {
-			return null;
+			return CustomerLookupResult.fail("Email is required.");
 		}
-		return db.findCustomerByEmail(email.trim());
+		Customer c = db.findCustomerByEmail(email.trim());
+		if (c == null) {
+			return CustomerLookupResult.notFound("Customer not found by email.");
+		}
+		return CustomerLookupResult.found(c);
+	}
+
+	// ======================== UPDATE PROFILE ========================
+
+	public CustomerLookupResult updateSubscriberProfile(int subscriberId, String fullName, String phone, String email)
+			throws SQLException {
+		if (subscriberId <= 0) {
+			return CustomerLookupResult.fail("Invalid subscriber ID.");
+		}
+
+		Customer existing = db.getSubscribedCustomerById(subscriberId);
+		if (existing == null) {
+			return CustomerLookupResult.notFound("Subscriber not found.");
+		}
+
+		String newFullName = (fullName != null && !fullName.isBlank()) ? fullName.trim() : existing.getFullName();
+		String newPhone = (phone != null && !phone.isBlank()) ? phone.trim() : existing.getPhone();
+		String newEmail = (email != null && !email.isBlank()) ? email.trim() : existing.getEmail();
+
+		if (db.customerExistsByPhoneOrEmailExcept(subscriberId, newPhone, newEmail)) {
+			return CustomerLookupResult.fail("Phone or email already in use by another customer.");
+		}
+
+		boolean updated = db.updateCustomerProfile(subscriberId, newFullName, newPhone, newEmail);
+		if (!updated) {
+			return CustomerLookupResult.fail("Failed to update profile.");
+		}
+
+		Customer updatedCustomer = db.getSubscribedCustomerById(subscriberId);
+		return CustomerLookupResult.found(updatedCustomer);
+	}
+
+	// ======================== EMPLOYEE QUERIES ========================
+
+	public List<Customer> getAllSubscribers() throws SQLException {
+		return db.getAllSubscribers();
+	}
+
+	public List<Customer> getCurrentDiners() throws SQLException {
+		return db.getCurrentDiners();
 	}
 }

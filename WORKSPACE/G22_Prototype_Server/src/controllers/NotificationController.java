@@ -5,6 +5,7 @@ import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 
 import common.dto.Notification.CustomerContactInfo;
+import common.dto.Notification.NotificationResult;
 import common.dto.Reservation.ReservationBasicInfo;
 import common.entity.Bill;
 import common.entity.Reservation;
@@ -28,39 +29,41 @@ public class NotificationController {
         return (res == null) ? null : res.getReservationId();
     }
     
- // 1) Reservation confirmation
-    public boolean sendReservationConfirmation(int reservationId) throws SQLException {
-
+    // 1) Reservation confirmation
+    public NotificationResult sendReservationConfirmation(int reservationId) throws SQLException {
         CustomerContactInfo contact = db.getContactInfoByReservationId(reservationId);
-        
         ReservationBasicInfo info = db.getReservationBasicInfo(reservationId); 
-        if (info == null || contact == null) return false;
+        
+        if (info == null) return NotificationResult.reservationNotFound();
+        if (contact == null) return NotificationResult.noContactInfo();
+        
         String msg = buildMessage(NotificationType.RESERVATION_CONFIRMATION,
-        		info.fullName, info.dateTime, info.guests, info.confirmationCode, null, null);
+                        info.fullName, info.dateTime, info.guests, info.confirmationCode, null, null);
 
         return send(contact, msg);
     }
     
     // 2) Resend confirmation
-    public boolean resendReservationConfirmation(int reservationId) throws SQLException {
-
+    public NotificationResult resendReservationConfirmation(int reservationId) throws SQLException {
         CustomerContactInfo contact = db.getContactInfoByReservationId(reservationId);
-        
         ReservationBasicInfo info = db.getReservationBasicInfo(reservationId); 
-        if (info == null || contact == null) return false;
+        
+        if (info == null) return NotificationResult.reservationNotFound();
+        if (contact == null) return NotificationResult.noContactInfo();
+        
         String msg = buildMessage(NotificationType.RESEND_CONFIRMATION,
-        		info.fullName, info.dateTime, info.guests, info.confirmationCode, null, null);
+                        info.fullName, info.dateTime, info.guests, info.confirmationCode, null, null);
 
         return send(contact, msg);
     }
 
     // 3) Reminder
-    public boolean sendReservationReminder(int reservationId) throws SQLException {
-
+    public NotificationResult sendReservationReminder(int reservationId) throws SQLException {
         CustomerContactInfo contact = db.getContactInfoByReservationId(reservationId);
-
         ReservationBasicInfo info = db.getReservationBasicInfo(reservationId); 
-        if (info == null) return false;
+        
+        if (info == null) return NotificationResult.reservationNotFound();
+        if (contact == null) return NotificationResult.noContactInfo();
 
         String msg = buildMessage(NotificationType.RESERVATION_REMINDER,
                 info.fullName, info.dateTime, info.guests, info.confirmationCode, null, null);
@@ -68,14 +71,13 @@ public class NotificationController {
         return send(contact, msg);
     }
 
-
     // 4) Table available 
-    public boolean sendTableAvailable(int reservationId) throws SQLException {
-
+    public NotificationResult sendTableAvailable(int reservationId) throws SQLException {
         CustomerContactInfo contact = db.getContactInfoByReservationId(reservationId);
-
         ReservationBasicInfo info = db.getReservationBasicInfo(reservationId);
-        if (info == null) return false;
+        
+        if (info == null) return NotificationResult.reservationNotFound();
+        if (contact == null) return NotificationResult.noContactInfo();
 
         String msg = buildMessage(NotificationType.TABLE_AVAILABLE,
                 info.fullName, null, null, info.confirmationCode, null, null);
@@ -83,13 +85,13 @@ public class NotificationController {
         return send(contact, msg);
     }
 
-
     // 5) Table received 
-    public boolean sendTableReceived(int reservationId) throws SQLException {
-
+    public NotificationResult sendTableReceived(int reservationId) throws SQLException {
         CustomerContactInfo contact = db.getContactInfoByReservationId(reservationId);
+        
+        if (contact == null) return NotificationResult.noContactInfo();
 
-        String name = (contact != null ? contact.getFullName() : "Customer");
+        String name = contact.getFullName() != null ? contact.getFullName() : "Customer";
 
         String msg = buildMessage(NotificationType.TABLE_RECEIVED,
                 name, null, null, null, null, null);
@@ -98,12 +100,12 @@ public class NotificationController {
     }
 
     // 6) Bill sent 
-    public boolean sendBillSent(int reservationId, Bill bill) throws SQLException {
-
+    public NotificationResult sendBillSent(int reservationId, Bill bill) throws SQLException {
         CustomerContactInfo contact = db.getContactInfoByReservationId(reservationId);
-
         ReservationBasicInfo info = db.getReservationBasicInfo(reservationId);
-        if (info == null) return false;
+        
+        if (info == null) return NotificationResult.reservationNotFound();
+        if (contact == null) return NotificationResult.noContactInfo();
 
         String msg = buildMessage(NotificationType.BILL_SENT,
                 info.fullName, null, null, info.confirmationCode,
@@ -112,13 +114,13 @@ public class NotificationController {
         return send(contact, msg);
     }
 
-
     // 7) Payment success 
-    public boolean sendPaymentSuccess(int reservationId) throws SQLException {
-
+    public NotificationResult sendPaymentSuccess(int reservationId) throws SQLException {
         CustomerContactInfo contact = db.getContactInfoByReservationId(reservationId);
+        
+        if (contact == null) return NotificationResult.noContactInfo();
 
-        String name = (contact != null ? contact.getFullName() : "Customer");
+        String name = contact.getFullName() != null ? contact.getFullName() : "Customer";
 
         String msg = buildMessage(NotificationType.PAYMENT_SUCCESS,
                 name, null, null, null, null, null);
@@ -127,11 +129,12 @@ public class NotificationController {
     }
 
     // 8) Reservation canceled
-    public boolean sendReservationCanceled(int reservationId) throws SQLException {
-
+    public NotificationResult sendReservationCanceled(int reservationId) throws SQLException {
         CustomerContactInfo contact = db.getContactInfoByReservationId(reservationId);
+        
+        if (contact == null) return NotificationResult.noContactInfo();
 
-        String name = (contact != null ? contact.getFullName() : "Customer");
+        String name = contact.getFullName() != null ? contact.getFullName() : "Customer";
 
         String msg = buildMessage(NotificationType.RESERVATION_CANCELED,
                 name, null, null, null, null, null);
@@ -139,11 +142,11 @@ public class NotificationController {
         return send(contact, msg);
     }
 
-    public boolean sendReservationCanceledByCode(int confirmationCode) throws SQLException {
+    public NotificationResult sendReservationCanceledByCode(int confirmationCode) throws SQLException {
         Integer resId = resolveReservationIdByCode(confirmationCode);
         if (resId == null) {
             ui.display("❌ RESERVATION_CANCELED not sent: invalid confirmationCode=" + confirmationCode);
-            return false;
+            return NotificationResult.fail("Invalid confirmation code: " + confirmationCode);
         }
         return sendReservationCanceled(resId);
     }
@@ -152,18 +155,18 @@ public class NotificationController {
      * Sends message to contact info (simulation).
      * - If email exists -> "simulate email"
      * - If phone exists -> "simulate SMS"
-     * - If both missing -> log and return false
+     * - If both missing -> return failure result
      */
-    public boolean send(CustomerContactInfo contact, String message) {
+    private NotificationResult send(CustomerContactInfo contact, String message) {
 
         if (message == null || message.isBlank()) {
             ui.display("❌ Notification NOT sent: empty message.");
-            return false;
+            return NotificationResult.emptyMessage();
         }
 
         if (contact == null) {
             ui.display("❌ Notification NOT sent: contact info is null.");
-            return false;
+            return NotificationResult.noContactInfo();
         }
 
         boolean hasEmail = contact.getEmail() != null && !contact.getEmail().isBlank();
@@ -171,26 +174,26 @@ public class NotificationController {
 
         if (!hasEmail && !hasPhone) {
             ui.display("❌ Notification NOT sent: no email/phone for customerId=" + contact.getCustomerId());
-            return false;
+            return NotificationResult.noContactInfo();
         }
 
-        boolean sentSomething = false;
+        String channel = null;
 
         if (hasEmail) {
             // SIMULATE email
             ui.display("📧 [EMAIL] To: " + contact.getEmail());
             ui.display(message);
-            sentSomething = true;
+            channel = "EMAIL";
         }
 
         if (hasPhone) {
             // SIMULATE SMS
             ui.display("📱 [SMS] To: " + contact.getPhone());
             ui.display(message);
-            sentSomething = true;
+            channel = (channel == null) ? "SMS" : channel + "+SMS";
         }
 
-        return sentSomething;
+        return NotificationResult.sent("Notification sent via " + channel, channel);
     }
     
     private static final DateTimeFormatter FORMATTER =

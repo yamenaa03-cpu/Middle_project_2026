@@ -3,10 +3,9 @@ package clientGUI;
 
 import client.Client;
 import client.ClientUI;
-import common.dto.Authentication.SubscriberAuthResponse;
 import common.dto.Reservation.ReservationResponse;
+import common.dto.UserAccount.UserAccountResponse;
 import common.entity.Reservation;
-import common.enums.AuthOperation;
 import javafx.animation.PauseTransition;
 import javafx.animation.RotateTransition;
 import javafx.animation.TranslateTransition;
@@ -19,11 +18,13 @@ import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.scene.control.Alert;
 import javafx.scene.control.Button;
+import javafx.scene.control.MenuItem;
 import javafx.scene.image.ImageView;
 import javafx.scene.layout.HBox;
 import javafx.scene.transform.Rotate;
 import javafx.stage.Modality;
 import javafx.stage.Stage;
+import javafx.stage.Window;
 import javafx.util.Duration;
 
 import java.io.IOException;
@@ -51,10 +52,13 @@ public class ClientController implements ClientUI{
     private Client client;
     private LoginController activeLoginController;
     private Integer currentSubscriberId = null;//subscriber id if the client is connected
+    
     private ReservationController activeReservationController;
     private PersonalSpaceController activePersonalSpaceController;
     private CancelReservationController ActiveCancelReservationGuestController;
     private CancelReservationConfirmController ActiveCancelReservationConfirmController;
+    private BistroKioskController ActiveBistroKioskController;
+    private RegisterSubscriberController ActiveRegisterSubscriberController;
     private boolean waitingSubscriberReservationsForCancel = false;
 
 
@@ -101,6 +105,13 @@ public class ClientController implements ClientUI{
         this.ActiveCancelReservationConfirmController = Crcc;
     }
     
+    public void setActiveBistroKioskController(BistroKioskController Kctr) {
+    		this.ActiveBistroKioskController = Kctr;
+    }
+    
+    public void setActiveRegisterSubscriberController(RegisterSubscriberController RSctr) {
+		this.ActiveRegisterSubscriberController = RSctr;
+}
     
     
     
@@ -164,7 +175,7 @@ public class ClientController implements ClientUI{
     }
 
     @FXML
-    private void onDeleteReservation(ActionEvent event) {
+    public void onDeleteReservation(ActionEvent event) {
 
         if (client == null || !client.isConnected()) {
             displayMessage("Not connected to server.");
@@ -225,7 +236,31 @@ public class ClientController implements ClientUI{
         }
     }
 
+    @FXML
+    public void onRegisterSubscriber(ActionEvent event) {
+        try {
+            MenuItem item = (MenuItem) event.getSource();
+            Window owner = item.getParentPopup().getOwnerWindow();
 
+            FXMLLoader loader = new FXMLLoader(getClass().getResource("/clientGUI/RegisterSubscriber.fxml"));
+            Parent root = loader.load();
+            
+            RegisterSubscriberController RSCtrl = loader.getController();
+            RSCtrl.setClient(client);
+            RSCtrl.setMainController(this);
+            setActiveRegisterSubscriberController(RSCtrl);
+            
+            
+            Stage popupStage = new Stage();
+            popupStage.initOwner(owner);
+            popupStage.initModality(Modality.APPLICATION_MODAL);
+            popupStage.setScene(new Scene(root));
+            popupStage.showAndWait();
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
     @FXML
     public void onSignIn() {
     	 try {
@@ -263,8 +298,7 @@ public class ClientController implements ClientUI{
     @FXML
     public void onLogout() {
     		client.requestLogout();
-    	    Stage stage = (Stage) logoutBtn.getScene().getWindow();
-    	    stage.close();
+
     }
     
     public void onPersonalSpace() {
@@ -340,6 +374,39 @@ public class ClientController implements ClientUI{
  	        e.printStackTrace();
  	    }
     }
+    @FXML
+    public void onOpenKiosk() {
+    	 try {
+  	        FXMLLoader loader = new FXMLLoader(
+  	                getClass().getResource("/clientGUI/BistroKiosk.fxml")
+  	        );
+  	        Parent root = loader.load();
+  	        Scene scene = new Scene(root);
+  	        
+  	        
+            BistroKioskController KCtrl = loader.getController();
+            KCtrl.setClient(client);
+            KCtrl.setMainController(this);
+            setActiveBistroKioskController(KCtrl);
+            
+            
+
+
+
+  	        Stage popupStage = new Stage();
+  	        popupStage.setTitle("Bistro – Kiosk");
+  	        popupStage.initModality(Modality.APPLICATION_MODAL);
+  	        popupStage.initOwner(SignInButton.getScene().getWindow());
+  	        popupStage.setResizable(true);
+  	        popupStage.setScene(scene);
+
+  	        popupStage.showAndWait();
+  	        System.out.println("Kisok Opened");
+
+  	    } catch (Exception e) {
+  	        e.printStackTrace();
+  	    }
+    }
 
     // ==========================================================
     // CLEAN SHUTDOWN (OPTIONAL BUT RECOMMENDED)
@@ -373,7 +440,7 @@ public class ClientController implements ClientUI{
 	}
 
 	@Override
-	public void handleAuthResponse(SubscriberAuthResponse resp) {
+	public void handleAuthResponse(UserAccountResponse resp) {
 
 	    if (resp.isSuccess()) {
 	        currentSubscriberId = resp.getSubscriberId();  // ✅ save login state
@@ -388,7 +455,7 @@ public class ClientController implements ClientUI{
 	        }
 	    }
 	    if (activePersonalSpaceController != null) {
-	    	activePersonalSpaceController.onAuthResponse(resp);
+	    	//activePersonalSpaceController.onAuthResponse(resp);
 	    }
 	}
 	@Override

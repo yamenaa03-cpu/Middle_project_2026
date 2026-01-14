@@ -6,25 +6,72 @@
 <?import javafx.scene.layout.HBox?>
 <?import javafx.scene.layout.VBox?>
 
-<BorderPane prefHeight="800" prefWidth="600" style="-fx-background-color: #111111;" xmlns="http://javafx.com/javafx/21" xmlns:fx="http://javafx.com/fxml/1">
+<BorderPane prefHeight="800" prefWidth="600"
+            style="-fx-background-color: #111111;"
+            xmlns="http://javafx.com/javafx/21"
+            xmlns:fx="http://javafx.com/fxml/1"
+            fx:controller="clientGUI.BistroKioskController">
 
-    <!-- ===== TOP TITLE ===== -->
+    <!-- ===== TOP TITLE + SIGN IN ===== -->
     <top>
-        <HBox alignment="CENTER" style="-fx-padding: 40;">
-            <Label prefHeight="63.0" prefWidth="226.0" style="-fx-text-fill: white; -fx-font-size: 56px; -fx-font-family: 'Didot'; -fx-font-weight: bold;" text="𝔹𝕀𝕊𝕋ℝ𝕆" textAlignment="CENTER" />
-        </HBox>
+        <BorderPane style="-fx-padding: 25 25 0 25;">
+
+            <!-- Sign In button (upper-left) -->
+            <left>
+                <Button fx:id="signInButton"
+                        text="👤"
+                        prefWidth="55" prefHeight="55"
+                        onAction="#onSignIn"
+                        style="-fx-background-color: transparent;
+                               -fx-border-color: white;
+                               -fx-border-width: 2;
+                               -fx-border-radius: 999;
+                               -fx-background-radius: 999;
+                               -fx-font-size: 24px;
+                               -fx-text-fill: white;"
+                        mnemonicParsing="false"/>
+            </left>
+
+            <!-- Center Title -->
+            <center>
+                <HBox alignment="CENTER" style="-fx-padding: 15 0 15 0;">
+                    <Label prefHeight="63.0" prefWidth="226.0"
+                           style="-fx-text-fill: white; -fx-font-size: 56px; -fx-font-family: 'Didot'; -fx-font-weight: bold;"
+                           text="𝔹𝕀𝕊𝕋ℝ𝕆"
+                           textAlignment="CENTER" />
+                </HBox>
+            </center>
+
+        </BorderPane>
     </top>
 
     <!-- ===== MAIN BUTTONS ===== -->
     <center>
         <VBox alignment="CENTER" spacing="35">
 
-            <Button prefHeight="90" prefWidth="350" style="-fx-background-radius: 200; -fx-background-color: #FFFDD0; -fx-text-fill: black; -fx-font-size: 26px; -fx-font-weight: bold;" text="קבלת שולחן" />
+            <Button fx:id="receiveTableButton"
+                    prefHeight="90" prefWidth="350"
+                    text="קבלת שולחן"
+                    onAction="#onReceiveTable"
+                    style="-fx-background-radius: 200; -fx-background-color: #FFFDD0; -fx-text-fill: black; -fx-font-size: 26px; -fx-font-weight: bold;" />
 
-            <Button prefHeight="90" prefWidth="350" style="-fx-background-radius: 200; -fx-background-color: #ffffff; -fx-text-fill: black; -fx-font-size: 26px; -fx-font-weight: bold;" text="כניסה לרשימת המתנה" />
+            <Button fx:id="waitingListButton"
+                    prefHeight="90" prefWidth="350"
+                    text="כניסה לרשימת המתנה"
+                    onAction="#onJoinWaitingList"
+                    style="-fx-background-radius: 200; -fx-background-color: #ffffff; -fx-text-fill: black; -fx-font-size: 26px; -fx-font-weight: bold;" />
 
-            <Button prefHeight="90" prefWidth="350" style="-fx-background-radius: 200; -fx-background-color: #FFFDD0; -fx-text-fill: black; -fx-font-size: 26px; -fx-font-weight: bold;" text="תשלום" />
-         <Button prefHeight="90" prefWidth="350" style="-fx-background-radius: 200; -fx-background-color: #ffffff; -fx-text-fill: black; -fx-font-size: 26px; -fx-font-weight: bold;" text="ביטול הזמנה" />
+            <Button fx:id="paymentButton"
+                    prefHeight="90" prefWidth="350"
+                    text="תשלום"
+                    onAction="#onPayment"
+                    style="-fx-background-radius: 200; -fx-background-color: #FFFDD0; -fx-text-fill: black; -fx-font-size: 26px; -fx-font-weight: bold;" />
+
+            <Button fx:id="cancelReservationButton"
+                    prefHeight="90" prefWidth="350"
+                    text="ביטול הזמנה"
+                    onAction="#onCancelReservation"
+                    style="-fx-background-radius: 200; -fx-background-color: #ffffff; -fx-text-fill: black; -fx-font-size: 26px; -fx-font-weight: bold;" />
 
         </VBox>
     </center>

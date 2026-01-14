@@ -1,8 +1,8 @@
 package clientGUI;
 
 import client.Client;
-import common.dto.Authentication.SubscriberAuthResponse;
 import common.dto.Reservation.ReservationResponse;
+import common.dto.UserAccount.UserAccountResponse;
 import common.entity.Customer;
 import common.entity.Reservation;
 import common.enums.ReservationStatus;
@@ -140,7 +140,7 @@ public class PersonalSpaceController {
     // ===================== RESPONSES FROM MAIN CONTROLLER =====================
 
     // Profile comes via CustomerAuthResponse (GET_PROFILE / UPDATE_PROFILE)
-    public void onAuthResponse(SubscriberAuthResponse resp) {
+    public void onAuthResponse(UserAccountResponse resp) {
         Platform.runLater(() -> {
             if (!resp.isSuccess()) {
                 infoStatusLabel.setText(resp.getMessage());
@@ -188,7 +188,7 @@ public class PersonalSpaceController {
             boolean sub = (boolean) c.getClass().getMethod("isSubscribed").invoke(c);
             subscribedCheckBox.setSelected(sub);
         } catch (Exception ignore) {
-            subscribedCheckBox.setSelected(false);
+            subscribedCheckBox.setSelected(true);
         }
     }
 
@@ -249,7 +249,7 @@ public class PersonalSpaceController {
             return;
         }
         reservationStatusLabel.setText("Canceling reservation...");
-        client.requestCancelReservation(selected.getReservationId(), selected.getConfirmationCode());
+        client.requestCancelReservation(selected.getReservationId());
     }
 
     private void onLeaveWaitingList(ActionEvent e) {
@@ -263,7 +263,7 @@ public class PersonalSpaceController {
         }
 
         reservationStatusLabel.setText("Leaving waiting list...");
-        client.requestCancelReservation(waiting.getReservationId(), waiting.getConfirmationCode());
+        client.requestCancelReservation(waiting.getReservationId());
     }
 
     @FXML

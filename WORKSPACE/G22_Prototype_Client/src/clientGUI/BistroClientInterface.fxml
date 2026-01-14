@@ -45,9 +45,10 @@
             <!-- Menu -->
             <MenuButton styleClass="topButton" text="≡">
                 <items>
-                    <MenuItem text="Add Member" />
+                    <MenuItem onAction ="#onRegisterSubscriber" text="Register Subscriber" />
                     <MenuItem onAction="#onEmployeeDashboard" text="Employee Dashboard" />
                     <MenuItem text="Statistic" />
+                     <MenuItem onAction="#onOpenKiosk" text="Open Kiosk" />
                 </items>
             </MenuButton>
         </HBox>

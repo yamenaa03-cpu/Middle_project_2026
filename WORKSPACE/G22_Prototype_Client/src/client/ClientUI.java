@@ -2,8 +2,8 @@ package client;
 
 import java.util.List;
 
-import common.dto.Authentication.SubscriberAuthResponse;
 import common.dto.Reservation.ReservationResponse;
+import common.dto.UserAccount.UserAccountResponse;
 import common.entity.Reservation;
 
 /**
@@ -43,7 +43,7 @@ public interface ClientUI {
      */
     void displayReservations(List<Reservation> reservations);
     
-    void handleAuthResponse(SubscriberAuthResponse resp);
+    void handleAuthResponse(UserAccountResponse resp);
     
     
     void handleReservationResponse(ReservationResponse resp);

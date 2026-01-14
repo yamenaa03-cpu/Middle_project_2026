@@ -6,10 +6,10 @@ import java.io.IOException;
 import java.time.LocalDateTime;
 import java.util.List;
 
-import common.dto.Authentication.SubscriberAuthRequest;
-import common.dto.Authentication.SubscriberAuthResponse;
 import common.dto.Reservation.ReservationRequest;
 import common.dto.Reservation.ReservationResponse;
+import common.dto.UserAccount.UserAccountRequest;
+import common.dto.UserAccount.UserAccountResponse;
 import common.entity.Reservation;
 /**
  * The Client class extends the OCSF AbstractClient framework.
@@ -45,12 +45,12 @@ public class Client extends AbstractClient {
     @Override
     protected void handleMessageFromServer(Object msg) {
 
-        if (msg instanceof SubscriberAuthResponse ) {
-        		SubscriberAuthResponse authResp = (SubscriberAuthResponse)msg;
-        		if(authResp.isSuccess()) {
-        			String StringRes = "Wellcome back " + authResp.getMessage();
+        if (msg instanceof UserAccountResponse ) {
+        	UserAccountResponse authResp = (UserAccountResponse)msg;
+
+        			String StringRes = authResp.getMessage();
         			ui.displayMessage(StringRes);
-        				}
+        			
             ui.handleAuthResponse(authResp);
             return;
         }
@@ -67,7 +67,7 @@ public class Client extends AbstractClient {
     //request login for the subscriber
     public void requestLoginBySubscriptionCode(String code) {
         try {
-            sendToServer(SubscriberAuthRequest.createAuthRequest(code));
+            sendToServer(UserAccountRequest.createSubscriberLogInRequest(code));
         } catch (IOException e) {
             ui.displayMessage("Error sending login request: " + e.getMessage());
         }
@@ -76,7 +76,7 @@ public class Client extends AbstractClient {
     
     public void requestLoggedInStatus() {
     		try {
-    			sendToServer(SubscriberAuthRequest.createLoggedInStatusRequest());
+    			sendToServer(UserAccountRequest.createLoggedInStatusRequest());
     		}catch (IOException e) {
                 ui.displayMessage("Error Checking login Status: " + e.getMessage());
             }
@@ -84,16 +84,50 @@ public class Client extends AbstractClient {
     		
         	public void requestLogout() {
         		try {
-        			sendToServer(SubscriberAuthRequest.createLoggedInStatusRequest());
+        			sendToServer(UserAccountRequest.createLogoutRequest());
         		}catch (IOException e) {
                     ui.displayMessage("Error sending logOut request: " + e.getMessage());
                 }
     	
         	}
         	
-    
-    
-    
+    //*********************CostumerProfile*********************
+        	
+
+        	public void requestCustomerProfile() {
+        		try {
+        			sendToServer(UserAccountRequest.createGetSubscriberProfileRequest());
+        		}catch (IOException e) {
+                    ui.displayMessage("Error Checking login Status: " + e.getMessage());
+                }
+        		
+        	}
+        	
+        	public void requestCustomerReservations() {
+        		try {
+        			sendToServer(ReservationRequest);
+        		}catch (IOException e) {
+                    ui.displayMessage("Error Checking login Status: " + e.getMessage());
+                }
+        	}
+
+        	public void requestUpdateCustomerProfile(String name, String phone, String email) {
+        		try {
+        			sendToServer(UserAccountRequest);
+        		}catch (IOException e) {
+                    ui.displayMessage("Error Checking login Status: " + e.getMessage());
+                }
+        		        		
+        	}
+        	
+        	public void requestRegisterSubscriber(String fullName, String phone, String email) {
+        		try {
+        			sendToServer(UserAccountRequest.createRegisterSubscriberRequest(fullName, phone, email));
+        		}catch (IOException e) {
+                    ui.displayMessage("Error Checking login Status: " + e.getMessage());
+                }
+        	}
+
     //*************************************************************
     
     /**
@@ -177,6 +211,10 @@ public class Client extends AbstractClient {
             ui.displayMessage("Error sending request: " + e.getMessage());
         }
     }
+
+
+
+
 
 
 

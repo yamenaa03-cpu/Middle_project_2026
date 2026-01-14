@@ -2,9 +2,8 @@ package clientGUI;
 
 import client.Client;
 import client.ClientUI;
-import common.dto.Authentication.SubscriberAuthRequest;
-import common.dto.Authentication.SubscriberAuthResponse;
-import common.enums.AuthOperation;
+import common.dto.UserAccount.UserAccountRequest;
+import common.dto.UserAccount.UserAccountResponse;
 import javafx.application.Platform;
 import javafx.fxml.FXML;
 import javafx.scene.control.Label;
@@ -30,10 +29,10 @@ public class LoginController {
 	        statusLabel.setText("Please enter your membership code.");
 	        return;
 	    }
-//	    if(code.length() != 6) {
-//	        statusLabel.setText("membership code Should be of lenght 6.");
-//	        return;
-//	    }
+	    if(code.length() != 8) {
+	        statusLabel.setText("membership code Should be of lenght 8.");
+	        return;
+	    }
 	   
 
 	    try {
@@ -44,7 +43,7 @@ public class LoginController {
 	        e.printStackTrace();
 	    }
 	}
-	public void onAuthResponse(SubscriberAuthResponse resp) {
+	public void onAuthResponse(UserAccountResponse resp) {
 		Platform.runLater(() -> {
 		System.out.println("Login success = " + resp.isSuccess());
 

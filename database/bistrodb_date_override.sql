@@ -16,32 +16,31 @@
 /*!40111 SET @OLD_SQL_NOTES=@@SQL_NOTES, SQL_NOTES=0 */;
 
 --
--- Table structure for table `customer`
+-- Table structure for table `date_override`
 --
 
-DROP TABLE IF EXISTS `customer`;
+DROP TABLE IF EXISTS `date_override`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!50503 SET character_set_client = utf8mb4 */;
-CREATE TABLE `customer` (
-  `customer_id` int NOT NULL AUTO_INCREMENT,
-  `full_name` varchar(100) DEFAULT NULL,
-  `phone` varchar(30) DEFAULT NULL,
-  `email` varchar(120) DEFAULT NULL,
-  `is_subscribed` tinyint(1) NOT NULL DEFAULT '0',
-  `subscription_code` varchar(50) DEFAULT NULL,
-  PRIMARY KEY (`customer_id`),
-  UNIQUE KEY `uq_customer_subscription_code` (`subscription_code`)
-) ENGINE=InnoDB AUTO_INCREMENT=1010 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+CREATE TABLE `date_override` (
+  `override_id` int NOT NULL AUTO_INCREMENT,
+  `override_date` date NOT NULL,
+  `open_time` time DEFAULT NULL,
+  `close_time` time DEFAULT NULL,
+  `is_closed` tinyint(1) DEFAULT '0',
+  `reason` varchar(255) DEFAULT NULL,
+  PRIMARY KEY (`override_id`),
+  UNIQUE KEY `override_date` (`override_date`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
--- Dumping data for table `customer`
+-- Dumping data for table `date_override`
 --
 
-LOCK TABLES `customer` WRITE;
-/*!40000 ALTER TABLE `customer` DISABLE KEYS */;
-INSERT INTO `customer` VALUES (14,'Thierry Henry',NULL,NULL,1,'123456'),(1001,'Lionel Messi',NULL,NULL,0,NULL),(1002,'Emad Taha',NULL,NULL,1,NULL),(1003,'Cristiano Ronaldo','501234567','cristiano@cr7.com',0,NULL),(1004,'Neymar Junior',NULL,NULL,0,NULL),(1005,'Some Name','0501234567',NULL,0,NULL),(1007,'New Guest','0599999999','new_guest_test_999@example.com',0,NULL),(1008,'Cancel Tester 1','0597000001','ct1@test.com',0,NULL),(1009,'Cancel Tester 2','0597000002','ct2@test.com',0,NULL);
-/*!40000 ALTER TABLE `customer` ENABLE KEYS */;
+LOCK TABLES `date_override` WRITE;
+/*!40000 ALTER TABLE `date_override` DISABLE KEYS */;
+/*!40000 ALTER TABLE `date_override` ENABLE KEYS */;
 UNLOCK TABLES;
 /*!40103 SET TIME_ZONE=@OLD_TIME_ZONE */;
 
@@ -53,4 +52,4 @@ UNLOCK TABLES;
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
--- Dump completed on 2026-01-15 18:57:47
+-- Dump completed on 2026-01-15 18:57:48

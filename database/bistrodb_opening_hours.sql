@@ -16,27 +16,29 @@
 /*!40111 SET @OLD_SQL_NOTES=@@SQL_NOTES, SQL_NOTES=0 */;
 
 --
--- Table structure for table `restaurant_table`
+-- Table structure for table `opening_hours`
 --
 
-DROP TABLE IF EXISTS `restaurant_table`;
+DROP TABLE IF EXISTS `opening_hours`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!50503 SET character_set_client = utf8mb4 */;
-CREATE TABLE `restaurant_table` (
-  `table_id` int NOT NULL AUTO_INCREMENT,
-  `capacity` int NOT NULL,
-  PRIMARY KEY (`table_id`)
-) ENGINE=InnoDB AUTO_INCREMENT=7 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+CREATE TABLE `opening_hours` (
+  `day_of_week` int NOT NULL,
+  `open_time` time DEFAULT NULL,
+  `close_time` time DEFAULT NULL,
+  `is_closed` tinyint(1) DEFAULT '0',
+  PRIMARY KEY (`day_of_week`),
+  CONSTRAINT `opening_hours_chk_1` CHECK ((`day_of_week` between 1 and 7))
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
--- Dumping data for table `restaurant_table`
+-- Dumping data for table `opening_hours`
 --
 
-LOCK TABLES `restaurant_table` WRITE;
-/*!40000 ALTER TABLE `restaurant_table` DISABLE KEYS */;
-INSERT INTO `restaurant_table` VALUES (1,2),(2,2),(3,4),(4,4),(5,6),(6,8);
-/*!40000 ALTER TABLE `restaurant_table` ENABLE KEYS */;
+LOCK TABLES `opening_hours` WRITE;
+/*!40000 ALTER TABLE `opening_hours` DISABLE KEYS */;
+/*!40000 ALTER TABLE `opening_hours` ENABLE KEYS */;
 UNLOCK TABLES;
 /*!40103 SET TIME_ZONE=@OLD_TIME_ZONE */;
 

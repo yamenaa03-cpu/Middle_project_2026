@@ -31,7 +31,7 @@ CREATE TABLE `customer` (
   `subscription_code` varchar(50) DEFAULT NULL,
   PRIMARY KEY (`customer_id`),
   UNIQUE KEY `uq_customer_subscription_code` (`subscription_code`)
-) ENGINE=InnoDB AUTO_INCREMENT=1005 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=1010 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -40,7 +40,7 @@ CREATE TABLE `customer` (
 
 LOCK TABLES `customer` WRITE;
 /*!40000 ALTER TABLE `customer` DISABLE KEYS */;
-INSERT INTO `customer` VALUES (14,'Thierry Henry',NULL,NULL,1,NULL),(1001,'Lionel Messi',NULL,NULL,0,NULL),(1002,'Emad Taha',NULL,NULL,1,NULL),(1003,'Cristiano Ronaldo',NULL,NULL,0,NULL),(1004,'Neymar Junior',NULL,NULL,0,NULL);
+INSERT INTO `customer` VALUES (14,'Thierry Henry',NULL,NULL,1,'123456'),(1001,'Lionel Messi',NULL,NULL,0,NULL),(1002,'Emad Taha',NULL,NULL,1,NULL),(1003,'Cristiano Ronaldo','501234567','cristiano@cr7.com',0,NULL),(1004,'Neymar Junior',NULL,NULL,0,NULL),(1005,'Some Name','0501234567',NULL,0,NULL),(1007,'New Guest','0599999999','new_guest_test_999@example.com',0,NULL),(1008,'Cancel Tester 1','0597000001','ct1@test.com',0,NULL),(1009,'Cancel Tester 2','0597000002','ct2@test.com',0,NULL);
 /*!40000 ALTER TABLE `customer` ENABLE KEYS */;
 UNLOCK TABLES;
 /*!40103 SET TIME_ZONE=@OLD_TIME_ZONE */;
@@ -53,4 +53,4 @@ UNLOCK TABLES;
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
--- Dump completed on 2025-12-29 14:45:35
+-- Dump completed on 2026-01-15 18:57:47

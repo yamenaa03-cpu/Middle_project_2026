@@ -25,3 +25,197 @@
     -fx-background-radius: 0;  /* square corners */
     -fx-border-radius: 0;
 }
+
+.darkNeonButton {
+    -fx-background-color: #121318;
+    -fx-text-fill: #e9eeff;
+    -fx-font-weight: 800;
+    -fx-font-size: 13px;
+
+    -fx-padding: 10 16 10 16;
+    -fx-background-radius: 12;
+    -fx-border-radius: 12;
+    -fx-border-color: rgba(120,140,255,0.55);
+    -fx-border-width: 1.2;
+
+    -fx-effect: dropshadow(gaussian, rgba(120,140,255,0.25), 20, 0.2, 0, 0);
+    -fx-cursor: hand;
+}
+
+.darkNeonButton:hover {
+    -fx-border-color: rgba(120,140,255,0.85);
+    -fx-effect: dropshadow(gaussian, rgba(120,140,255,0.35), 28, 0.25, 0, 0);
+}
+
+.darkNeonButton:pressed {
+    -fx-background-color: #0c0d11;
+    -fx-translate-y: 1;
+}
+
+
+/* ========== GRID TABLE (rows + columns lines) ========== */
+
+/* whole table border */
+.gridTable {
+    -fx-border-color: #3a3a3a;
+    -fx-border-width: 1;
+    -fx-background-color: white; /* change if you want dark */
+}
+
+/* header background + bottom border */
+.gridTable .column-header-background {
+    -fx-background-color: #f2f2f2;      /* header bg */
+    -fx-border-color: #3a3a3a;
+    -fx-border-width: 0 0 1 0;         /* bottom line */
+}
+
+/* header cell borders (vertical lines) */
+.gridTable .column-header {
+    -fx-background-color: transparent;
+    -fx-border-color: #3a3a3a;
+    -fx-border-width: 0 1 0 0;         /* right border */
+}
+
+/* header text */
+.gridTable .column-header .label {
+    -fx-text-fill: #111;
+    -fx-font-weight: bold;
+}
+
+/* row bottom border (horizontal lines) */
+.gridTable .table-row-cell {
+    -fx-background-color: white;
+    -fx-border-color: #d0d0d0;
+    -fx-border-width: 0 0 1 0;         /* bottom line */
+}
+
+/* zebra rows (optional) */
+.gridTable .table-row-cell:odd {
+    -fx-background-color: #fafafa;
+}
+
+/* cell borders (vertical grid lines) */
+.gridTable .table-cell {
+    -fx-border-color: #d0d0d0;
+    -fx-border-width: 0 1 0 0;         /* right border */
+    -fx-padding: 8 10 8 10;
+    -fx-text-fill: #111;
+}
+
+/* selection */
+.gridTable .table-row-cell:selected {
+    -fx-background-color: #dbe9ff;
+}
+.gridTable .table-row-cell:selected .table-cell {
+    -fx-text-fill: #111;
+}
+
+/* remove default selection bar highlight weirdness */
+.gridTable:focused .table-row-cell:selected {
+    -fx-background-color: #cfe2ff;
+}
+
+/* ========== 3) Dark “Glass” Button ========== */
+.darkGlassButton {
+    -fx-background-color: rgba(25, 27, 33, 0.78);
+    -fx-text-fill: #ffffff;
+    -fx-font-weight: 700;
+    -fx-font-size: 13px;
+
+    -fx-padding: 10 16 10 16;
+    -fx-background-radius: 14;
+    -fx-border-radius: 14;
+    -fx-border-color: rgba(255,255,255,0.14);
+    -fx-border-width: 1;
+
+    -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.55), 22, 0.25, 0, 8);
+    -fx-cursor: hand;
+}
+
+.darkGlassButton:hover {
+    -fx-background-color: rgba(34, 37, 45, 0.82);
+    -fx-border-color: rgba(255,255,255,0.20);
+}
+
+.darkGlassButton:pressed {
+    -fx-background-color: rgba(15, 16, 20, 0.85);
+    -fx-translate-y: 1;
+}
+
+
+/* Base button */
+.emp-btn {
+    -fx-background-color: linear-gradient(to bottom, #2a2f38, #14171c);
+    -fx-text-fill: #eef2ff;
+    -fx-font-weight: 800;
+    -fx-font-size: 13px;
+
+    -fx-padding: 10 16;
+    -fx-background-radius: 12;
+    -fx-border-radius: 12;
+
+    -fx-border-color: rgba(255,255,255,0.14);
+    -fx-border-width: 1;
+
+    -fx-cursor: hand;
+    -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.45), 18, 0.22, 0, 6);
+}
+
+.emp-btn:hover {
+    -fx-background-color: linear-gradient(to bottom, #343b46, #171b21);
+    -fx-border-color: rgba(255,255,255,0.20);
+    -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.55), 22, 0.22, 0, 8);
+}
+
+.emp-btn:pressed {
+    -fx-background-color: linear-gradient(to bottom, #111319, #0c0d11);
+    -fx-translate-y: 1;
+    -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.35), 10, 0.20, 0, 3);
+}
+
+.emp-btn:disabled {
+    -fx-opacity: 0.45;
+    -fx-cursor: default;
+}
+
+
+/* Primary (nice blue accent) */
+.emp-btn-primary {
+    -fx-background-color: linear-gradient(to bottom, #4d63ff, #2c3bd6);
+    -fx-text-fill: white;
+    -fx-border-color: rgba(255,255,255,0.18);
+}
+
+.emp-btn-primary:hover {
+    -fx-background-color: linear-gradient(to bottom, #5b6fff, #3242e6);
+}
+
+
+/* Danger (delete/cancel) */
+.emp-btn-danger {
+    -fx-background-color: linear-gradient(to bottom, #ff4d5a, #d62a35);
+    -fx-text-fill: white;
+    -fx-border-color: rgba(255,255,255,0.16);
+}
+
+.emp-btn-danger:hover {
+    -fx-background-color: linear-gradient(to bottom, #ff5e69, #e0333f);
+}
+
+
+/* Ghost / outline (secondary) */
+.emp-btn-ghost {
+    -fx-background-color: transparent;
+    -fx-text-fill: #eef2ff;
+    -fx-border-color: rgba(255,255,255,0.22);
+    -fx-border-width: 1.2;
+    -fx-background-radius: 12;
+    -fx-border-radius: 12;
+    -fx-padding: 10 16;
+    -fx-font-weight: 800;
+    -fx-cursor: hand;
+}
+
+.emp-btn-ghost:hover {
+    -fx-background-color: rgba(255,255,255,0.08);
+}

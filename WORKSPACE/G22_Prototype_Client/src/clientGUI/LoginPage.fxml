@@ -34,7 +34,7 @@
                 <Label text="Membership code" />
                 <TextField fx:id="membershipCodeField" promptText="Enter subscription code" />
             </VBox>
-<Button mnemonicParsing="false" onAction="#onLogin" prefHeight="45.0" prefWidth="234.0" style="-fx-font: 20px Arial;" styleClass="topButton" stylesheets="@bistro.css" text="Log In">
+<Button fx:id="loginButton" mnemonicParsing="false" onAction="#onLogin" prefHeight="45.0" prefWidth="234.0" style="-fx-font: 20px Arial;" styleClass="topButton" stylesheets="@bistro.css" text="Log In">
     <font>
         <Font name="System Bold" size="20.0" />
     </font>

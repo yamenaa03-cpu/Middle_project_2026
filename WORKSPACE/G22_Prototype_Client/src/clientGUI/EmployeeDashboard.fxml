@@ -1,20 +1,41 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
 <?import javafx.geometry.Insets?>
-<?import javafx.scene.control.*?>
-<?import javafx.scene.layout.*?>
+<?import javafx.scene.control.Button?>
+<?import javafx.scene.control.CheckBox?>
+<?import javafx.scene.control.ChoiceBox?>
+<?import javafx.scene.control.ComboBox?>
+<?import javafx.scene.control.DatePicker?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.control.RadioButton?>
+<?import javafx.scene.control.ScrollPane?>
+<?import javafx.scene.control.Separator?>
+<?import javafx.scene.control.Spinner?>
+<?import javafx.scene.control.Tab?>
+<?import javafx.scene.control.TabPane?>
+<?import javafx.scene.control.TableColumn?>
+<?import javafx.scene.control.TableView?>
+<?import javafx.scene.control.TextArea?>
+<?import javafx.scene.control.TextField?>
+<?import javafx.scene.control.TitledPane?>
+<?import javafx.scene.layout.BorderPane?>
+<?import javafx.scene.layout.ColumnConstraints?>
+<?import javafx.scene.layout.FlowPane?>
+<?import javafx.scene.layout.GridPane?>
+<?import javafx.scene.layout.HBox?>
+<?import javafx.scene.layout.Pane?>
+<?import javafx.scene.layout.Region?>
+<?import javafx.scene.layout.RowConstraints?>
+<?import javafx.scene.layout.VBox?>
 
-<BorderPane xmlns="http://javafx.com/javafx/21"
-            xmlns:fx="http://javafx.com/fxml/1"
-            fx:controller="clientGUI.EmployeeDashboardController"
-            prefWidth="1200" prefHeight="800">
+<BorderPane prefHeight="800" prefWidth="1200" style="-fx-background-color: #F6F7FB;" xmlns="http://javafx.com/javafx/21" xmlns:fx="http://javafx.com/fxml/1" fx:controller="clientGUI.EmployeeDashboardController">
 
     <!-- ===== TOP BAR ===== -->
     <top>
         <HBox spacing="12" style="-fx-padding: 15; -fx-background-color: white;">
-            <Label text="Employee Personal Space" style="-fx-font-size: 20; -fx-font-weight: bold;"/>
-            <Pane HBox.hgrow="ALWAYS"/>
-            <Button fx:id="btnRefreshAll" text="Refresh All"/>
+            <Label style="-fx-font-size: 20; -fx-font-weight: bold;" text="Employee Personal Space" />
+            <Pane HBox.hgrow="ALWAYS" />
+            <Button fx:id="btnRefreshAll" styleClass="topButton" stylesheets="@bistro.css" text="Refresh All" />
         </HBox>
     </top>
 
@@ -23,138 +44,446 @@
         <TabPane fx:id="dashboardTabs">
 
             <!-- ================= WAITING LIST ================= -->
-            <Tab text="Waiting List" closable="false">
+            <Tab closable="false" text="⏳ Waiting List">
                 <VBox spacing="10">
                     <padding>
-                        <Insets top="15" right="15" bottom="15" left="15"/>
+                        <Insets bottom="15" left="15" right="15" top="15" />
                     </padding>
 
                     <HBox spacing="10">
-                        <Button fx:id="btnRefreshWaitingList" text="Refresh Waiting List"/>
-                        <Label text="Status:"/>
-                        <ChoiceBox fx:id="waitingStatusFilter"/>
+                        <Button fx:id="btnRefreshWaitingList" styleClass="topButton" stylesheets="@bistro.css" text="Refresh Waiting List" />
+                        <Label text="Status:" />
+                        <ChoiceBox fx:id="waitingStatusFilter" />
                     </HBox>
 
-                    <TableView fx:id="waitingTable" prefHeight="600">
+                    <TableView fx:id="waitingTable" prefHeight="600" styleClass="gridTable" stylesheets="@bistro.css">
                         <columns>
-                            <TableColumn fx:id="colWaitId" text="Wait ID" prefWidth="90"/>
-                            <TableColumn fx:id="colWaitCustomer" text="Customer" prefWidth="220"/>
-                            <TableColumn fx:id="colWaitGuests" text="Guests" prefWidth="90"/>
-                            <TableColumn fx:id="colWaitTime" text="Request Time" prefWidth="180"/>
-                            <TableColumn fx:id="colWaitStatus" text="Status" prefWidth="120"/>
-                            <TableColumn fx:id="colWaitNotes" text="Notes" prefWidth="250"/>
+                            <TableColumn fx:id="colWaitId" prefWidth="90" text="Wait ID" />
+                            <TableColumn fx:id="colWaitCustomer" prefWidth="220" text="Customer" />
+                            <TableColumn fx:id="colWaitGuests" prefWidth="90" text="Guests" />
+                            <TableColumn fx:id="colWaitTime" prefWidth="180" text="Request Time" />
+                            <TableColumn fx:id="colWaitStatus" prefWidth="120" text="Status" />
+                            <TableColumn fx:id="colWaitNotes" prefWidth="250" text="Notes" />
                         </columns>
                     </TableView>
                 </VBox>
             </Tab>
 
             <!-- ================= RESERVATIONS ================= -->
-            <Tab text="Reservations" closable="false">
+            <Tab closable="false" text="📅  Reservations">
                 <VBox spacing="10">
                     <padding>
-                        <Insets top="15" right="15" bottom="15" left="15"/>
+                        <Insets bottom="15" left="15" right="15" top="15" />
                     </padding>
 
                     <HBox spacing="10">
-                        <TextField fx:id="reservationSearchField"
-                                   promptText="Search by Reservation ID / Confirmation Code / Customer ID"
-                                   HBox.hgrow="ALWAYS"/>
-                        <Button fx:id="btnSearchReservation" text="Search"/>
-                        <Label text="Status:"/>
-                        <ChoiceBox fx:id="reservationStatusFilter"/>
-                        <Button fx:id="btnRefreshReservations" text="Refresh"/>
+                        <TextField fx:id="reservationSearchField" promptText="Search by Reservation ID / Confirmation Code / Customer ID" HBox.hgrow="ALWAYS" />
+                        <Button fx:id="btnSearchReservation" styleClass="darkGlassButton" stylesheets="@bistro.css" text="Search" />
+                        <Label text="Status:" />
+                        <ChoiceBox fx:id="reservationStatusFilter" stylesheets="@bistro.css" />
+                        <Button fx:id="btnRefreshReservations" styleClass="topButton" stylesheets="@bistro.css" text="Refresh" />
                     </HBox>
 
-                    <TableView fx:id="reservationTable" prefHeight="600">
+                    <TableView fx:id="reservationTable" prefHeight="600" styleClass="gridTable" stylesheets="@bistro.css">
                         <columns>
-                            <TableColumn fx:id="colResId" text="Res ID" prefWidth="90"/>
-                            <TableColumn fx:id="colResDateTime" text="Date/Time" prefWidth="180"/>
-                            <TableColumn fx:id="colResGuests" text="Guests" prefWidth="90"/>
-                            <TableColumn fx:id="colResConf" text="Conf Code" prefWidth="120"/>
-                            <TableColumn fx:id="colResCustomerId" text="Customer ID" prefWidth="110"/>
-                            <TableColumn fx:id="colResTableId" text="Table ID" prefWidth="90"/>
-                            <TableColumn fx:id="colResStatus" text="Status" prefWidth="120"/>
-                            <TableColumn fx:id="colResCreated" text="Created At" prefWidth="180"/>
+                            <TableColumn fx:id="colResId" prefWidth="90" text="Res ID" />
+                            <TableColumn fx:id="colResDateTime" prefWidth="180" text="Date/Time" />
+                            <TableColumn fx:id="colResGuests" prefWidth="90" text="Guests" />
+                            <TableColumn fx:id="colResConf" prefWidth="120" text="Conf Code" />
+                            <TableColumn fx:id="colResCustomerId" prefWidth="110" text="Customer ID" />
+                            <TableColumn fx:id="colResTableId" prefWidth="90" text="Table ID" />
+                            <TableColumn fx:id="colResStatus" prefWidth="120" text="Status" />
+                            <TableColumn fx:id="colResCreated" prefWidth="180" text="Created At" />
                         </columns>
                     </TableView>
                 </VBox>
             </Tab>
 
-            <!-- ================= TABLES MANAGEMENT ================= -->
-            <Tab text="Tables" closable="false">
+            <!-- ================= DINERS NOW ================= -->
+            <Tab closable="false" text="🍽 Diners Now">
                 <VBox spacing="10">
                     <padding>
-                        <Insets top="15" right="15" bottom="15" left="15"/>
+                        <Insets bottom="15" left="15" right="15" top="15" />
                     </padding>
 
                     <HBox spacing="10">
-                        <Button fx:id="btnRefreshTables" text="Refresh Tables"/>
-
-                        <Region HBox.hgrow="ALWAYS"/>
-
-                        <Label text="Update selected table capacity:"/>
-                        <TextField fx:id="tableCapacityField" promptText="Capacity" prefWidth="120"/>
-                        <Button fx:id="btnUpdateTableCapacity" text="Update"/>
+                        <Button fx:id="btnRefreshDinersNow" styleClass="topButton" stylesheets="@bistro.css" text="Refresh Diners Now" />
+                        <Label fx:id="lblDinersNowStatus" text="" />
                     </HBox>
 
-                    <TableView fx:id="tablesTable" prefHeight="600">
+                    <TableView fx:id="dinersNowTable" prefHeight="600" styleClass="gridTable" stylesheets="@bistro.css">
                         <columns>
-                            <TableColumn fx:id="colTableId" text="Table ID" prefWidth="120"/>
-                            <TableColumn fx:id="colCapacity" text="Capacity" prefWidth="120"/>
+                            <TableColumn fx:id="colDinerResId" prefWidth="130" text="Reservation ID" />
+                            <TableColumn fx:id="colDinerCustomer" prefWidth="230" text="Customer" />
+                            <TableColumn fx:id="colDinerGuests" prefWidth="90" text="Guests" />
+                            <TableColumn fx:id="colDinerTableId" prefWidth="90" text="Table ID" />
+                            <TableColumn fx:id="colDinerStatus" prefWidth="140" text="Status" />
+                            <TableColumn fx:id="colDinerSince" prefWidth="190" text="Since" />
                         </columns>
                     </TableView>
                 </VBox>
             </Tab>
+
+<!-- ================= TABLES MANAGEMENT ================= -->
+<Tab closable="false" text="🔢 Tables">
+    <BorderPane>
+        <padding>
+            <Insets bottom="15" left="15" right="15" top="15" />
+        </padding>
+
+        <!-- Top controls -->
+        <top>
+            <VBox spacing="10">
+
+                <!-- Actions row -->
+                <HBox alignment="CENTER_LEFT" spacing="10">
+                    <Button fx:id="btnRefreshTables" styleClass="topButton" stylesheets="@bistro.css" text="Refresh Tables" />
+
+                    <Region HBox.hgrow="ALWAYS" />
+
+                    <Label style="-fx-font-weight: bold;" text="Selected Table:" />
+                    <Label fx:id="lblSelectedTableId" text="None" />
+
+                    <Label fx:id="lblTablesMsg" text="" />
+                </HBox>
+
+                <!-- CRUD row -->
+                <HBox alignment="CENTER_LEFT" spacing="10">
+                    <Label text="Capacity:" />
+                    <TextField fx:id="tableCapacityField" prefWidth="120" promptText="Capacity" />
+
+                    <Button fx:id="btnAddTable" styleClass="darkGlassButton" stylesheets="@bistro.css" text="Add Table" />
+                    <Button fx:id="btnUpdateTableCapacity" disable="true" styleClass="emp-btn-primary" stylesheets="@bistro.css" text="Update Selected" />
+                    <Button fx:id="btnDeleteTable" disable="true" styleClass="emp-btn-danger" stylesheets="@bistro.css" text="Delete Selected" />
+                </HBox>
+
+                <Separator />
+            </VBox>
+        </top>
+
+        <!-- Center: graph/grid of tables -->
+        <center>
+            <ScrollPane fitToHeight="true" fitToWidth="true">
+                <content>
+                    <FlowPane fx:id="tablesGraphPane" hgap="12" prefWrapLength="1000" style="-fx-padding: 10;" vgap="12">
+                        <!-- Controller will add table nodes here -->
+                    </FlowPane>
+                </content>
+            </ScrollPane>
+        </center>
+
+        <!-- Optional: keep a raw table view for debugging -->
+        <bottom>
+            <TitledPane expanded="false" text="Raw Tables List (debug)">
+                <content>
+                    <TableView fx:id="tablesTable" prefHeight="220">
+                        <columns>
+                            <TableColumn fx:id="colTableId" prefWidth="120" text="Table ID" />
+                            <TableColumn fx:id="colCapacity" prefWidth="120" text="Capacity" />
+                        </columns>
+                    </TableView>
+                </content>
+            </TitledPane>
+        </bottom>
+
+    </BorderPane>
+</Tab>
+
 
             <!-- ================= WORKING HOURS ================= -->
-            <Tab text="Working Hours" closable="false">
+            <Tab closable="false" text="🕒 Working Hours">
                 <VBox spacing="10">
                     <padding>
-                        <Insets top="15" right="15" bottom="15" left="15"/>
+                        <Insets bottom="15" left="15" right="15" top="15" />
                     </padding>
 
                     <HBox spacing="10">
-                        <Button fx:id="btnLoadHours" text="Load Hours"/>
-                        <Button fx:id="btnSaveHours" text="Save Hours"/>
+                        <Button fx:id="btnLoadHours" styleClass="darkGlassButton" stylesheets="@bistro.css" text="Load Hours" />
+                        <Button fx:id="btnSaveHours" styleClass="darkGlassButton" stylesheets="@bistro.css" text="Save Hours" />
                     </HBox>
 
-                    <TableView fx:id="hoursTable" prefHeight="600">
+                    <TableView fx:id="hoursTable" prefHeight="214.0" prefWidth="796.0" styleClass="gridTable" stylesheets="@bistro.css">
                         <columns>
-                            <TableColumn fx:id="colDay" text="Day" prefWidth="150"/>
-                            <TableColumn fx:id="colOpen" text="Open Time" prefWidth="150"/>
-                            <TableColumn fx:id="colClose" text="Close Time" prefWidth="150"/>
-                            <TableColumn fx:id="colClosed" text="Closed?" prefWidth="120"/>
+                            <TableColumn fx:id="colDay" prefWidth="306.3999264240265" text="Day" />
+                            <TableColumn fx:id="colOpen" prefWidth="323.1999816894531" text="Open Time" />
+                            <TableColumn fx:id="colClose" prefWidth="336.79998779296875" text="Close Time" />
+                            <TableColumn fx:id="colClosed" prefWidth="202.40008544921875" text="Closed?" />
                         </columns>
                     </TableView>
                 </VBox>
             </Tab>
 
             <!-- ================= MEMBERS ================= -->
-            <Tab text="Members" closable="false">
+            <Tab closable="false" text="👥 Members">
                 <VBox spacing="10">
                     <padding>
-                        <Insets top="15" right="15" bottom="15" left="15"/>
+                        <Insets bottom="15" left="15" right="15" top="15" />
                     </padding>
 
                     <HBox spacing="10">
-                        <TextField fx:id="memberSearchField"
-                                   promptText="Search by customer_id / name / email"
-                                   HBox.hgrow="ALWAYS"/>
-                        <Button fx:id="btnSearchMember" text="Search"/>
-                        <Button fx:id="btnRefreshMembers" text="Refresh"/>
+                        <TextField fx:id="memberSearchField" promptText="Search by customer_id / name / email" HBox.hgrow="ALWAYS" />
+                        <Button fx:id="btnSearchMember" styleClass="darkGlassButton" stylesheets="@bistro.css" text="Search" />
+                        <Button fx:id="btnRefreshMembers" styleClass="topButton" stylesheets="@bistro.css" text="Refresh" />
                     </HBox>
 
-                    <TableView fx:id="membersTable" prefHeight="600">
+                    <TableView fx:id="membersTable" prefHeight="600" styleClass="gridTable" stylesheets="@bistro.css">
                         <columns>
-                            <TableColumn fx:id="colCustId" text="Customer ID" prefWidth="110"/>
-                            <TableColumn fx:id="colCustName" text="Full Name" prefWidth="220"/>
-                            <TableColumn fx:id="colCustPhone" text="Phone" prefWidth="160"/>
-                            <TableColumn fx:id="colCustEmail" text="Email" prefWidth="250"/>
-                            <TableColumn fx:id="colCustSubscribed" text="Subscribed" prefWidth="120"/>
-                            <TableColumn fx:id="colCustCode" text="Subscription Code" prefWidth="160"/>
+                            <TableColumn fx:id="colCustId" prefWidth="110" text="Customer ID" />
+                            <TableColumn fx:id="colCustName" prefWidth="220" text="Full Name" />
+                            <TableColumn fx:id="colCustPhone" prefWidth="160" text="Phone" />
+                            <TableColumn fx:id="colCustEmail" prefWidth="250" text="Email" />
+                            <TableColumn fx:id="colCustSubscribed" prefWidth="120" text="Subscribed" />
+                            <TableColumn fx:id="colCustCode" prefWidth="160" text="Subscription Code" />
                         </columns>
                     </TableView>
                 </VBox>
+            </Tab>
+
+            <!-- ================= CUSTOMER OPERATIONS (ON BEHALF) ================= -->
+            <Tab closable="false" text="🛎 Customer Operations (On Behalf)">
+                <ScrollPane fitToWidth="true">
+                    <content>
+                        <VBox spacing="12">
+                            <padding>
+                                <Insets bottom="15" left="15" right="15" top="15" />
+                            </padding>
+
+                            <!-- ===== FIND CUSTOMER ===== -->
+                            <VBox spacing="10" style="-fx-padding: 12; -fx-border-color: #dddddd; -fx-border-radius: 10; -fx-background-radius: 10;">
+                                <Label style="-fx-font-size: 15; -fx-font-weight: bold;" text="1) Find Customer" />
+
+                                <HBox spacing="16">
+                                    <!-- toggle group will be set in controller initialize() -->
+                                    <RadioButton fx:id="rbFindByCode" selected="true" text="Subscription Code" />
+                                    <RadioButton fx:id="rbFindByPhone" text="Phone" />
+                                    <RadioButton fx:id="rbFindByEmail" text="Email" />
+                                </HBox>
+
+                                <HBox spacing="10">
+                                    <TextField fx:id="tfFindCustomerValue" promptText="Enter value..." HBox.hgrow="ALWAYS" />
+                                    <Button fx:id="btnFindCustomer" text="Search" />
+                                    <Button fx:id="btnClearCustomerSearch" text="Clear" />
+                                    <Label fx:id="lblFindCustomerStatus" text="" />
+                                </HBox>
+
+                                <Label style="-fx-font-weight: bold;" text="Search Results (select the correct customer):" />
+                                <TableView fx:id="customerSearchResultsTable" prefHeight="160" styleClass="gridTable" stylesheets="@bistro.css">
+                                    <columns>
+                                        <TableColumn fx:id="colFoundCustId" prefWidth="110" text="Customer ID" />
+                                        <TableColumn fx:id="colFoundCustName" prefWidth="220" text="Full Name" />
+                                        <TableColumn fx:id="colFoundCustPhone" prefWidth="160" text="Phone" />
+                                        <TableColumn fx:id="colFoundCustEmail" prefWidth="250" text="Email" />
+                                        <TableColumn fx:id="colFoundCustCode" prefWidth="160" text="Subscription Code" />
+                                    </columns>
+                                </TableView>
+
+                                <HBox spacing="10">
+                                    <Button fx:id="btnSelectCustomerFromResults" styleClass="darkGlassButton" stylesheets="@bistro.css" text="Use Selected Customer" />
+                                    <Button fx:id="btnUnselectCustomer" prefHeight="43.0" prefWidth="84.0" styleClass="emp-btn-danger" stylesheets="@bistro.css" text="Unselect" />
+                                    <Label style="-fx-font-weight: bold;" text="Selected:" />
+                                    <Label fx:id="lblSelectedCustomer" text="None" />
+                                    <Label fx:id="lblOnBehalfGlobalStatus" text="" />
+                                </HBox>
+
+                                <!-- store selected customer id -->
+                                <Label fx:id="lblSelectedCustomerIdHidden" managed="false" text="0" visible="false" />
+                            </VBox>
+
+                            <!-- ===== OPERATIONS ===== -->
+                            <VBox spacing="12" style="-fx-padding: 12; -fx-border-color: #dddddd; -fx-border-radius: 10; -fx-background-radius: 10;">
+                                <Label style="-fx-font-size: 15; -fx-font-weight: bold;" text="2) Operations" />
+                                <Label text="Note: For Receive Table / Checkout you must load reservations, select one, then proceed." wrapText="true" />
+
+                                <!-- ========== MAKE RESERVATION ========== -->
+                                <TitledPane expanded="false" text="Make Reservation">
+                                    <content>
+                                        <VBox spacing="10" style="-fx-padding: 10;">
+                                            <HBox spacing="12">
+                                                <VBox spacing="6">
+                                                    <Label text="Date" />
+                                                    <DatePicker fx:id="dpMakeResDate" />
+                                                </VBox>
+
+                                                <VBox spacing="6">
+                                                    <Label text="Time" />
+                                                    <HBox spacing="8">
+                                                        <ComboBox fx:id="cbMakeResHour" prefWidth="90" promptText="HH" />
+                                                        <ComboBox fx:id="cbMakeResMinute" prefWidth="90" promptText="MM" />
+                                                    </HBox>
+                                                </VBox>
+
+                                                <VBox spacing="6">
+                                                    <Label text="Guests" />
+                                                    <Spinner fx:id="spMakeResGuests" prefWidth="120" />
+                                                </VBox>
+                                            </HBox>
+
+                                            <Separator />
+
+                                            <CheckBox fx:id="cbMakeResGuestMode" text="Guest mode (ignore selected customer)" />
+
+                                            <GridPane hgap="10" vgap="10">
+                                                <columnConstraints>
+                                                    <ColumnConstraints minWidth="120" />
+                                                    <ColumnConstraints hgrow="ALWAYS" />
+                                                </columnConstraints>
+
+                                                <Label text="Full Name" GridPane.columnIndex="0" GridPane.rowIndex="0" />
+                                                <TextField fx:id="tfMakeResGuestName" GridPane.columnIndex="1" GridPane.rowIndex="0" />
+
+                                                <Label text="Phone" GridPane.columnIndex="0" GridPane.rowIndex="1" />
+                                                <TextField fx:id="tfMakeResGuestPhone" GridPane.columnIndex="1" GridPane.rowIndex="1" />
+
+                                                <Label text="Email" GridPane.columnIndex="0" GridPane.rowIndex="2" />
+                                                <TextField fx:id="tfMakeResGuestEmail" GridPane.columnIndex="1" GridPane.rowIndex="2" />
+                                    <rowConstraints>
+                                       <RowConstraints />
+                                       <RowConstraints />
+                                       <RowConstraints />
+                                    </rowConstraints>
+                                            </GridPane>
+
+                                            <HBox spacing="10">
+                                                <Button fx:id="btnMakeReservationOnBehalf" styleClass="darkGlassButton" stylesheets="@bistro.css" text="Create Reservation" />
+                                                <Label fx:id="lblMakeReservationStatus" text="" />
+                                            </HBox>
+                                        </VBox>
+                                    </content>
+                                </TitledPane>
+
+                                <!-- ========== JOIN WAITLIST ========== -->
+                                <TitledPane expanded="false" text="Join Waitlist">
+                                    <content>
+                                        <VBox spacing="10" style="-fx-padding: 10;">
+                                            <HBox spacing="12">
+                                                <VBox spacing="6">
+                                                    <Label text="Guests" />
+                                                    <Spinner fx:id="spWaitlistGuests" prefWidth="140" />
+                                                </VBox>
+                                            </HBox>
+
+                                            <Separator />
+
+                                            <CheckBox fx:id="cbWaitlistGuestMode" text="Guest mode (ignore selected customer)" />
+
+                                            <GridPane hgap="10" vgap="10">
+                                                <columnConstraints>
+                                                    <ColumnConstraints minWidth="120" />
+                                                    <ColumnConstraints hgrow="ALWAYS" />
+                                                </columnConstraints>
+
+                                                <Label text="Full Name" GridPane.columnIndex="0" GridPane.rowIndex="0" />
+                                                <TextField fx:id="tfWaitlistGuestName" GridPane.columnIndex="1" GridPane.rowIndex="0" />
+
+                                                <Label text="Phone" GridPane.columnIndex="0" GridPane.rowIndex="1" />
+                                                <TextField fx:id="tfWaitlistGuestPhone" GridPane.columnIndex="1" GridPane.rowIndex="1" />
+
+                                                <Label text="Email" GridPane.columnIndex="0" GridPane.rowIndex="2" />
+                                                <TextField fx:id="tfWaitlistGuestEmail" GridPane.columnIndex="1" GridPane.rowIndex="2" />
+                                    <rowConstraints>
+                                       <RowConstraints />
+                                       <RowConstraints />
+                                       <RowConstraints />
+                                    </rowConstraints>
+                                            </GridPane>
+
+                                            <HBox spacing="10">
+                                                <Button fx:id="btnJoinWaitlistOnBehalf" styleClass="darkGlassButton" stylesheets="@bistro.css" text="Join Waitlist" />
+                                                <Label fx:id="lblJoinWaitlistStatus" text="" />
+                                            </HBox>
+                                        </VBox>
+                                    </content>
+                                </TitledPane>
+
+                                <!-- ========== CANCEL RESERVATION ========== -->
+                                <TitledPane expanded="false" text="Cancel Reservation">
+                                    <content>
+                                        <VBox spacing="10" style="-fx-padding: 10;">
+                                            <HBox spacing="10">
+                                                <Button fx:id="btnLoadCancelableReservations" text="Load Reservations" />
+                                                <Label fx:id="lblCancelLoadStatus" text="" />
+                                            </HBox>
+
+                                            <TableView fx:id="cancelReservationsTable" prefHeight="200">
+                                                <columns>
+                                                    <TableColumn fx:id="colCancelResId" prefWidth="130" text="Reservation ID" />
+                                                    <TableColumn fx:id="colCancelDateTime" prefWidth="190" text="Date/Time" />
+                                                    <TableColumn fx:id="colCancelGuests" prefWidth="90" text="Guests" />
+                                                    <TableColumn fx:id="colCancelStatus" prefWidth="120" text="Status" />
+                                                    <TableColumn fx:id="colCancelConf" prefWidth="130" text="Confirmation" />
+                                                </columns>
+                                            </TableView>
+
+                                            <HBox spacing="10">
+                                                <Button fx:id="btnCancelSelectedReservation" styleClass="emp-btn-danger" stylesheets="@bistro.css" text="Cancel Selected" />
+                                                <Label fx:id="lblCancelStatus" text="" />
+                                            </HBox>
+                                        </VBox>
+                                    </content>
+                                </TitledPane>
+
+                                <!-- ========== RECEIVE TABLE ========== -->
+                                <TitledPane expanded="false" text="Receive Table">
+                                    <content>
+                                        <VBox spacing="10" style="-fx-padding: 10;">
+                                            <HBox spacing="10">
+                                                <Button fx:id="btnLoadReceivableReservations" text="Load Reservations" />
+                                                <Label fx:id="lblReceiveLoadStatus" text="" />
+                                            </HBox>
+
+                                            <TableView fx:id="receiveReservationsTable" prefHeight="200">
+                                                <columns>
+                                                    <TableColumn fx:id="colReceiveResId" prefWidth="130" text="Reservation ID" />
+                                                    <TableColumn fx:id="colReceiveDateTime" prefWidth="190" text="Date/Time" />
+                                                    <TableColumn fx:id="colReceiveGuests" prefWidth="90" text="Guests" />
+                                                    <TableColumn fx:id="colReceiveStatus" prefWidth="120" text="Status" />
+                                                    <TableColumn fx:id="colReceiveConf" prefWidth="130" text="Confirmation" />
+                                                </columns>
+                                            </TableView>
+
+                                            <HBox spacing="10">
+                                                <Button fx:id="btnReceiveTableForSelected" styleClass="darkGlassButton" stylesheets="@bistro.css" text="Receive Table" />
+                                                <Label fx:id="lblReceiveStatus" text="" />
+                                            </HBox>
+                                        </VBox>
+                                    </content>
+                                </TitledPane>
+
+                                <!-- ========== CHECKOUT ========== -->
+                                <TitledPane expanded="false" text="Checkout (Pay Bill)">
+                                    <content>
+                                        <VBox spacing="10" style="-fx-padding: 10;">
+                                            <HBox spacing="10">
+                                                <Button fx:id="btnLoadCheckoutReservations" text="Load Reservations" />
+                                                <Label fx:id="lblCheckoutLoadStatus" text="" />
+                                            </HBox>
+
+                                            <TableView fx:id="checkoutReservationsTable" prefHeight="200">
+                                                <columns>
+                                                    <TableColumn fx:id="colCheckoutResId" prefWidth="130" text="Reservation ID" />
+                                                    <TableColumn fx:id="colCheckoutDateTime" prefWidth="190" text="Date/Time" />
+                                                    <TableColumn fx:id="colCheckoutGuests" prefWidth="90" text="Guests" />
+                                                    <TableColumn fx:id="colCheckoutStatus" prefWidth="120" text="Status" />
+                                                    <TableColumn fx:id="colCheckoutConf" prefWidth="130" text="Confirmation" />
+                                                </columns>
+                                            </TableView>
+
+                                            <HBox spacing="10">
+                                                <Button fx:id="btnLoadBillForSelected" text="Load Bill" />
+                                                <Button fx:id="btnPayLoadedBill" styleClass="darkNeonButton" stylesheets="@bistro.css" text="Pay Bill" />
+                                                <Label fx:id="lblCheckoutStatus" text="" />
+                                            </HBox>
+
+                                            <TextArea fx:id="taBillDetails" editable="false" prefRowCount="5" wrapText="true" />
+                                        </VBox>
+                                    </content>
+                                </TitledPane>
+
+                            </VBox>
+
+                        </VBox>
+                    </content>
+                </ScrollPane>
             </Tab>
 
         </TabPane>

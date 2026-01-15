@@ -45,7 +45,7 @@
             <!-- Menu -->
             <MenuButton styleClass="topButton" text="≡">
                 <items>
-                    <MenuItem onAction ="#onRegisterSubscriber" text="Register Subscriber" />
+                    <MenuItem onAction="#onRegisterSubscriber" text="Register Subscriber" />
                     <MenuItem onAction="#onEmployeeDashboard" text="Employee Dashboard" />
                     <MenuItem text="Statistic" />
                      <MenuItem onAction="#onOpenKiosk" text="Open Kiosk" />
@@ -105,7 +105,7 @@
                             </rowConstraints>
 
                             <!-- (1) Leave waiting list -->
-                            <Button styleClass="squareAction" text="Join Waiting List" GridPane.columnIndex="0" GridPane.rowIndex="0" />
+                            <Button styleClass="squareAction" text="Leave Waiting List" GridPane.columnIndex="0" GridPane.rowIndex="0" />
 
                             <!-- (2) Pay bill -->
                             <Button styleClass="squareAction" text="CheckOut" GridPane.columnIndex="1" GridPane.rowIndex="0" />
@@ -119,38 +119,7 @@
                         </GridPane>
                     </HBox>
 
-                    <!-- ===== FOOD GALLERY SECTION ===== -->
-                    <VBox alignment="CENTER">
-                        <Label style="-fx-font-size:26px; -fx-font-weight:bold;" text="התפריט שלנו" />
 
-                        <HBox spacing="150">
-
-                            <ImageView fitHeight="200" fitWidth="280" preserveRatio="true" smooth="true">
-                                <image>
-                                    <Image url="@../images/food1.png" />
-                                </image>
-                            </ImageView>
-
-                            <ImageView fitHeight="200" fitWidth="280" preserveRatio="true" smooth="true">
-                                <image>
-                                    <Image url="@../images/food2.png" />
-                                </image>
-                            </ImageView>
-
-                            <ImageView fitHeight="200" fitWidth="280" preserveRatio="true" smooth="true">
-                                <image>
-                                    <Image url="@../images/food3.png" />
-                                </image>
-                            </ImageView>
-
-                            <ImageView fitHeight="200" fitWidth="280" preserveRatio="true" smooth="true">
-                                <image>
-                                    <Image url="@../images/food4.png" />
-                                </image>
-                            </ImageView>
-
-                        </HBox>
-                    </VBox>
 
                     <!-- ===== OUR STORY SECTION ===== -->
                     <VBox alignment="CENTER" spacing="20">

@@ -461,7 +461,7 @@ public class ClientController implements ClientUI{
 	@Override
 	public void handleReservationResponse(ReservationResponse resp) {
 	    Platform.runLater(() -> {
-
+	    		
 	        // 1) Subscriber cancel flow: load list into table
 	        if (waitingSubscriberReservationsForCancel) {
 	            waitingSubscriberReservationsForCancel = false;

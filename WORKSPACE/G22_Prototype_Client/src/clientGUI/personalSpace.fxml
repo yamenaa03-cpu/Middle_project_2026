@@ -23,20 +23,20 @@
     <!-- Top bar -->
     <top>
         <HBox alignment="CENTER_LEFT" spacing="12" style="-fx-padding: 14 20; -fx-background-color: white;">
-            <Label style="-fx-font-size: 20px; -fx-font-weight: 700;" text="איזור אישי" />
+            <Label style="-fx-font-size: 20px; -fx-font-weight: 700;" text="personal space" />
             <Region HBox.hgrow="ALWAYS" />
-            <Button fx:id="refreshBtn" text="Refresh" onAction="#onRefresh"/>
-			<Button fx:id="logoutBtn" text="Logout" onAction="#onLogout"/>
+            <Button fx:id="refreshBtn" onAction="#onRefresh" styleClass="topButton" stylesheets="@bistro.css" text="Refresh" />
+			<Button fx:id="logoutBtn" onAction="#onLogout" styleClass="topButton" stylesheets="@bistro.css" text="Logout" />
 
         </HBox>
     </top>
 
     <center>
-        <TabPane style="-fx-background-color: transparent;" tabClosingPolicy="UNAVAILABLE">
+        <TabPane style="-fx-background-color: transparent; -fx-background-color: beige;" tabClosingPolicy="UNAVAILABLE">
             <!-- ================== TAB: PERSONAL INFO ================== -->
             <Tab text="Personal Info">
-                <ScrollPane fitToWidth="true" style="-fx-background-color: transparent;">
-                    <VBox spacing="16" style="-fx-padding: 20;">
+                <ScrollPane fitToWidth="true" style="-fx-background-color: transparent; -fx-background-color: beige;">
+                    <VBox spacing="16" style="-fx-padding: 20; -fx-background-color: beige;">
                         <Label style="-fx-font-size: 16px; -fx-font-weight: 700;" text="Personal Information" />
 
                         <GridPane hgap="12" vgap="12">
@@ -62,8 +62,7 @@
                             <TextField fx:id="emailField" promptText="example@gmail.com" GridPane.columnIndex="1" GridPane.rowIndex="4" />
 
                             <Label text="Subscribed:" GridPane.columnIndex="0" GridPane.rowIndex="5" />
-                            <CheckBox fx:id="subscribedCheckBox" text="Yes"           selected="true"
-          					disable="true" GridPane.columnIndex="1" GridPane.rowIndex="5" />
+                            <CheckBox fx:id="subscribedCheckBox" disable="true" selected="true" text="Yes" GridPane.columnIndex="1" GridPane.rowIndex="5" />
                      <rowConstraints>
                         <RowConstraints />
                         <RowConstraints />
@@ -75,7 +74,7 @@
                         </GridPane>
 
                         <HBox spacing="10">
-                            <Button fx:id="saveBtn" text="Save Changes" styleClass="primary-button" onAction="#onSaveChanges"/>
+                            <Button fx:id="saveBtn" onAction="#onSaveChanges" styleClass="darkNeonButton" stylesheets="@bistro.css" text="Save Changes" />
                             <Label fx:id="infoStatusLabel" text="" />
                         </HBox>
                     </VBox>
@@ -90,14 +89,14 @@
                             <HBox alignment="CENTER_LEFT" spacing="10">
                                 <Label style="-fx-font-size: 16px; -fx-font-weight: 700;" text="Reservations" />
                                 <Region HBox.hgrow="ALWAYS" />
-                                <Button fx:id="leaveWaitingListButton" text="Leave Waiting List" />
+                                <Button fx:id="leaveWaitingListButton" styleClass="darkGlassButton" stylesheets="@bistro.css" text="Leave Waiting List" />
                             </HBox>
 
                             <HBox alignment="CENTER_LEFT" spacing="10">
                                 <Label style="-fx-font-weight: 700;" text="Active reservations:" />
                                 <Label fx:id="activeCountLabel" text="0" />
                                 <Region HBox.hgrow="ALWAYS" />
-                                <Button fx:id="cancelActiveButton" disable="true" text="Cancel Selected Active Reservation" />
+                                <Button fx:id="cancelActiveButton" disable="true" styleClass="topButton" stylesheets="@bistro.css" text="Cancel Selected Active Reservation" />
                                 <Label fx:id="reservationStatusLabel" text="" />
                             </HBox>
 
@@ -111,7 +110,7 @@
                             <!-- Active table -->
                             <VBox spacing="8">
                                 <Label style="-fx-font-weight: 700;" text="Active" />
-                                <TableView fx:id="activeReservationsTable" prefHeight="220">
+                                <TableView fx:id="activeReservationsTable" prefHeight="220" styleClass="gridTable" stylesheets="@bistro.css">
                                     <columns>
                                         <TableColumn fx:id="colA_datetime" prefWidth="170" text="Date/Time" />
                                         <TableColumn fx:id="colA_guests" prefWidth="70" text="Guests" />
@@ -125,7 +124,7 @@
                             <!-- History table -->
                             <VBox spacing="8">
                                 <Label style="-fx-font-weight: 700;" text="History" />
-                                <TableView fx:id="reservationHistoryTable" prefHeight="280">
+                                <TableView fx:id="reservationHistoryTable" prefHeight="280" styleClass="gridTable" stylesheets="@bistro.css">
                                     <columns>
                                         <TableColumn fx:id="colH_datetime" prefWidth="170" text="Date/Time" />
                                         <TableColumn fx:id="colH_guests" prefWidth="70" text="Guests" />
@@ -145,9 +144,9 @@
             <Tab text="Bills">
                 <VBox spacing="10" style="-fx-padding: 20;">
                     <Label style="-fx-font-size: 16px; -fx-font-weight: 700;" text="Bills" />
-               <Button mnemonicParsing="false" text="Pay Bill" />
+               <Button mnemonicParsing="false" prefHeight="28.0" prefWidth="86.0" styleClass="darkGlassButton" stylesheets="@bistro.css" text="Pay Bill" />
                     <Label text="(No bills tables were provided yet. Add your bills table(s), then we’ll bind them here.)" />
-                    <TableView fx:id="billsTable" prefHeight="450">
+                    <TableView fx:id="billsTable" prefHeight="450" styleClass="gridTable" stylesheets="@bistro.css">
                                                         <columns>
                                         <TableColumn fx:id="colH_billId" prefWidth="62.00003242492676" text="Bill Id" />
                                         <TableColumn fx:id="colH_reservationId" prefWidth="184.40001678466797" text="reservation Number" />

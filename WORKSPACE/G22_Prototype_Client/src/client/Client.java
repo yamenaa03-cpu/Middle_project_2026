@@ -11,6 +11,8 @@ import common.dto.Reservation.ReservationResponse;
 import common.dto.UserAccount.UserAccountRequest;
 import common.dto.UserAccount.UserAccountResponse;
 import common.entity.Reservation;
+import common.enums.ReservationOperation;
+import common.enums.UserAccountOperation;
 /**
  * The Client class extends the OCSF AbstractClient framework.
  * It is responsible for:
@@ -44,19 +46,26 @@ public class Client extends AbstractClient {
      */
     @Override
     protected void handleMessageFromServer(Object msg) {
-
+    	
+    				
         if (msg instanceof UserAccountResponse ) {
         	UserAccountResponse authResp = (UserAccountResponse)msg;
-
-        			String StringRes = authResp.getMessage();
-        			ui.displayMessage(StringRes);
+        	
+        			if(authResp.getOperation() == UserAccountOperation.SUBSCRIBER_LOG_IN) {
+        				String StringRes = "Welcome Back "+authResp.getFullName()+" !";
+        				ui.displayMessage(StringRes);
+        			}
         			
+        			if(authResp.getOperation() == UserAccountOperation.LOGOUT) {
+        				String StringRes = "GoodBye "+authResp.getFullName()+" !";
+        				ui.displayMessage(StringRes);
+        			}
             ui.handleAuthResponse(authResp);
             return;
         }
 
         if (msg instanceof ReservationResponse resResp) {
-            ui.handleReservationResponse(resResp);   // ✅ THIS is the missing link
+            ui.handleReservationResponse(resResp);   
             return;
             
         }
@@ -105,7 +114,7 @@ public class Client extends AbstractClient {
         	
         	public void requestCustomerReservations() {
         		try {
-        			sendToServer(ReservationRequest);
+        			sendToServer(ReservationRequest.);
         		}catch (IOException e) {
                     ui.displayMessage("Error Checking login Status: " + e.getMessage());
                 }
@@ -113,7 +122,7 @@ public class Client extends AbstractClient {
 
         	public void requestUpdateCustomerProfile(String name, String phone, String email) {
         		try {
-        			sendToServer(UserAccountRequest);
+        			sendToServer(UserAccountRequest.createUpdateSubscriberProfileRequest(name, phone, email));
         		}catch (IOException e) {
                     ui.displayMessage("Error Checking login Status: " + e.getMessage());
                 }
@@ -192,10 +201,6 @@ public class Client extends AbstractClient {
     public void requestCancelReservation(int reservationId) {
         sendRequest(ReservationRequest.createCancelReservationRequest(reservationId));
     }
-    public void requestCheckout(int confirmationCode) {
-        sendRequest(ReservationRequest.createPayBillRequest(confirmationCode));
-    }
-
 
     /**
      * sends a request object to the server.

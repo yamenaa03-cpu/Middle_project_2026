@@ -6,6 +6,7 @@ import common.dto.UserAccount.UserAccountRequest;
 import common.dto.UserAccount.UserAccountResponse;
 import javafx.application.Platform;
 import javafx.fxml.FXML;
+import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.control.TextField;
 import javafx.stage.Stage;
@@ -13,14 +14,22 @@ import javafx.stage.Stage;
 public class LoginController {
 
     private Client client;
+    @FXML Button loginButton;
+    @FXML TextField membershipCodeField;
+    @FXML private Label statusLabel;
 
     public void setClient(Client client) {
         this.client = client;
     }
     
-	@FXML private TextField membershipCodeField;
-	@FXML private Label statusLabel;
 
+	
+
+
+	@FXML
+	private void initialize() {
+		membershipCodeField.setOnAction(e -> loginButton.fire());
+	}
 	@FXML
 	private void onLogin() {
 	    String code = membershipCodeField.getText().trim();

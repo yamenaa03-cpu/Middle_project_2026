@@ -134,7 +134,7 @@ public class PersonalSpaceController {
 
         client.requestCustomerProfile();
         // إذا بعدك مش جاهز بهي، علّقها مؤقتاً:
-        client.requestCustomerReservations();
+        //client.requestCustomerReservations();
     }
 
     // ===================== RESPONSES FROM MAIN CONTROLLER =====================

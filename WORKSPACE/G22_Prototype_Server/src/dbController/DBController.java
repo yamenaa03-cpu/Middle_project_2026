@@ -649,8 +649,11 @@ public class DBController {
 			tableId = tid;
 		}
 
-		ReservationStatus status = ReservationStatus.valueOf(rs.getString("status"));
-		ReservationType type = ReservationType.valueOf(rs.getString("type"));
+		String statusStr = rs.getString("status");
+		ReservationStatus status = (statusStr == null) ? null : ReservationStatus.valueOf(statusStr);
+
+		String typeStr = rs.getString("type");
+		ReservationType type = (typeStr == null) ? null : ReservationType.valueOf(typeStr);
 
 		boolean reminderSent = rs.getBoolean("reminder_sent");
 

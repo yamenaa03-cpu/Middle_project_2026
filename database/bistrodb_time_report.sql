@@ -16,29 +16,36 @@
 /*!40111 SET @OLD_SQL_NOTES=@@SQL_NOTES, SQL_NOTES=0 */;
 
 --
--- Table structure for table `opening_hours`
+-- Table structure for table `time_report`
 --
 
-DROP TABLE IF EXISTS `opening_hours`;
+DROP TABLE IF EXISTS `time_report`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!50503 SET character_set_client = utf8mb4 */;
-CREATE TABLE `opening_hours` (
-  `day_of_week` int NOT NULL,
-  `open_time` time DEFAULT NULL,
-  `close_time` time DEFAULT NULL,
-  `is_closed` tinyint(1) DEFAULT '0',
-  PRIMARY KEY (`day_of_week`),
-  CONSTRAINT `opening_hours_chk_1` CHECK ((`day_of_week` between 1 and 7))
+CREATE TABLE `time_report` (
+  `report_id` int NOT NULL AUTO_INCREMENT,
+  `report_year` int NOT NULL,
+  `report_month` int NOT NULL,
+  `reservation_id` int DEFAULT NULL,
+  `scheduled_time` datetime DEFAULT NULL,
+  `checked_in_at` datetime DEFAULT NULL,
+  `checked_out_at` datetime DEFAULT NULL,
+  `arrival_delay_minutes` int DEFAULT NULL,
+  `session_duration_minutes` int DEFAULT NULL,
+  `customer_name` varchar(100) DEFAULT NULL,
+  `is_subscriber` tinyint(1) DEFAULT NULL,
+  PRIMARY KEY (`report_id`),
+  UNIQUE KEY `report_year` (`report_year`,`report_month`,`reservation_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
--- Dumping data for table `opening_hours`
+-- Dumping data for table `time_report`
 --
 
-LOCK TABLES `opening_hours` WRITE;
-/*!40000 ALTER TABLE `opening_hours` DISABLE KEYS */;
-/*!40000 ALTER TABLE `opening_hours` ENABLE KEYS */;
+LOCK TABLES `time_report` WRITE;
+/*!40000 ALTER TABLE `time_report` DISABLE KEYS */;
+/*!40000 ALTER TABLE `time_report` ENABLE KEYS */;
 UNLOCK TABLES;
 /*!40103 SET TIME_ZONE=@OLD_TIME_ZONE */;
 

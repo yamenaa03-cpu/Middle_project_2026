@@ -26,7 +26,7 @@ CREATE TABLE `employee` (
   `employee_id` int NOT NULL AUTO_INCREMENT,
   `full_name` varchar(100) NOT NULL,
   `username` varchar(50) NOT NULL,
-  `password_hash` varchar(255) NOT NULL,
+  `password` varchar(255) NOT NULL,
   `role` enum('REP','MANAGER') NOT NULL,
   `active` tinyint(1) NOT NULL DEFAULT '1',
   PRIMARY KEY (`employee_id`),
@@ -52,4 +52,4 @@ UNLOCK TABLES;
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
--- Dump completed on 2026-01-15 18:57:48
+-- Dump completed on 2026-01-16 18:25:08

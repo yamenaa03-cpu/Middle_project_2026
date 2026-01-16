@@ -48,7 +48,8 @@
                     <MenuItem onAction="#onRegisterSubscriber" text="Register Subscriber" />
                     <MenuItem onAction="#onEmployeeDashboard" text="Employee Dashboard" />
                     <MenuItem text="Statistic" />
-                     <MenuItem onAction="#onOpenKiosk" text="Open Kiosk" />
+                    <MenuItem onAction="#onOpenKiosk" text="Open Kiosk" />
+                    <MenuItem onAction="#onEmployeeLogin" text="Employee Login" />
                 </items>
             </MenuButton>
         </HBox>
@@ -108,7 +109,7 @@
                             <Button styleClass="squareAction" text="Leave Waiting List" GridPane.columnIndex="0" GridPane.rowIndex="0" />
 
                             <!-- (2) Pay bill -->
-                            <Button styleClass="squareAction" text="CheckOut" GridPane.columnIndex="1" GridPane.rowIndex="0" />
+                            <Button fx:id="CheckoutBttn" onAction="#onCheckOut" styleClass="squareAction" text="CheckOut" GridPane.columnIndex="1" GridPane.rowIndex="0" />
 
                             <!-- (3) Make reservation -->
                             <Button id="ReservatioButton" onAction="#onLoadClientReservation" styleClass="squareAction" text="Make A Reservation" GridPane.columnIndex="0" GridPane.rowIndex="1" />

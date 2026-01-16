@@ -5,6 +5,7 @@ import common.dto.Reservation.ReservationResponse;
 import common.dto.UserAccount.UserAccountResponse;
 import common.entity.Customer;
 import common.entity.Reservation;
+import common.enums.ReservationOperation;
 import common.enums.ReservationStatus;
 import javafx.application.Platform;
 import javafx.collections.FXCollections;
@@ -32,7 +33,6 @@ public class PersonalSpaceController {
     // ====== Personal Info (match FXML fx:id) ======
     @FXML private TextField membershipNumberField;
     @FXML private TextField fullNameField;
-    @FXML private TextField usernameField;
     @FXML private TextField phoneField;
     @FXML private TextField emailField;
     @FXML private CheckBox subscribedCheckBox;
@@ -74,7 +74,6 @@ public class PersonalSpaceController {
     @FXML
     public void initialize() {
         membershipNumberField.setEditable(false);
-        usernameField.setEditable(false);
 
         // ---- Active table columns ----
         colA_datetime.setCellValueFactory(new PropertyValueFactory<>("reservationDateTime"));
@@ -134,7 +133,7 @@ public class PersonalSpaceController {
 
         client.requestCustomerProfile();
         // إذا بعدك مش جاهز بهي، علّقها مؤقتاً:
-        //client.requestCustomerReservations();
+        client.requestCustomerReservations();
     }
 
     // ===================== RESPONSES FROM MAIN CONTROLLER =====================
@@ -152,17 +151,22 @@ public class PersonalSpaceController {
             } else {
                 infoStatusLabel.setText(resp.getMessage());
             }
+            
         });
     }
 
     // Reservations come via ReservationResponse
     public void onReservationResponse(ReservationResponse resp) {
         Platform.runLater(() -> {
-            if (resp.getReservations() != null) {
+            reservationStatusLabel.setText(resp.getMessage());
+
+            if (resp.getOperation() == ReservationOperation.GET_SUBSCRIBER_HISTORY) {
                 fillReservations(resp.getReservations());
-                reservationStatusLabel.setText(resp.getMessage());
-            } else {
-                reservationStatusLabel.setText(resp.getMessage());
+                return;
+            }
+
+            if (resp.getOperation() == ReservationOperation.CANCEL_RESERVATION && resp.isSuccess()) {
+                client.requestCustomerReservations(); // reload history after cancel
             }
         });
     }
@@ -170,28 +174,15 @@ public class PersonalSpaceController {
     // ===================== FILL UI =====================
 
     private void fillCustomer(Customer c) {
-        membershipNumberField.setText(String.valueOf(c.getCustomerId()));
+        membershipNumberField.setText(String.valueOf(c.getSubscriptionCode()));
         fullNameField.setText(c.getFullName());
         phoneField.setText(c.getPhone());
         emailField.setText(c.getEmail());
 
-        // if you added subscriptionCode to Customer -> use it here
-        try {
-            String code = (String) c.getClass().getMethod("getSubscriptionCode").invoke(c);
-            usernameField.setText(code == null ? "" : code);
-        } catch (Exception ignore) {
-            usernameField.setText("");
-        }
-
-        // if you removed is_subscribed, just set false
-        try {
-            boolean sub = (boolean) c.getClass().getMethod("isSubscribed").invoke(c);
-            subscribedCheckBox.setSelected(sub);
-        } catch (Exception ignore) {
-            subscribedCheckBox.setSelected(true);
-        }
+        subscribedCheckBox.setSelected(c.isSubscriber());
     }
-
+    
+    
     private void fillReservations(List<Reservation> all) {
         if (all == null) all = List.of();
 
@@ -204,7 +195,7 @@ public class PersonalSpaceController {
                 .filter(r -> !isActive(r))
                 .sorted(Comparator.comparing(Reservation::getReservationDateTime).reversed())
                 .collect(Collectors.toList());
-
+        activeCountLabel.setText(String.valueOf(active.size()));
         activeReservationsTable.setItems(FXCollections.observableArrayList(active));
         reservationHistoryTable.setItems(FXCollections.observableArrayList(history));
     }
@@ -240,6 +231,8 @@ public class PersonalSpaceController {
 
         infoStatusLabel.setText("Saving...");
         client.requestUpdateCustomerProfile(name, phone, email);
+        infoStatusLabel.setText("Personal information Updated 🔄");
+
     }
 
     private void onCancelActiveReservation(ActionEvent e) {

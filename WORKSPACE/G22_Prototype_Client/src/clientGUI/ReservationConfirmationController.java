@@ -13,7 +13,9 @@ public class ReservationConfirmationController {
     @FXML private Label messageLabel;
 
     public void setData(int code, LocalDateTime dt, int guests) {
+    		if(dt!=null) {
         dateTimeLabel.setText(dt.toString());
+    		}else {dateTimeLabel.setText(null);}
         guestsLabel.setText(String.valueOf(guests));
         confirmationCodeLabel.setText(String.valueOf(code));
         messageLabel.setText("Reservation confirmed!");

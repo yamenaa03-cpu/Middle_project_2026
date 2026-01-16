@@ -3,6 +3,7 @@ package client;
 import java.util.List;
 
 import common.dto.Reservation.ReservationResponse;
+import common.dto.RestaurantManagement.RestaurantManagementResponse;
 import common.dto.UserAccount.UserAccountResponse;
 import common.entity.Reservation;
 
@@ -47,6 +48,8 @@ public interface ClientUI {
     
     
     void handleReservationResponse(ReservationResponse resp);
+    void handleRestaurantManagementResponse(RestaurantManagementResponse resp);
+
     
     
 

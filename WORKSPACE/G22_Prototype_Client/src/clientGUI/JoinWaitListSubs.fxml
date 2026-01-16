@@ -1,0 +1,85 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.Button?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.control.Separator?>
+<?import javafx.scene.control.Spinner?>
+<?import javafx.scene.layout.BorderPane?>
+<?import javafx.scene.layout.ColumnConstraints?>
+<?import javafx.scene.layout.GridPane?>
+<?import javafx.scene.layout.HBox?>
+<?import javafx.scene.layout.Pane?>
+<?import javafx.scene.layout.RowConstraints?>
+<?import javafx.scene.layout.VBox?>
+<?import javafx.scene.text.Font?>
+
+<BorderPane prefHeight="520" prefWidth="650" style="-fx-background-color: #F6F7FB;" xmlns="http://javafx.com/javafx/21" xmlns:fx="http://javafx.com/fxml/1" fx:controller="clientGUI.JoinWaitlistController">
+
+    <!-- ===== TOP BAR ===== -->
+    <top>
+        <HBox alignment="CENTER_LEFT" spacing="12" style="-fx-padding: 14 18; -fx-background-color: #5a3a3a;">
+            <Pane style="-fx-background-color: #5a3a3a;" HBox.hgrow="ALWAYS">
+            <children>
+                  <Label layoutX="229.0" style="-fx-font-size: 18; -fx-font-weight: bold;" text="🎟 Join Waitlist " textFill="WHITE">
+                  <font>
+                     <Font size="20.0" />
+                  </font>
+               </Label>
+            </children></Pane>
+            <Button fx:id="btnClose" onAction="#onClose" styleClass="topButton" stylesheets="@bistro.css" text="Close" textFill="#f8f8f8" />
+        </HBox>
+    </top>
+
+    <!-- ===== CENTER ===== -->
+    <center>
+        <VBox spacing="14">
+            <padding>
+                <Insets bottom="18" left="18" right="18" top="18" />
+            </padding>
+
+            <!-- Info -->
+            <Label style="-fx-text-fill: #444;" text="Enter your details to join the waiting list. We’ll contact you when a table is available." wrapText="true" />
+
+            <!-- Form Card -->
+            <VBox spacing="12" style="-fx-background-color: white; -fx-padding: 16; -fx-background-radius: 14; -fx-border-radius: 14; -fx-border-color: #E6E8EF;">
+
+                <GridPane hgap="12" vgap="10">
+                    <columnConstraints>
+                        <ColumnConstraints minWidth="140" />
+                        <ColumnConstraints hgrow="ALWAYS" />
+                    </columnConstraints>
+
+                    <Label text="Guests:" GridPane.columnIndex="0" GridPane.rowIndex="3" />
+                    <Spinner fx:id="guestsSpinner" prefWidth="150" GridPane.columnIndex="1" GridPane.rowIndex="3" />
+               <Label text="       👥" GridPane.rowIndex="3">
+                  <font>
+                     <Font size="33.0" />
+                  </font>
+               </Label>
+               <rowConstraints>
+                  <RowConstraints />
+                  <RowConstraints />
+                  <RowConstraints />
+                  <RowConstraints />
+                  <RowConstraints />
+               </rowConstraints>
+                </GridPane>
+
+                <Separator />
+
+                <HBox alignment="CENTER_LEFT" spacing="10">
+                    <Button fx:id="btnJoinWaitlist" onAction="#onJoinWaitlist" style="-fx-background-color: #5a3a3a;" styleClass="darkGlassButton" stylesheets="@bistro.css" text="Join Waitlist" />
+                    <Button fx:id="btnClear" onAction="#onClear" style="-fx-background-color: #5a3a3a;" styleClass="darkGlassButton" stylesheets="@bistro.css" text="Clear" />
+                    <Pane HBox.hgrow="ALWAYS" />
+                    <Label fx:id="statusLabel" text="" wrapText="true" />
+                </HBox>
+            </VBox>
+         <Label fx:id="Status" prefHeight="32.0" prefWidth="582.0" />
+
+            <!-- Small hint -->
+           
+        </VBox>
+    </center>
+
+</BorderPane>

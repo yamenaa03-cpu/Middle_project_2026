@@ -4,8 +4,11 @@ package clientGUI;
 import client.Client;
 import client.ClientUI;
 import common.dto.Reservation.ReservationResponse;
+import common.dto.RestaurantManagement.RestaurantManagementResponse;
 import common.dto.UserAccount.UserAccountResponse;
 import common.entity.Reservation;
+import common.enums.ReservationOperation;
+import common.enums.UserAccountOperation;
 import javafx.animation.PauseTransition;
 import javafx.animation.RotateTransition;
 import javafx.animation.TranslateTransition;
@@ -51,6 +54,7 @@ public class ClientController implements ClientUI{
     /** Shared client instance (used by all popups) */
     private Client client;
     private LoginController activeLoginController;
+    private EmployeeLoginController activeEmployeeLoginController;
     private Integer currentSubscriberId = null;//subscriber id if the client is connected
     
     private ReservationController activeReservationController;
@@ -59,6 +63,11 @@ public class ClientController implements ClientUI{
     private CancelReservationConfirmController ActiveCancelReservationConfirmController;
     private BistroKioskController ActiveBistroKioskController;
     private RegisterSubscriberController ActiveRegisterSubscriberController;
+    private CheckoutGuestController activeCheckoutGuestController;
+    private CheckoutPayController activeCheckoutPayController;
+    private EmployeeDashboardController activeEmployeeDashboardController;
+
+
     private boolean waitingSubscriberReservationsForCancel = false;
 
 
@@ -111,7 +120,21 @@ public class ClientController implements ClientUI{
     
     public void setActiveRegisterSubscriberController(RegisterSubscriberController RSctr) {
 		this.ActiveRegisterSubscriberController = RSctr;
-}
+    	}
+    
+    public void setActiveCheckoutGuestController(CheckoutGuestController c){
+    		this.activeCheckoutGuestController=c; 
+    	}
+    
+    public void setActiveCheckoutPayController(CheckoutPayController c){ 
+    		this.activeCheckoutPayController=c; 
+    	}
+    public void setactiveEmployeeLoginController(EmployeeLoginController ELC) {
+    		this.activeEmployeeLoginController = ELC;
+    }
+    public void setActiveEmployeeDashboardController(EmployeeDashboardController c) {
+        this.activeEmployeeDashboardController = c;
+    }
     
     
     
@@ -123,6 +146,10 @@ public class ClientController implements ClientUI{
      */
     public void setClient(Client client) {
         this.client = client;
+    }
+    
+    public Client getClient() {
+        return client;
     }
     
     public boolean isLoggedIn() {
@@ -173,6 +200,85 @@ public class ClientController implements ClientUI{
             e.printStackTrace();
         }
     }
+    @FXML
+    public void onCheckOut(ActionEvent event) {
+
+        if (client == null || !client.isConnected()) {
+            displayMessage("Not connected to server.");
+            return;
+        }
+
+        // =======================
+        // SUBSCRIBER FLOW
+        // =======================
+        if (isLoggedIn()) {
+            try {
+                FXMLLoader loader = new FXMLLoader(getClass().getResource("/clientGUI/CheckoutPay.fxml"));
+                Parent root = loader.load();
+
+                CheckoutPayController payCtrl = loader.getController();
+                payCtrl.setClient(client);
+                payCtrl.setMainController(this);
+
+                // ✅ set active so handleReservationResponse can forward updates
+                setActiveCheckoutPayController(payCtrl);
+
+                Stage popupStage = new Stage();
+                popupStage.setTitle("Checkout");
+                popupStage.initModality(Modality.APPLICATION_MODAL);
+                popupStage.initOwner(((Node) event.getSource()).getScene().getWindow());
+                popupStage.setScene(new Scene(root));
+                popupStage.setResizable(false);
+                popupStage.sizeToScene();
+                popupStage.centerOnScreen();
+
+                // ✅ IMPORTANT: request data BEFORE showAndWait()
+                payCtrl.loadSubscriberPayableReservations();
+
+                popupStage.showAndWait();
+
+                // optional cleanup
+                // setActiveCheckoutPayController(null);
+
+            } catch (IOException e) {
+                e.printStackTrace();
+                displayMessage("Failed to open checkout screen.");
+            }
+
+            return;
+        }
+
+        // =======================
+        // GUEST FLOW
+        // =======================
+        try {
+            FXMLLoader loader = new FXMLLoader(getClass().getResource("/clientGUI/CheckoutGuest.fxml"));
+            Parent root = loader.load();
+
+            CheckoutGuestController guestCtrl = loader.getController();
+            guestCtrl.setClient(client);
+            guestCtrl.setMainController(this);
+
+            setActiveCheckoutGuestController(guestCtrl);
+
+            Stage popupStage = new Stage();
+            popupStage.setTitle("Checkout");
+            popupStage.initModality(Modality.APPLICATION_MODAL);
+            popupStage.initOwner(((Node) event.getSource()).getScene().getWindow());
+            popupStage.setScene(new Scene(root));
+            popupStage.setResizable(false);
+            popupStage.sizeToScene();
+            popupStage.centerOnScreen();
+            popupStage.showAndWait();
+
+            // optional cleanup
+            // setActiveCheckoutGuestController(null);
+
+        } catch (IOException e) {
+            e.printStackTrace();
+            displayMessage("Failed to open guest checkout screen.");
+        }
+    }
 
     @FXML
     public void onDeleteReservation(ActionEvent event) {
@@ -190,6 +296,7 @@ public class ClientController implements ClientUI{
                 CancelReservationConfirmController confirmCtrl = loader.getController();
                 confirmCtrl.setClient(client);
                 confirmCtrl.setMainController(this);
+                
                 setActiveCancelReservationConfirmController(confirmCtrl);
 
                 Stage popupStage = new Stage();
@@ -218,6 +325,7 @@ public class ClientController implements ClientUI{
                 CancelReservationController guestCtrl = loader.getController();
                 guestCtrl.setClient(client);
                 guestCtrl.setMainController(this);
+                
                 setActiveCancelReservationGuestController(guestCtrl);
 
                 Stage popupStage = new Stage();
@@ -260,6 +368,37 @@ public class ClientController implements ClientUI{
         } catch (Exception e) {
             e.printStackTrace();
         }
+    }
+    @FXML
+    public void onEmployeeLogin() {
+    	 try {
+ 	        FXMLLoader loader = new FXMLLoader(
+ 	                getClass().getResource("/clientGUI/EmployeeLogin.fxml")
+ 	        );
+
+ 	        Parent root = loader.load();
+ 	        Scene scene = new Scene(root);
+
+ 	        
+
+ 	        Stage popupStage = new Stage();
+ 	        popupStage.setTitle("Bistro – Employee Login");
+ 	        popupStage.initModality(Modality.APPLICATION_MODAL);
+ 	        popupStage.initOwner(SignInButton.getScene().getWindow());
+ 	        popupStage.setResizable(false);
+ 	        popupStage.setScene(scene);
+ 	        
+ 	       EmployeeLoginController elc = loader.getController();
+ 	       elc.setClient(client);
+ 	      setactiveEmployeeLoginController(elc);
+
+ 	     
+ 	        popupStage.showAndWait();
+ 	        System.out.println("Sign in clicked");
+
+ 	    } catch (Exception e) {
+ 	        e.printStackTrace();
+ 	    }
     }
     @FXML
     public void onSignIn() {
@@ -355,10 +494,10 @@ public class ClientController implements ClientUI{
  	        Parent root = loader.load();
  	        Scene scene = new Scene(root);
 
- 	        // CSS (enable later if needed)
- 	        // scene.getStylesheets().add(
- 	        //        getClass().getResource("/clientGUI/style.css").toExternalForm()
- 	        // );
+ 	        EmployeeDashboardController dash = loader.getController();
+ 	       setActiveEmployeeDashboardController(dash);
+ 	        dash.setClient(client);          
+ 	        
 
  	        Stage popupStage = new Stage();
  	        popupStage.setTitle("Bistro – Employee Dashboard");
@@ -367,7 +506,9 @@ public class ClientController implements ClientUI{
  	        popupStage.setResizable(false);
  	        popupStage.setScene(scene);
 
- 	        popupStage.showAndWait();
+ 	        popupStage.setOnHidden(e -> setActiveEmployeeDashboardController(null));
+
+ 	        popupStage.show();
  	        System.out.println("Employee Dashboard clicked");
 
  	    } catch (Exception e) {
@@ -441,60 +582,132 @@ public class ClientController implements ClientUI{
 
 	@Override
 	public void handleAuthResponse(UserAccountResponse resp) {
+        if (resp.getOperation() == UserAccountOperation.EMPLOYEE_LOG_IN) { // تأكد من الاسم عندك
+            if (activeEmployeeLoginController != null) {
+                activeEmployeeLoginController.onEmployeeLoginResponse(resp);
+
+                // optional cleanup
+                if (resp.isSuccess()) {
+                    activeEmployeeLoginController = null;
+                }
+            }
+            return;
+        }
 
 	    if (resp.isSuccess()) {
 	        currentSubscriberId = resp.getSubscriberId();  // ✅ save login state
 	    } else {
 	        currentSubscriberId = null;
 	    }
-
+	    if (activeEmployeeDashboardController != null) {
+	        activeEmployeeDashboardController.handleServerMessage(resp);
+	    }
 	    if (activeLoginController != null) {
 	        activeLoginController.onAuthResponse(resp);
 	        if (resp.isSuccess()) {
 	            activeLoginController = null;
 	        }
 	    }
-	    if (activePersonalSpaceController != null) {
-	    	//activePersonalSpaceController.onAuthResponse(resp);
-	    }
+		if(resp.getOperation() ==  UserAccountOperation.GET_SUBSCRIBER_PROFILE)
+	    if (activePersonalSpaceController != null)
+	        activePersonalSpaceController.onAuthResponse(resp);
+	    
 	}
 	@Override
 	public void handleReservationResponse(ReservationResponse resp) {
 	    Platform.runLater(() -> {
-	    		
-	        // 1) Subscriber cancel flow: load list into table
-	        if (waitingSubscriberReservationsForCancel) {
-	            waitingSubscriberReservationsForCancel = false;
+	    	System.out.println("RESP op=" + resp.getOperation()
+	        + " success=" + resp.isSuccess()
+	        + " msg=" + resp.getMessage());
+	    	
+	    	if (activeEmployeeDashboardController != null) {
+	    	    activeEmployeeDashboardController.handleServerMessage(resp);
+	    	}
+	    	if (waitingSubscriberReservationsForCancel
+	    		    && resp.getOperation() == ReservationOperation.GET_CUSTOMER_RESERVATIONS_FOR_CANCELLATION) {
+	    		    waitingSubscriberReservationsForCancel = false;
+	    		    if (ActiveCancelReservationConfirmController != null)
+	    		        ActiveCancelReservationConfirmController.setReservations(resp.getReservations());
+	    		    return;
+	    		}
 
-	            if (ActiveCancelReservationConfirmController != null) {
-	                ActiveCancelReservationConfirmController.setReservations(resp.getReservations());
-	            } else {
-	                displayMessage("Cancel page is not open.");
-	            }
-	            return;
-	        }
 
-	        // 2) Guest flow (lookup by confirmation code)
-	        if (ActiveCancelReservationGuestController != null) {
-	            ActiveCancelReservationGuestController.onReservationResponse(resp);
-	        }
+	        if (resp == null || resp.getOperation() == null) return;
 
-	        // 3) Reservation page
-	        if (activeReservationController != null) {
-	            activeReservationController.onReservationResponse(resp);
-	        }
+	        switch (resp.getOperation()) {
 
-	        // 4) Personal space
-	        if (activePersonalSpaceController != null) {
-	            activePersonalSpaceController.onReservationResponse(resp);
-	        }
+	            case CREATE_RESERVATION:
+	                if (activeReservationController != null) activeReservationController.onReservationResponse(resp);
+	                break;
 
-	        // 5) If confirm page is open and it sent cancel request
-	        if (ActiveCancelReservationConfirmController != null) {
-	            ActiveCancelReservationConfirmController.onReservationResponse(resp);
+	            case JOIN_WAITLIST:
+	                if (ActiveBistroKioskController != null) ActiveBistroKioskController.onReservationResponse(resp);
+	                if (activePersonalSpaceController != null) activePersonalSpaceController.onReservationResponse(resp);
+	                break;
+
+	            case GET_CUSTOMER_RESERVATIONS_FOR_CANCELLATION:
+	            case CANCEL_RESERVATION:
+	                if (ActiveCancelReservationGuestController != null)
+	                    ActiveCancelReservationGuestController.onReservationResponse(resp);
+
+	                if (ActiveCancelReservationConfirmController != null)
+	                    ActiveCancelReservationConfirmController.onReservationResponse(resp);
+
+	                if (activePersonalSpaceController != null)
+	                    activePersonalSpaceController.onReservationResponse(resp);
+
+	                break;
+
+
+	            case RECEIVE_TABLE:
+	            case GET_RESERVATION_By_CONFIRMATION_CODE_FOR_RECEIVING:
+	            case GET_CUSTOMER_RESERVATIONS_FOR_RECEIVING:
+	                if (ActiveBistroKioskController != null) ActiveBistroKioskController.onReservationResponse(resp);
+	                break;
+	                
+	            case GET_RESERVATION_By_CONFIRMATION_CODE_FOR_CANCELLATION:
+	                if (ActiveCancelReservationGuestController != null) {
+	                    ActiveCancelReservationGuestController.onReservationResponse(resp);
+	                } else {
+	                    System.out.println("ActiveCancelReservationGuestController is NULL");
+	                }
+	                
+	                break;
+	                
+	            case GET_CUSTOMER_RESERVATIONS_FOR_CHECKOUT:
+	            case GET_RESERVATION_By_CONFIRMATION_CODE_FOR_CHECKOUT:
+	            case GET_BILL_FOR_PAYING:
+	            case PAY_BILL:
+	                if (activeCheckoutGuestController != null) activeCheckoutGuestController.onReservationResponse(resp);
+	                if (activeCheckoutPayController != null) activeCheckoutPayController.onReservationResponse(resp);
+	                break;
+	            case GET_SUBSCRIBER_HISTORY:
+	                if (activePersonalSpaceController != null)
+	                    activePersonalSpaceController.onReservationResponse(resp);
+	                break;
+	                
+	               
+	                
+	                
+	               
+
+	            default:
+	                // optionally log
+	                break;
 	        }
 	    });
 	}
+	@Override
+	public void handleRestaurantManagementResponse(RestaurantManagementResponse resp) {
+	    if (activeEmployeeDashboardController != null) {
+	        activeEmployeeDashboardController.handleServerMessage(resp);
+	    }
+	    if(activeEmployeeLoginController != null) {
+	    		displayMessage(resp.getMessage());
+	    }
+	}
+
+
 
 	private Reservation pickCancellable(List<Reservation> list) {
 	    if (list == null) return null;

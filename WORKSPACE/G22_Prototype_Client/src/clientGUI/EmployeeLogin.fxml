@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.Button?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.control.PasswordField?>
+<?import javafx.scene.control.TextField?>
+<?import javafx.scene.layout.AnchorPane?>
+<?import javafx.scene.layout.HBox?>
+<?import javafx.scene.layout.VBox?>
+<?import javafx.scene.text.Font?>
+
+<AnchorPane prefHeight="520.0" prefWidth="820.0" style="-fx-background-color: #f6f4ef;" xmlns="http://javafx.com/javafx/21" xmlns:fx="http://javafx.com/fxml/1" fx:controller="clientGUI.EmployeeLoginController">
+
+    <VBox alignment="CENTER" spacing="18.0" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
+
+        <VBox alignment="CENTER" spacing="6.0">
+            <Label style="-fx-text-fill: #1f1f1f;" text="Employee Login">
+                <font>
+                    <Font size="28.0" />
+                </font>
+            </Label>
+            <Label style="-fx-text-fill: #666666; -fx-font-size: 13px;" />
+        </VBox>
+
+        <VBox maxWidth="360.0" spacing="12.0" style="-fx-background-color: white; -fx-background-radius: 18; -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.12), 18, 0.2, 0, 6);">
+            <padding>
+                <Insets bottom="26" left="26" right="26" top="26" />
+            </padding>
+
+            <VBox spacing="6.0">
+                <Label style="-fx-text-fill: #333333; -fx-font-size: 12px;" text="Username" />
+                <TextField fx:id="usernameField" promptText="Enter username" style="-fx-background-radius: 10; -fx-border-radius: 10; -fx-border-color: #d8d2c6; -fx-background-color: #fbfbfb; -fx-padding: 10;" />
+            </VBox>
+
+            <VBox spacing="6.0">
+                <Label style="-fx-text-fill: #333333; -fx-font-size: 12px;" text="Password" />
+                <PasswordField fx:id="passwordField" promptText="Enter password" style="-fx-background-radius: 10; -fx-border-radius: 10; -fx-border-color: #d8d2c6; -fx-background-color: #fbfbfb; -fx-padding: 10;" />
+            </VBox>
+
+            <Label fx:id="errorLabel" style="-fx-text-fill: #c0392b; -fx-font-size: 12px;" text="" wrapText="true" />
+
+            <HBox alignment="CENTER_RIGHT" spacing="10.0">
+                <Button onAction="#onBack" style="-fx-background-color: transparent; -fx-text-fill: #444444; -fx-font-size: 13px; -fx-padding: 8 14;" text="Back" />
+                <Button onAction="#onLogin" style="-fx-background-color: #1f1f1f; -fx-text-fill: white; -fx-font-size: 13px; -fx-background-radius: 10; -fx-padding: 8 18;" styleClass="darkNeonButton" stylesheets="@bistro.css" text="Login" />
+            </HBox>
+        </VBox>
+
+    </VBox>
+</AnchorPane>

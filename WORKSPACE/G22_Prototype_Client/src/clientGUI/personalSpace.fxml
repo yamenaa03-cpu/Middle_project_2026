@@ -52,9 +52,6 @@
                             <Label text="Full Name:" GridPane.columnIndex="0" GridPane.rowIndex="1" />
                             <TextField fx:id="fullNameField" promptText="Full name" GridPane.columnIndex="1" GridPane.rowIndex="1" />
 
-                            <Label text="Username:" GridPane.columnIndex="0" GridPane.rowIndex="2" />
-                            <TextField fx:id="usernameField" promptText="Username" GridPane.columnIndex="1" GridPane.rowIndex="2" />
-
                             <Label text="Phone:" GridPane.columnIndex="0" GridPane.rowIndex="3" />
                             <TextField fx:id="phoneField" promptText="05X-XXXXXXX" GridPane.columnIndex="1" GridPane.rowIndex="3" />
 

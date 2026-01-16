@@ -17,6 +17,7 @@ public class ReceiveTableResult implements Serializable {
 
     public boolean isSuccess() { return success; }
     public String getMessage() { return message; }
+    public Integer getTableNumber() { return tableId; }
 
     public static ReceiveTableResult ok(int tableId) {
         return new ReceiveTableResult(true, "✅ Table assigned successfully. Your table number is: " + tableId, tableId);

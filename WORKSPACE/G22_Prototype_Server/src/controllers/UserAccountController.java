@@ -33,7 +33,7 @@ public class UserAccountController {
 
 		String fullName = db.getFullNameByCustomerId(subscriberId);
 
-		return SubscriberLogInResult.ok(subscriberId, "Login successful.", fullName);
+		return SubscriberLogInResult.ok(subscriberId, fullName, "Subscriber login successful.");
 	}
 
 	public EmployeeLogInResult employeeLogIn(String username, String password) throws SQLException {
@@ -49,7 +49,7 @@ public class UserAccountController {
 		String fullName = db.getEmployeeNameById(empId);
 		EmployeeRole empRole = db.getEmployeeRoleById(empId);
 
-		return EmployeeLogInResult.ok(empId, empRole, fullName, "Login successful.");
+		return EmployeeLogInResult.ok(empId, empRole, fullName, "Employee login successful.");
 	}
 
 	// ======================== REGISTRATION ========================

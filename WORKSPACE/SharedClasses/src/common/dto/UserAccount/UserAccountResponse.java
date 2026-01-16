@@ -50,8 +50,8 @@ public class UserAccountResponse implements Serializable {
 
 	// LOGIN success
 	public static UserAccountResponse loginOk(Integer subscriberId, String fullName) {
-		return new UserAccountResponse(true, "Login successful.", subscriberId, fullName, LoggedInStatus.SUBSCRIBER,
-				null, null, null, null, null, UserAccountOperation.SUBSCRIBER_LOG_IN);
+		return new UserAccountResponse(true, fullName + "\nSubscriber Login successful.", subscriberId, fullName,
+				LoggedInStatus.SUBSCRIBER, null, null, null, null, null, UserAccountOperation.SUBSCRIBER_LOG_IN);
 	}
 
 	// LOGIN fail
@@ -120,8 +120,8 @@ public class UserAccountResponse implements Serializable {
 		LoggedInStatus st = (employeeRole == EmployeeRole.MANAGER) ? LoggedInStatus.MANAGER
 				: LoggedInStatus.REPRESENTATIVE;
 
-		return new UserAccountResponse(true, "Employee login successful.", null, fullName, st, null, null, null,
-				employeeId, employeeRole, UserAccountOperation.EMPLOYEE_LOG_IN);
+		return new UserAccountResponse(true, fullName + "\nEmployee login successful.", null, fullName, st, null, null,
+				null, employeeId, employeeRole, UserAccountOperation.EMPLOYEE_LOG_IN);
 	}
 
 	public static UserAccountResponse employeeLoginFail(String msg) {

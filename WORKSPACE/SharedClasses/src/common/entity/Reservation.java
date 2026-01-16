@@ -10,8 +10,9 @@ import common.enums.ReservationType;
  * Represents a single Reservation entity stored in the database. Shared between
  * client & server.
  *
- * Notes: - Billing data is stored in Bill entity/table (not here). - status is
- * essential for flows: WAITING/NOTIFIED/ACTIVE/IN_PROGRESS/COMPLETED/CANCELED
+ * Fields match the reservation table: reservation_id, reservation_datetime,
+ * number_of_guests, confirmation_code, customer_id, table_id, created_at,
+ * status, reminder_sent, type, checked_in_at, checked_out_at
  */
 public class Reservation implements Serializable {
 
@@ -19,148 +20,85 @@ public class Reservation implements Serializable {
 
 	// Core fields
 	private final int reservationId; // PK
-	private final LocalDateTime reservationDateTime; // reservation time (and can be used as seated_at when IN_PROGRESS)
-	private final int numberOfGuests;
-	private final int confirmationCode;
-	private final int customerId; // FK to customer
-	private final LocalDateTime createdAt; // created timestamp
-	private final Integer tableId; // nullable
+	private final LocalDateTime reservationDateTime; // reservation_datetime
+	private final int numberOfGuests; // number_of_guests
+	private final int confirmationCode; // confirmation_code
+	private final int customerId; // customer_id (FK)
+	private final Integer tableId; // table_id (nullable)
+	private final LocalDateTime createdAt; // created_at
 
-	// Lifecycle field
-	private final ReservationStatus status; // IMPORTANT
+	// Status/type
+	private final ReservationStatus status; // status
+	private final ReservationType type; // type (ADVANCE/WALKIN)
 
-	// Type field - ADVANCE (booked ahead) or WALKIN (from waitlist)
-	private final ReservationType type;
+	// Reminder flag
+	private final boolean reminderSent; // reminder_sent
 
-	// Time tracking for reports
-	private final LocalDateTime checkedInAt;
-	private final LocalDateTime checkedOutAt;
+	// Time tracking (nullable)
+	private final LocalDateTime checkedInAt; // checked_in_at
+	private final LocalDateTime checkedOutAt; // checked_out_at
 
+	/**
+	 * Full constructor (matches DB table 1:1).
+	 */
 	public Reservation(int reservationId, LocalDateTime reservationDateTime, int numberOfGuests, int confirmationCode,
-			int customerId, LocalDateTime createdAt, Integer tableId, ReservationStatus status, ReservationType type,
-			LocalDateTime checkedInAt, LocalDateTime checkedOutAt) {
+			int customerId, Integer tableId, LocalDateTime createdAt, ReservationStatus status, boolean reminderSent,
+			ReservationType type, LocalDateTime checkedInAt, LocalDateTime checkedOutAt) {
+
 		this.reservationId = reservationId;
 		this.reservationDateTime = reservationDateTime;
 		this.numberOfGuests = numberOfGuests;
 		this.confirmationCode = confirmationCode;
 		this.customerId = customerId;
-		this.createdAt = createdAt;
 		this.tableId = tableId;
+		this.createdAt = createdAt;
 		this.status = status;
+		this.reminderSent = reminderSent;
 		this.type = type;
 		this.checkedInAt = checkedInAt;
 		this.checkedOutAt = checkedOutAt;
 	}
 
-	// Constructor without time tracking
-	public Reservation(int reservationId, LocalDateTime reservationDateTime, int numberOfGuests, int confirmationCode,
-			int customerId, LocalDateTime createdAt, Integer tableId, ReservationStatus status, ReservationType type) {
-		this(reservationId, reservationDateTime, numberOfGuests, confirmationCode, customerId, createdAt, tableId,
-				status, type, null, null);
-	}
+	// Getters
 
-	// Constructor for backward compatibility (defaults to ADVANCE)
-	public Reservation(int reservationId, LocalDateTime reservationDateTime, int numberOfGuests, int confirmationCode,
-			int customerId, LocalDateTime createdAt, Integer tableId, ReservationStatus status) {
-		this(reservationId, reservationDateTime, numberOfGuests, confirmationCode, customerId, createdAt, tableId,
-				status, ReservationType.ADVANCE, null, null);
-	}
-
-	/**
-	 * Construct a Reservation entity.
-	 *
-	 * @param reservationId       unique identifier of the reservation
-	 * @param reservationDateTime date and time of the reservation
-	 * @param numberOfGuests      number of guests for the reservation
-	 * @param confirmationCode    numeric confirmation code given to the customer
-	 * @param customerId          id of the customer who made the reservation
-	 * @param createdAt           timestamp when the reservation was created
-	 * @param tableId             optional table id assigned to the reservation
-	 *                            (nullable)
-	 * @param status              current lifecycle status of the reservation
-	 */
 	public int getReservationId() {
 		return reservationId;
 	}
-
-	/**
-	 * Returns the reservation identifier.
-	 *
-	 * @return reservation id
-	 */
 
 	public LocalDateTime getReservationDateTime() {
 		return reservationDateTime;
 	}
 
-	/**
-	 * Returns the date and time of the reservation.
-	 *
-	 * @return reservation date and time
-	 */
-
 	public int getNumberOfGuests() {
 		return numberOfGuests;
 	}
-
-	/**
-	 * Returns the number of guests for this reservation.
-	 *
-	 * @return number of guests
-	 */
 
 	public int getConfirmationCode() {
 		return confirmationCode;
 	}
 
-	/**
-	 * Returns the numeric confirmation code provided to the customer.
-	 *
-	 * @return confirmation code
-	 */
-
 	public int getCustomerId() {
 		return customerId;
 	}
-
-	/**
-	 * Returns the id of the customer who created the reservation.
-	 *
-	 * @return customer id
-	 */
-
-	public LocalDateTime getCreatedAt() {
-		return createdAt;
-	}
-
-	/**
-	 * Returns the creation timestamp for the reservation.
-	 *
-	 * @return creation timestamp
-	 */
 
 	public Integer getTableId() {
 		return tableId;
 	}
 
-	/**
-	 * Returns the assigned table id, or null if none assigned.
-	 *
-	 * @return table id or null
-	 */
+	public LocalDateTime getCreatedAt() {
+		return createdAt;
+	}
 
 	public ReservationStatus getStatus() {
 		return status;
 	}
 
-	/**
-	 * Returns the current lifecycle status of the reservation.
-	 *
-	 * @return reservation status
-	 */
-
 	public ReservationType getType() {
 		return type;
+	}
+
+	public boolean isReminderSent() {
+		return reminderSent;
 	}
 
 	public LocalDateTime getCheckedInAt() {
@@ -175,7 +113,8 @@ public class Reservation implements Serializable {
 	public String toString() {
 		return "Reservation #" + reservationId + " | type=" + type + " | status=" + status + " | dateTime="
 				+ reservationDateTime + " | guests=" + numberOfGuests + " | confirmationCode=" + confirmationCode
-				+ " | customerId=" + customerId + " | createdAt=" + createdAt + " | tableId=" + tableId
-				+ " | checkedInAt=" + checkedInAt + " | checkedOutAt=" + checkedOutAt;
+				+ " | customerId=" + customerId + " | tableId=" + tableId + " | createdAt=" + createdAt
+				+ " | reminderSent=" + reminderSent + " | checkedInAt=" + checkedInAt + " | checkedOutAt="
+				+ checkedOutAt;
 	}
 }

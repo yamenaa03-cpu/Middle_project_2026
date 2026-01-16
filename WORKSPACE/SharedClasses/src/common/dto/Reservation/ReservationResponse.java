@@ -134,13 +134,10 @@ public class ReservationResponse implements Serializable {
 			return created(r.getReservationId(), r.getConfirmationCode(), r.getMessage(), operation);
 		return createFailedWithSuggestions(r.getMessage(), r.getSuggestions(), operation);
 	}
-	
-	public static ReservationResponse tableAssigned(CreateReservationResult r, ReservationOperation operation) {
-		if (r == null)
-			return fail("Operation failed.", operation);
-		if (r.isSuccess())
-			return created(r.getReservationId(), r.getConfirmationCode(), r.getMessage(), operation);
-		return createFailedWithSuggestions(r.getMessage(), r.getSuggestions(), operation);
+
+	public static ReservationResponse tableAssigned(int tableNumber, String message) {
+		return new ReservationResponse(true, safeMsg(message, "Table Assigned\nYour table number is " + tableNumber),
+				null, null, null, null, null, null, tableNumber, ReservationOperation.RECEIVE_TABLE);
 	}
 
 	/* ---------------- Getters ---------------- */

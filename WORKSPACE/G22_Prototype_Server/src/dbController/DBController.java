@@ -341,8 +341,7 @@ public class DBController {
 
 	public Reservation findReservationByConfirmationCode(int code) throws SQLException {
 		String sql = """
-				    SELECT reservation_id, reservation_datetime, number_of_guests,
-				           confirmation_code, customer_id, created_at, table_id, status
+				    SELECT *
 				    FROM reservation
 				    WHERE confirmation_code = ?
 				    LIMIT 1
@@ -361,8 +360,7 @@ public class DBController {
 
 	public Reservation findReservationById(int reservationId) throws SQLException {
 		String sql = """
-				    SELECT reservation_id, reservation_datetime, number_of_guests,
-				           confirmation_code, customer_id, created_at, table_id, status
+				    SELECT *
 				    FROM reservation
 				    WHERE reservation_id = ?
 				    LIMIT 1
@@ -567,17 +565,10 @@ public class DBController {
 			tableId = tid;
 		}
 
-		ReservationStatus status = null;
-		String statusStr = rs.getString("status");
-		if (statusStr != null) {
-			status = ReservationStatus.valueOf(statusStr);
-		}
+		ReservationStatus status = ReservationStatus.valueOf(rs.getString("status"));
+		ReservationType type = ReservationType.valueOf(rs.getString("type"));
 
-		ReservationType type = ReservationType.ADVANCE; // default
-		String typeStr = rs.getString("type");
-		if (typeStr != null) {
-			type = ReservationType.valueOf(typeStr);
-		}
+		boolean reminderSent = rs.getBoolean("reminder_sent");
 
 		LocalDateTime checkedInAt = null;
 		Timestamp ciTs = rs.getTimestamp("checked_in_at");
@@ -591,9 +582,22 @@ public class DBController {
 			checkedOutAt = coTs.toLocalDateTime();
 		}
 
-		return new Reservation(reservationId, reservationDateTime, guests, confirmationCode, customerId, createdAt,
-				tableId, status, type, checkedInAt, checkedOutAt);
+		return new Reservation(
+				reservationId,
+				reservationDateTime,
+				guests,
+				confirmationCode,
+				customerId,
+				tableId,
+				createdAt,
+				status,
+				reminderSent,
+				type,
+				checkedInAt,
+				checkedOutAt
+		);
 	}
+
 
 	public List<Integer> getNoShowReservationIds() throws SQLException {
 		String sql = "SELECT reservation_id " + "FROM reservation " + "WHERE status IN ('ACTIVE','NOTIFIED') "
@@ -1110,8 +1114,7 @@ public class DBController {
 
 	public List<Reservation> getReservationHistoryByCustomerId(int customerId) throws SQLException {
 		String sql = """
-				    SELECT reservation_id, reservation_datetime, number_of_guests,
-				           confirmation_code, customer_id, created_at, table_id, status, type
+				    SELECT *
 				    FROM reservation
 				    WHERE customer_id = ?
 				    ORDER BY reservation_datetime DESC

@@ -515,7 +515,8 @@ public class Server extends AbstractServer {
 
 				case RECEIVE_TABLE:
 					ReceiveTableResult rtr = reservationController.receiveTable(resReq.getReservationId());
-					resResp = rtr.isSuccess() ? ReservationResponse.ok(rtr.getMessage(), resReq.getOperation())
+					resResp = rtr.isSuccess()
+							? ReservationResponse.tableAssigned(rtr.getTableNumber(), rtr.getMessage())
 							: ReservationResponse.fail(rtr.getMessage(), resReq.getOperation());
 
 					if (rtr.isSuccess())

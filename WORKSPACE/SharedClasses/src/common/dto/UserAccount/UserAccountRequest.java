@@ -63,36 +63,48 @@ public class UserAccountRequest implements Serializable {
 		r.password = password;
 		return r;
 	}
-	
+
 	public static UserAccountRequest createLookupCustomerBySubscriptionCodeRequest(String subscriptionCode) {
-        UserAccountRequest r = new UserAccountRequest();
-        r.operation = UserAccountOperation.LOOKUP_CUSTOMER_BY_SUBSCRIPTION_CODE;
-        r.subscriptionCode = subscriptionCode;
-        return r;
-    }
+		UserAccountRequest r = new UserAccountRequest();
+		r.operation = UserAccountOperation.LOOKUP_CUSTOMER_BY_SUBSCRIPTION_CODE;
+		r.subscriptionCode = subscriptionCode;
+		return r;
+	}
 
-    public static UserAccountRequest createLookupCustomerByPhoneRequest(String phone) {
-        UserAccountRequest r = new UserAccountRequest();
-        r.operation = UserAccountOperation.LOOKUP_CUSTOMER_BY_PHONE;
-        r.phone = phone;
-        return r;
-    }
+	public static UserAccountRequest createLookupCustomerByPhoneRequest(String phone) {
+		UserAccountRequest r = new UserAccountRequest();
+		r.operation = UserAccountOperation.LOOKUP_CUSTOMER_BY_PHONE;
+		r.phone = phone;
+		return r;
+	}
 
-    public static UserAccountRequest createLookupCustomerByEmailRequest(String email) {
-        UserAccountRequest r = new UserAccountRequest();
-        r.operation = UserAccountOperation.LOOKUP_CUSTOMER_BY_EMAIL;
-        r.email = email;
-        return r;
-    }
-    
-    public static UserAccountRequest createUpdateSubscriberProfileRequest(String fullName, String phone, String email) {
-        UserAccountRequest r = new UserAccountRequest();
-        r.operation = UserAccountOperation.UPDATE_SUBSCRIBER_PROFILE;
-        r.fullName = fullName;
-        r.phone = phone;
-        r.email = email;
-        return r;
-    }
+	public static UserAccountRequest createLookupCustomerByEmailRequest(String email) {
+		UserAccountRequest r = new UserAccountRequest();
+		r.operation = UserAccountOperation.LOOKUP_CUSTOMER_BY_EMAIL;
+		r.email = email;
+		return r;
+	}
+
+	public static UserAccountRequest createUpdateSubscriberProfileRequest(String fullName, String phone, String email) {
+		UserAccountRequest r = new UserAccountRequest();
+		r.operation = UserAccountOperation.UPDATE_SUBSCRIBER_PROFILE;
+		r.fullName = fullName;
+		r.phone = phone;
+		r.email = email;
+		return r;
+	}
+
+	public static UserAccountRequest createGetAllSubscribersRequest() {
+		UserAccountRequest r = new UserAccountRequest();
+		r.operation = UserAccountOperation.GET_ALL_SUBSCRIBERS;
+		return r;
+	}
+
+	public static UserAccountRequest createGetCurrentDinersRequest() {
+		UserAccountRequest r = new UserAccountRequest();
+		r.operation = UserAccountOperation.GET_CURRENT_DINERS;
+		return r;
+	}
 
 	public UserAccountOperation getOperation() {
 		return operation;

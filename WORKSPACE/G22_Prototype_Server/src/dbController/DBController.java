@@ -70,11 +70,10 @@ public class DBController {
 		}
 	}
 
-	public List<Reservation> getAllReservations() throws SQLException {
-		// !! check if it is possible to change to Hashmap for faster results !!
+	public List<Reservation> getActiveReservations() throws SQLException {
 		List<Reservation> result = new ArrayList<>();// array list to insert the Reservations in it
 
-		String sql = "SELECT * FROM reservation";
+		String sql = "SELECT * FROM reservation WHERE status IN ('ACTIVE','NOTIFIED','IN_PROGRESS')  ORDER BY reservation_datetime ASC";
 
 		try (Connection conn = getConnection();
 				PreparedStatement ps = conn.prepareStatement(sql);
@@ -1602,6 +1601,328 @@ public class DBController {
 			}
 		}
 		return list;
+	}
+
+	// ======================== REPORT STORAGE ========================
+
+	public void clearTimeReport(int year, int month) throws SQLException {
+		String sql = "DELETE FROM time_report WHERE report_year = ? AND report_month = ?";
+		try (Connection conn = getConnection(); PreparedStatement ps = conn.prepareStatement(sql)) {
+			ps.setInt(1, year);
+			ps.setInt(2, month);
+			ps.executeUpdate();
+		}
+	}
+
+	public void insertTimeReportEntry(int year, int month, common.dto.Report.TimeReportEntry entry)
+			throws SQLException {
+		String sql = """
+				    INSERT INTO time_report (report_year, report_month, reservation_id, scheduled_time,
+				        checked_in_at, checked_out_at, arrival_delay_minutes, session_duration_minutes,
+				        number_of_guests, customer_name, is_subscriber)
+				    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+				""";
+		try (Connection conn = getConnection(); PreparedStatement ps = conn.prepareStatement(sql)) {
+			ps.setInt(1, year);
+			ps.setInt(2, month);
+			ps.setInt(3, entry.getReservationId());
+			ps.setTimestamp(4, entry.getScheduledTime() != null ? Timestamp.valueOf(entry.getScheduledTime()) : null);
+			ps.setTimestamp(5, entry.getCheckedInAt() != null ? Timestamp.valueOf(entry.getCheckedInAt()) : null);
+			ps.setTimestamp(6, entry.getCheckedOutAt() != null ? Timestamp.valueOf(entry.getCheckedOutAt()) : null);
+			ps.setLong(7, entry.getArrivalDelayMinutes());
+			ps.setLong(8, entry.getSessionDurationMinutes());
+			ps.setInt(9, entry.getNumberOfGuests());
+			ps.setString(10, entry.getCustomerName());
+			ps.setBoolean(11, entry.isSubscriber());
+			ps.executeUpdate();
+		}
+	}
+
+	public void clearSubscriberReport(int year, int month) throws SQLException {
+		String sql = "DELETE FROM subscriber_report WHERE report_year = ? AND report_month = ?";
+		try (Connection conn = getConnection(); PreparedStatement ps = conn.prepareStatement(sql)) {
+			ps.setInt(1, year);
+			ps.setInt(2, month);
+			ps.executeUpdate();
+		}
+	}
+
+	public void insertSubscriberReportEntry(int year, int month, common.dto.Report.SubscriberReportEntry entry)
+			throws SQLException {
+		String sql = """
+				    INSERT INTO subscriber_report (report_year, report_month, customer_id, customer_name,
+				        subscription_code, total_reservations, completed_reservations, cancelled_reservations, waitlist_entries)
+				    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+				""";
+		try (Connection conn = getConnection(); PreparedStatement ps = conn.prepareStatement(sql)) {
+			ps.setInt(1, year);
+			ps.setInt(2, month);
+			ps.setInt(3, entry.getCustomerId());
+			ps.setString(4, entry.getCustomerName());
+			ps.setString(5, entry.getSubscriptionCode());
+			ps.setInt(6, entry.getTotalReservations());
+			ps.setInt(7, entry.getCompletedReservations());
+			ps.setInt(8, entry.getCancelledReservations());
+			ps.setInt(9, entry.getWaitlistEntries());
+			ps.executeUpdate();
+		}
+	}
+
+	public List<common.dto.Report.TimeReportEntry> getStoredTimeReport(int year, int month) throws SQLException {
+		String sql = """
+				    SELECT reservation_id, scheduled_time, checked_in_at, checked_out_at,
+				           number_of_guests, customer_name, is_subscriber
+				    FROM time_report
+				    WHERE report_year = ? AND report_month = ?
+				    ORDER BY checked_in_at
+				""";
+
+		List<common.dto.Report.TimeReportEntry> list = new ArrayList<>();
+		try (Connection conn = getConnection(); PreparedStatement ps = conn.prepareStatement(sql)) {
+			ps.setInt(1, year);
+			ps.setInt(2, month);
+			try (ResultSet rs = ps.executeQuery()) {
+				while (rs.next()) {
+					LocalDateTime scheduled = rs.getTimestamp("scheduled_time") != null
+							? rs.getTimestamp("scheduled_time").toLocalDateTime()
+							: null;
+					LocalDateTime checkedIn = rs.getTimestamp("checked_in_at") != null
+							? rs.getTimestamp("checked_in_at").toLocalDateTime()
+							: null;
+					LocalDateTime checkedOut = rs.getTimestamp("checked_out_at") != null
+							? rs.getTimestamp("checked_out_at").toLocalDateTime()
+							: null;
+
+					list.add(new common.dto.Report.TimeReportEntry(rs.getInt("reservation_id"), scheduled, checkedIn,
+							checkedOut, rs.getInt("number_of_guests"), rs.getString("customer_name"),
+							rs.getBoolean("is_subscriber")));
+				}
+			}
+		}
+		return list;
+	}
+
+	public List<common.dto.Report.SubscriberReportEntry> getStoredSubscriberReport(int year, int month)
+			throws SQLException {
+		String sql = """
+				    SELECT customer_id, customer_name, subscription_code,
+				           total_reservations, completed_reservations, cancelled_reservations, waitlist_entries
+				    FROM subscriber_report
+				    WHERE report_year = ? AND report_month = ?
+				    ORDER BY total_reservations DESC
+				""";
+
+		List<common.dto.Report.SubscriberReportEntry> list = new ArrayList<>();
+		try (Connection conn = getConnection(); PreparedStatement ps = conn.prepareStatement(sql)) {
+			ps.setInt(1, year);
+			ps.setInt(2, month);
+			try (ResultSet rs = ps.executeQuery()) {
+				while (rs.next()) {
+					list.add(new common.dto.Report.SubscriberReportEntry(rs.getInt("customer_id"),
+							rs.getString("customer_name"), rs.getString("subscription_code"),
+							rs.getInt("total_reservations"), rs.getInt("completed_reservations"),
+							rs.getInt("cancelled_reservations"), rs.getInt("waitlist_entries")));
+				}
+			}
+		}
+		return list;
+	}
+
+	public boolean hasStoredTimeReport(int year, int month) throws SQLException {
+		String sql = "SELECT COUNT(*) FROM time_report WHERE report_year = ? AND report_month = ?";
+		try (Connection conn = getConnection(); PreparedStatement ps = conn.prepareStatement(sql)) {
+			ps.setInt(1, year);
+			ps.setInt(2, month);
+			try (ResultSet rs = ps.executeQuery()) {
+				return rs.next() && rs.getInt(1) > 0;
+			}
+		}
+	}
+
+	public boolean hasStoredSubscriberReport(int year, int month) throws SQLException {
+		String sql = "SELECT COUNT(*) FROM subscriber_report WHERE report_year = ? AND report_month = ?";
+		try (Connection conn = getConnection(); PreparedStatement ps = conn.prepareStatement(sql)) {
+			ps.setInt(1, year);
+			ps.setInt(2, month);
+			try (ResultSet rs = ps.executeQuery()) {
+				return rs.next() && rs.getInt(1) > 0;
+			}
+		}
+	}
+
+	// ======================== CONFLICT DETECTION METHODS ========================
+
+	public List<Integer> getActiveReservationsOnDay(DayOfWeek day) throws SQLException {
+		int dayNum = day.getValue();
+		String sql = """
+				        SELECT reservation_id FROM reservation
+				        WHERE status IN ('ACTIVE', 'NOTIFIED')
+				        AND DAYOFWEEK(reservation_datetime) = ?
+				""";
+		List<Integer> ids = new ArrayList<>();
+		try (Connection conn = getConnection(); PreparedStatement ps = conn.prepareStatement(sql)) {
+			ps.setInt(1, dayNum == 7 ? 1 : dayNum + 1);
+			try (ResultSet rs = ps.executeQuery()) {
+				while (rs.next()) {
+					ids.add(rs.getInt("reservation_id"));
+				}
+			}
+		}
+		return ids;
+	}
+
+	public List<Integer> getActiveReservationsOnDate(LocalDate date) throws SQLException {
+		String sql = """
+				        SELECT reservation_id FROM reservation
+				        WHERE status IN ('ACTIVE', 'NOTIFIED')
+				        AND DATE(reservation_datetime) = ?
+				""";
+		List<Integer> ids = new ArrayList<>();
+		try (Connection conn = getConnection(); PreparedStatement ps = conn.prepareStatement(sql)) {
+			ps.setDate(1, Date.valueOf(date));
+			try (ResultSet rs = ps.executeQuery()) {
+				while (rs.next()) {
+					ids.add(rs.getInt("reservation_id"));
+				}
+			}
+		}
+		return ids;
+	}
+
+	public List<Integer> getActiveReservationsOutsideHours(DayOfWeek day, LocalTime openTime, LocalTime closeTime,
+			boolean closed) throws SQLException {
+		int dayNum = day.getValue();
+		int mysqlDayNum = dayNum == 7 ? 1 : dayNum + 1;
+
+		if (closed) {
+			return getActiveReservationsOnDay(day);
+		}
+
+		String sql = """
+				        SELECT reservation_id, reservation_datetime FROM reservation
+				        WHERE status IN ('ACTIVE', 'NOTIFIED')
+				        AND DAYOFWEEK(reservation_datetime) = ?
+				""";
+
+		List<Integer> conflicting = new ArrayList<>();
+		try (Connection conn = getConnection(); PreparedStatement ps = conn.prepareStatement(sql)) {
+			ps.setInt(1, mysqlDayNum);
+			try (ResultSet rs = ps.executeQuery()) {
+				while (rs.next()) {
+					LocalDateTime resDateTime = rs.getTimestamp("reservation_datetime").toLocalDateTime();
+
+					if (!isReservationWithinHours(resDateTime, 120, openTime, closeTime)) {
+						conflicting.add(rs.getInt("reservation_id"));
+					}
+				}
+			}
+		}
+		return conflicting;
+	}
+
+	public List<Integer> getActiveReservationsOutsideHoursOnDate(LocalDate date, LocalTime openTime,
+			LocalTime closeTime, boolean closed) throws SQLException {
+		if (closed) {
+			return getActiveReservationsOnDate(date);
+		}
+
+		String sql = """
+				        SELECT reservation_id, reservation_datetime FROM reservation
+				        WHERE status IN ('ACTIVE', 'NOTIFIED')
+				        AND DATE(reservation_datetime) = ?
+				""";
+
+		List<Integer> conflicting = new ArrayList<>();
+		try (Connection conn = getConnection(); PreparedStatement ps = conn.prepareStatement(sql)) {
+			ps.setDate(1, Date.valueOf(date));
+			try (ResultSet rs = ps.executeQuery()) {
+				while (rs.next()) {
+					LocalDateTime resDateTime = rs.getTimestamp("reservation_datetime").toLocalDateTime();
+
+					if (!isReservationWithinHours(resDateTime, 120, openTime, closeTime)) {
+						conflicting.add(rs.getInt("reservation_id"));
+					}
+				}
+			}
+		}
+		return conflicting;
+	}
+
+	private boolean isReservationWithinHours(LocalDateTime resStart, int durationMinutes, LocalTime openTime,
+			LocalTime closeTime) {
+		LocalDate resDate = resStart.toLocalDate();
+		LocalTime resStartTime = resStart.toLocalTime();
+		LocalDateTime resEnd = resStart.plusMinutes(durationMinutes);
+		LocalTime resEndTime = resEnd.toLocalTime();
+
+		LocalDateTime openDT;
+		LocalDateTime closeDT;
+
+		if (closeTime.isAfter(openTime)) {
+			openDT = LocalDateTime.of(resDate, openTime);
+			closeDT = LocalDateTime.of(resDate, closeTime);
+		} else {
+			if (resStartTime.isBefore(closeTime)) {
+				openDT = LocalDateTime.of(resDate.minusDays(1), openTime);
+				closeDT = LocalDateTime.of(resDate, closeTime);
+			} else {
+				openDT = LocalDateTime.of(resDate, openTime);
+				closeDT = LocalDateTime.of(resDate.plusDays(1), closeTime);
+			}
+		}
+
+		return !resStart.isBefore(openDT) && !resEnd.isAfter(closeDT);
+	}
+
+	public List<Integer> getActiveReservationsOnTable(int tableNumber) throws SQLException {
+		String sql = """
+				        SELECT reservation_id FROM reservation
+				        WHERE status IN ('ACTIVE', 'NOTIFIED')
+				        AND table_id = (SELECT table_id FROM restaurant_table WHERE table_number = ?)
+				""";
+		List<Integer> ids = new ArrayList<>();
+		try (Connection conn = getConnection(); PreparedStatement ps = conn.prepareStatement(sql)) {
+			ps.setInt(1, tableNumber);
+			try (ResultSet rs = ps.executeQuery()) {
+				while (rs.next()) {
+					ids.add(rs.getInt("reservation_id"));
+				}
+			}
+		}
+		return ids;
+	}
+
+	public List<Integer> getActiveReservationsExceedingCapacity(int tableNumber, int newCapacity) throws SQLException {
+		String sql = """
+				        SELECT reservation_id FROM reservation
+				        WHERE status IN ('ACTIVE', 'NOTIFIED')
+				        AND table_id = (SELECT table_id FROM restaurant_table WHERE table_number = ?)
+				        AND number_of_guests > ?
+				""";
+		List<Integer> ids = new ArrayList<>();
+		try (Connection conn = getConnection(); PreparedStatement ps = conn.prepareStatement(sql)) {
+			ps.setInt(1, tableNumber);
+			ps.setInt(2, newCapacity);
+			try (ResultSet rs = ps.executeQuery()) {
+				while (rs.next()) {
+					ids.add(rs.getInt("reservation_id"));
+				}
+			}
+		}
+		return ids;
+	}
+
+	public int getTableSeats(int tableNumber) throws SQLException {
+		String sql = "SELECT seats FROM restaurant_table WHERE table_number = ?";
+		try (Connection conn = getConnection(); PreparedStatement ps = conn.prepareStatement(sql)) {
+			ps.setInt(1, tableNumber);
+			try (ResultSet rs = ps.executeQuery()) {
+				if (rs.next()) {
+					return rs.getInt("seats");
+				}
+			}
+		}
+		return -1;
 	}
 
 }

@@ -6,7 +6,7 @@ import java.io.Serializable;
  * Enumeration of reservation-related operations used in request messages.
  */
 public enum ReservationOperation implements Serializable  {
-    GET_ALL_RESERVATIONS,
+    GET_ACTIVE_RESERVATIONS,
     GET_WAITLIST,
     UPDATE_RESERVATION_FIELDS,
     CREATE_RESERVATION,
@@ -22,7 +22,5 @@ public enum ReservationOperation implements Serializable  {
     RECEIVE_TABLE,
     GET_BILL_FOR_PAYING,
     PAY_BILL,
-    GET_SUBSCRIBER_HISTORY,
-    GET_TIME_REPORT,
-    GET_SUBSCRIBER_REPORT
+    GET_SUBSCRIBER_HISTORY
 }

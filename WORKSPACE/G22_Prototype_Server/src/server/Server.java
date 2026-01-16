@@ -1,6 +1,7 @@
 package server;
 
 import java.sql.SQLException;
+import java.time.LocalDate;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -40,9 +41,11 @@ import controllers.RestaurantManagementController;
 import common.dto.RestaurantManagement.RestaurantManagementRequest;
 import common.dto.RestaurantManagement.RestaurantManagementResponse;
 import common.dto.RestaurantManagement.RestaurantManagementResult;
+import common.dto.Report.ReportRequest;
 import common.dto.Report.ReportResponse;
 import common.dto.Report.TimeReportEntry;
 import common.dto.Report.SubscriberReportEntry;
+import common.enums.ReportOperation;
 
 /**
  * Main class that extends AbstractServer OCSF server class that handles client
@@ -82,6 +85,10 @@ public class Server extends AbstractServer {
 	private NotificationController notificationController;
 
 	private RestaurantManagementController restaurantManagementController;
+
+	private controllers.ReportController reportController;
+
+	private ScheduledExecutorService reportScheduler;
 
 	private static final String SESSION_SUBSCRIBER_ID = "subscriberId";
 	private static final String SESSION_EMPLOYEE_ID = "employeeId";
@@ -353,13 +360,13 @@ public class Server extends AbstractServer {
 
 				switch (resReq.getOperation()) {
 
-				case GET_ALL_RESERVATIONS:
+				case GET_ACTIVE_RESERVATIONS:
 					if (!isEmployeeLoggedIn) {
 						resResp = ReservationResponse.fail("Not authorized.", resReq.getOperation());
 						break;
 					}
 					resResp = ReservationResponse.withReservations(true, "Reservations loaded.",
-							reservationController.getAllReservations(), resReq.getOperation());
+							reservationController.getAllActiveReservations(), resReq.getOperation());
 					break;
 
 				case GET_WAITLIST:
@@ -376,7 +383,7 @@ public class Server extends AbstractServer {
 							resReq.getReservationId(), resReq.getReservationDateTime(), resReq.getNumberOfGuests());
 
 					resResp = ReservationResponse.updated(updateResult.isSuccess(), updateResult.getMessage(),
-							updateResult.getMessage(), reservationController.getAllReservations(),
+							updateResult.getMessage(), reservationController.getAllActiveReservations(),
 							resReq.getOperation());
 					break;
 
@@ -568,33 +575,41 @@ public class Server extends AbstractServer {
 					}
 					break;
 
-				case GET_TIME_REPORT:
-					if (!isManagerLoggedIn) {
-						client.sendToClient(ReportResponse.fail("Manager login required.", resReq.getOperation()));
-						return;
-					}
-					List<TimeReportEntry> timeEntries = reservationController.getTimeReport(resReq.getReportYear(),
-							resReq.getReportMonth());
-					client.sendToClient(
-							ReportResponse.timeReport(timeEntries, resReq.getReportYear(), resReq.getReportMonth()));
-					return;
-
-				case GET_SUBSCRIBER_REPORT:
-					if (!isManagerLoggedIn) {
-						client.sendToClient(ReportResponse.fail("Manager login required.", resReq.getOperation()));
-						return;
-					}
-					List<SubscriberReportEntry> subEntries = reservationController
-							.getSubscriberReport(resReq.getReportYear(), resReq.getReportMonth());
-					client.sendToClient(ReportResponse.subscriberReport(subEntries, resReq.getReportYear(),
-							resReq.getReportMonth()));
-					return;
-
 				default:
 					resResp = ReservationResponse.fail("Unknown operation", resReq.getOperation());
 
 				}
 				client.sendToClient(resResp);// returns response to the client
+				return;
+			}
+
+			if (msg instanceof ReportRequest) {
+				ReportRequest repReq = (ReportRequest) msg;
+				ReportResponse repResp;
+
+				if (!isManagerLoggedIn) {
+					repResp = ReportResponse.fail("Manager login required.", repReq.getOperation());
+					client.sendToClient(repResp);
+					return;
+				}
+
+				switch (repReq.getOperation()) {
+				case GET_TIME_REPORT:
+					List<TimeReportEntry> timeEntries = reportController.getStoredTimeReport(repReq.getYear(),
+							repReq.getMonth());
+					repResp = ReportResponse.timeReport(timeEntries, repReq.getYear(), repReq.getMonth());
+					break;
+
+				case GET_SUBSCRIBER_REPORT:
+					List<SubscriberReportEntry> subEntries = reportController
+							.getStoredSubscriberReport(repReq.getYear(), repReq.getMonth());
+					repResp = ReportResponse.subscriberReport(subEntries, repReq.getYear(), repReq.getMonth());
+					break;
+
+				default:
+					repResp = ReportResponse.fail("Unknown report operation", repReq.getOperation());
+				}
+				client.sendToClient(repResp);
 				return;
 			}
 
@@ -621,17 +636,29 @@ public class Server extends AbstractServer {
 							? RestaurantManagementResponse.tableAdded(addResult.getNewTableNumber(),
 									restaurantManagementController.getAllTables())
 							: RestaurantManagementResponse.fail(addResult.getMessage(), mgrReq.getOperation());
+					if (addResult.isSuccess()) {
+						runNotifyCheck();
+					}
 					break;
 
 				case UPDATE_TABLE:
+					int oldSeats = reservationController.getTableSeats(mgrReq.getTableNumber());
 					RestaurantManagementResult updateResult = restaurantManagementController
 							.updateTable(mgrReq.getTableNumber(), mgrReq.getSeats());
 					mgrResp = updateResult.isSuccess()
 							? RestaurantManagementResponse.tableUpdated(restaurantManagementController.getAllTables())
 							: RestaurantManagementResponse.fail(updateResult.getMessage(), mgrReq.getOperation());
+					if (updateResult.isSuccess()) {
+						if (mgrReq.getSeats() > oldSeats) {
+							runNotifyCheck();
+						} else if (mgrReq.getSeats() < oldSeats) {
+							runConflictCheckForReducedCapacity(mgrReq.getTableNumber(), mgrReq.getSeats());
+						}
+					}
 					break;
 
 				case DELETE_TABLE:
+					runConflictCheckForTableDeletion(mgrReq.getTableNumber());
 					RestaurantManagementResult deleteResult = restaurantManagementController
 							.deleteTable(mgrReq.getTableNumber());
 					mgrResp = deleteResult.isSuccess()
@@ -652,6 +679,10 @@ public class Server extends AbstractServer {
 							? RestaurantManagementResponse
 									.hoursUpdated(restaurantManagementController.getOpeningHours())
 							: RestaurantManagementResponse.fail(hoursResult.getMessage(), mgrReq.getOperation());
+					if (hoursResult.isSuccess()) {
+						runConflictCheckForHoursChange(mgrReq.getDayOfWeek(), mgrReq.getOpenTime(),
+								mgrReq.getCloseTime(), mgrReq.isClosed());
+					}
 					break;
 
 				// Date override operations
@@ -668,6 +699,10 @@ public class Server extends AbstractServer {
 							? RestaurantManagementResponse
 									.overrideAdded(restaurantManagementController.getDateOverrides())
 							: RestaurantManagementResponse.fail(addOvResult.getMessage(), mgrReq.getOperation());
+					if (addOvResult.isSuccess()) {
+						runConflictCheckForDateOverride(mgrReq.getOverrideDate(), mgrReq.getOpenTime(),
+								mgrReq.getCloseTime(), mgrReq.isClosed());
+					}
 					break;
 
 				case UPDATE_DATE_OVERRIDE:
@@ -678,6 +713,10 @@ public class Server extends AbstractServer {
 							? RestaurantManagementResponse
 									.overrideUpdated(restaurantManagementController.getDateOverrides())
 							: RestaurantManagementResponse.fail(updateOvResult.getMessage(), mgrReq.getOperation());
+					if (updateOvResult.isSuccess()) {
+						runConflictCheckForDateOverride(mgrReq.getOverrideDate(), mgrReq.getOpenTime(),
+								mgrReq.getCloseTime(), mgrReq.isClosed());
+					}
 					break;
 
 				case DELETE_DATE_OVERRIDE:
@@ -753,6 +792,7 @@ public class Server extends AbstractServer {
 		reservationController = new ReservationController(db);
 		userAccountController = new UserAccountController(db);
 		notificationController = new NotificationController(ui, db);
+		reportController = new controllers.ReportController(db);
 
 		noShowScheduler = Executors.newSingleThreadScheduledExecutor();
 		noShowScheduler.scheduleAtFixedRate(() -> {
@@ -780,6 +820,15 @@ public class Server extends AbstractServer {
 				ui.display("Billing check error: " + e.getMessage());
 			}
 		}, 10, 60, TimeUnit.SECONDS);
+
+		reportScheduler = Executors.newSingleThreadScheduledExecutor();
+		reportScheduler.scheduleAtFixedRate(() -> {
+			try {
+				runMonthlyReportCheck();
+			} catch (Exception e) {
+				ui.display("Report generation error: " + e.getMessage());
+			}
+		}, 30, 3600, TimeUnit.SECONDS); // start after 30s, check every hour
 
 	}
 
@@ -813,6 +862,11 @@ public class Server extends AbstractServer {
 		if (billingScheduler != null) {
 			billingScheduler.shutdownNow();
 			billingScheduler = null;
+		}
+
+		if (reportScheduler != null) {
+			reportScheduler.shutdownNow();
+			reportScheduler = null;
 		}
 
 	}
@@ -877,6 +931,81 @@ public class Server extends AbstractServer {
 		Integer notifiedReservationId = null;
 		while ((notifiedReservationId = reservationController.notifyNextFromWaitlist(freedCapacity)) != null)
 			notificationController.sendTableAvailable(notifiedReservationId);
+	}
+
+	private void runConflictCheckForHoursChange(java.time.DayOfWeek day, java.time.LocalTime openTime,
+			java.time.LocalTime closeTime, boolean closed) throws SQLException {
+		List<Integer> cancelled = reservationController.cancelReservationsOutsideHours(day, openTime, closeTime,
+				closed);
+		for (Integer resId : cancelled) {
+			notificationController.sendReservationCanceled(resId);
+		}
+		if (!cancelled.isEmpty()) {
+			ui.display("Hours change: auto-canceled " + cancelled.size() + " reservations outside new hours.");
+			runNotifyCheck();
+		}
+	}
+
+	private void runConflictCheckForDateOverride(java.time.LocalDate date, java.time.LocalTime openTime,
+			java.time.LocalTime closeTime, boolean closed) throws SQLException {
+		List<Integer> cancelled = reservationController.cancelReservationsOutsideHoursOnDate(date, openTime, closeTime,
+				closed);
+		for (Integer resId : cancelled) {
+			notificationController.sendReservationCanceled(resId);
+		}
+		if (!cancelled.isEmpty()) {
+			ui.display("Date override: auto-canceled " + cancelled.size() + " reservations on " + date + ".");
+			runNotifyCheck();
+		}
+	}
+
+	private void runConflictCheckForTableDeletion(int tableNumber) throws SQLException {
+		List<Integer> cancelled = reservationController.cancelReservationsOnTable(tableNumber);
+		for (Integer resId : cancelled) {
+			notificationController.sendReservationCanceled(resId);
+		}
+		if (!cancelled.isEmpty()) {
+			ui.display("Table deletion: auto-canceled " + cancelled.size() + " reservations on table " + tableNumber
+					+ ".");
+			runNotifyCheck();
+		}
+	}
+
+	private void runConflictCheckForReducedCapacity(int tableNumber, int newCapacity) throws SQLException {
+		List<Integer> cancelled = reservationController.cancelReservationsExceedingCapacity(tableNumber, newCapacity);
+		for (Integer resId : cancelled) {
+			notificationController.sendReservationCanceled(resId);
+		}
+		if (!cancelled.isEmpty()) {
+			ui.display("Capacity reduced: auto-canceled " + cancelled.size() + " reservations exceeding new capacity.");
+			runNotifyCheck();
+		}
+	}
+
+	private void runMonthlyReportCheck() throws SQLException {
+		LocalDate today = LocalDate.now();
+		if (today.getDayOfMonth() != 1) {
+			return;
+		}
+
+		LocalDate lastMonth = today.minusMonths(1);
+		int year = lastMonth.getYear();
+		int month = lastMonth.getMonthValue();
+
+		boolean timeExists = reportController.hasStoredTimeReport(year, month);
+		boolean subExists = reportController.hasStoredSubscriberReport(year, month);
+
+		if (!timeExists) {
+			ui.display("Generating time report for " + month + "/" + year + "...");
+			reportController.generateAndStoreTimeReport(year, month);
+			ui.display("Time report generated for " + month + "/" + year);
+		}
+
+		if (!subExists) {
+			ui.display("Generating subscriber report for " + month + "/" + year + "...");
+			reportController.generateAndStoreSubscriberReport(year, month);
+			ui.display("Subscriber report generated for " + month + "/" + year);
+		}
 	}
 
 }

@@ -19,13 +19,33 @@ public class RestaurantManagementResponse implements Serializable {
 	private RestaurantManagementOperation operation;
 
 	// Getters
-	public boolean isSuccess() { return success; }
-	public String getMessage() { return message; }
-	public List<Table> getTables() { return tables; }
-	public List<OpeningHours> getOpeningHours() { return openingHours; }
-	public List<DateOverride> getDateOverrides() { return dateOverrides; }
-	public int getNewTableNumber() { return newTableNumber; }
-	public RestaurantManagementOperation getOperation() { return operation; }
+	public boolean isSuccess() {
+		return success;
+	}
+
+	public String getMessage() {
+		return message;
+	}
+
+	public List<Table> getTables() {
+		return tables;
+	}
+
+	public List<OpeningHours> getOpeningHours() {
+		return openingHours;
+	}
+
+	public List<DateOverride> getDateOverrides() {
+		return dateOverrides;
+	}
+
+	public int getNewTableNumber() {
+		return newTableNumber;
+	}
+
+	public RestaurantManagementOperation getOperation() {
+		return operation;
+	}
 
 	// ======================== TABLE RESPONSES ========================
 
@@ -62,7 +82,7 @@ public class RestaurantManagementResponse implements Serializable {
 		resp.success = true;
 		resp.message = "Table deleted.";
 		resp.tables = tables;
-		resp.operation = RestaurantManagementOperation.UPDATE_TABLE;
+		resp.operation = RestaurantManagementOperation.DELETE_TABLE;
 		return resp;
 	}
 

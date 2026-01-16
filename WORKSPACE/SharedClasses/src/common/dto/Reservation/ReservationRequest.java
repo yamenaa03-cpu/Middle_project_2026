@@ -38,17 +38,13 @@ public class ReservationRequest implements Serializable {
 	// target customer identification (for employee actions)
 	private String targetSubscriptionCode;
 
-	// Report parameters (for manager reports)
-	private int reportYear;
-	private int reportMonth;
-
 	/*
 	 * identify the request as an instance of Reservation request class and saves
 	 * the GET_ALL_RESERVATIONS operation as a field in the class
 	 */
-	public static ReservationRequest createGetAllReservationsRequest() {
+	public static ReservationRequest createGetActiveReservationsRequest() {
 		ReservationRequest req = new ReservationRequest();
-		req.operation = ReservationOperation.GET_ALL_RESERVATIONS;
+		req.operation = ReservationOperation.GET_ACTIVE_RESERVATIONS;
 		return req;
 	}
 
@@ -270,19 +266,9 @@ public class ReservationRequest implements Serializable {
 		return req;
 	}
 
-	public static ReservationRequest createGetTimeReportRequest(int year, int month) {
+	public static ReservationRequest createGetSubscriberHistoryRequest() {
 		ReservationRequest req = new ReservationRequest();
-		req.operation = ReservationOperation.GET_TIME_REPORT;
-		req.reportYear = year;
-		req.reportMonth = month;
-		return req;
-	}
-
-	public static ReservationRequest createGetSubscriberReportRequest(int year, int month) {
-		ReservationRequest req = new ReservationRequest();
-		req.operation = ReservationOperation.GET_SUBSCRIBER_REPORT;
-		req.reportYear = year;
-		req.reportMonth = month;
+		req.operation = ReservationOperation.GET_SUBSCRIBER_HISTORY;
 		return req;
 	}
 
@@ -331,13 +317,5 @@ public class ReservationRequest implements Serializable {
 
 	public Integer getTargetCustomerId() {
 		return targetCustomerId;
-	}
-
-	public int getReportYear() {
-		return reportYear;
-	}
-
-	public int getReportMonth() {
-		return reportMonth;
 	}
 }

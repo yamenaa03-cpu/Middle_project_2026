@@ -14,7 +14,8 @@ public class DateOverride implements Serializable {
 	private final boolean closed;
 	private final String reason;
 
-	public DateOverride(int id, LocalDate date, LocalTime openTime, LocalTime closeTime, boolean closed, String reason) {
+	public DateOverride(int id, LocalDate date, LocalTime openTime, LocalTime closeTime, boolean closed,
+			String reason) {
 		this.id = id;
 		this.date = date;
 		this.openTime = openTime;

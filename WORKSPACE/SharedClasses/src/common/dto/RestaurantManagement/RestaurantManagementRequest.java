@@ -27,16 +27,45 @@ public class RestaurantManagementRequest implements Serializable {
 	private String reason;
 
 	// Getters
-	public RestaurantManagementOperation getOperation() { return operation; }
-	public int getTableNumber() { return tableNumber; }
-	public int getSeats() { return seats; }
-	public DayOfWeek getDayOfWeek() { return dayOfWeek; }
-	public LocalTime getOpenTime() { return openTime; }
-	public LocalTime getCloseTime() { return closeTime; }
-	public boolean isClosed() { return closed; }
-	public int getOverrideId() { return overrideId; }
-	public LocalDate getOverrideDate() { return overrideDate; }
-	public String getReason() { return reason; }
+	public RestaurantManagementOperation getOperation() {
+		return operation;
+	}
+
+	public int getTableNumber() {
+		return tableNumber;
+	}
+
+	public int getSeats() {
+		return seats;
+	}
+
+	public DayOfWeek getDayOfWeek() {
+		return dayOfWeek;
+	}
+
+	public LocalTime getOpenTime() {
+		return openTime;
+	}
+
+	public LocalTime getCloseTime() {
+		return closeTime;
+	}
+
+	public boolean isClosed() {
+		return closed;
+	}
+
+	public int getOverrideId() {
+		return overrideId;
+	}
+
+	public LocalDate getOverrideDate() {
+		return overrideDate;
+	}
+
+	public String getReason() {
+		return reason;
+	}
 
 	// ======================== TABLE FACTORIES ========================
 
@@ -76,7 +105,8 @@ public class RestaurantManagementRequest implements Serializable {
 		return req;
 	}
 
-	public static RestaurantManagementRequest createUpdateOpeningHoursRequest(DayOfWeek day, LocalTime open, LocalTime close, boolean closed) {
+	public static RestaurantManagementRequest createUpdateOpeningHoursRequest(DayOfWeek day, LocalTime open,
+			LocalTime close, boolean closed) {
 		RestaurantManagementRequest req = new RestaurantManagementRequest();
 		req.operation = RestaurantManagementOperation.UPDATE_OPENING_HOURS;
 		req.dayOfWeek = day;
@@ -94,7 +124,8 @@ public class RestaurantManagementRequest implements Serializable {
 		return req;
 	}
 
-	public static RestaurantManagementRequest createAddDateOverrideRequest(LocalDate date, LocalTime open, LocalTime close, boolean closed, String reason) {
+	public static RestaurantManagementRequest createAddDateOverrideRequest(LocalDate date, LocalTime open,
+			LocalTime close, boolean closed, String reason) {
 		RestaurantManagementRequest req = new RestaurantManagementRequest();
 		req.operation = RestaurantManagementOperation.ADD_DATE_OVERRIDE;
 		req.overrideDate = date;
@@ -105,7 +136,8 @@ public class RestaurantManagementRequest implements Serializable {
 		return req;
 	}
 
-	public static RestaurantManagementRequest createUpdateDateOverrideRequest(int id, LocalDate date, LocalTime open, LocalTime close, boolean closed, String reason) {
+	public static RestaurantManagementRequest createUpdateDateOverrideRequest(int id, LocalDate date, LocalTime open,
+			LocalTime close, boolean closed, String reason) {
 		RestaurantManagementRequest req = new RestaurantManagementRequest();
 		req.operation = RestaurantManagementOperation.UPDATE_DATE_OVERRIDE;
 		req.overrideId = id;

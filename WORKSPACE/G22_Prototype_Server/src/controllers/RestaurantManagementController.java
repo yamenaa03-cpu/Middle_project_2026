@@ -44,7 +44,7 @@ public class RestaurantManagementController {
 		if (newSeats <= 0) {
 			return RestaurantManagementResult.fail("Seats must be a positive number.");
 		}
-		boolean updated = db.updateTableSeats(tableNumber, newSeats);
+		boolean updated = db.updateTableCapacity(tableNumber, newSeats);
 		if (updated) {
 			return RestaurantManagementResult.ok("Table " + tableNumber + " updated to " + newSeats + " seats.");
 		}

@@ -25,6 +25,7 @@ public class ClientMain_GUI extends Application {
 	    stage.setTitle("Bistro Client");
 	    stage.setScene(scene);
 	    stage.show();
+	    stage.setMaximized(true);
         stage.setOnCloseRequest(event -> {
             System.out.println("Closing GUI → stopping client...");
 

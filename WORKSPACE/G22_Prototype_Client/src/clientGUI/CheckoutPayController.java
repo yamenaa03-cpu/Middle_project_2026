@@ -44,7 +44,8 @@ public class CheckoutPayController {
     @FXML private Label codeLabel;
 
     @FXML private Label billIdLabel;
-    @FXML private Label billAmountLabel;
+    @FXML private Label billAmountBeforeLabel;
+    @FXML private Label billFinalAmountLabel;
     @FXML private Label billStatusLabel;
 
     @FXML private Label statusLabel;
@@ -182,6 +183,11 @@ public class CheckoutPayController {
             }
 
             if (waitingBill && op == ReservationOperation.GET_BILL_FOR_PAYING) {
+            	if(!resp.isSuccess())
+            		System.out.println("no successsssssssssssssssssss");
+            	else
+            		System.out.println("sucessssssssssssssssssssssssss");
+            	
                 waitingBill = false;
                 loadBillBtn.setDisable(false);
 
@@ -189,7 +195,8 @@ public class CheckoutPayController {
                 Integer billId = extractBillId(currentBill);
 
                 billIdLabel.setText(billId == null ? "" : String.valueOf(billId));
-                billAmountLabel.setText(extractBillAmount(currentBill));
+                billAmountBeforeLabel.setText(extractBillAmountBefore(currentBill));
+                billFinalAmountLabel.setText(extractBillFinalAmount(currentBill));
                 billStatusLabel.setText(resp.getMessage() == null ? "Bill loaded." : resp.getMessage());
 
                 payBtn.setDisable(billId == null);
@@ -229,7 +236,8 @@ public class CheckoutPayController {
     private void clearBillUI() {
         currentBill = null;
         billIdLabel.setText("");
-        billAmountLabel.setText("");
+        billAmountBeforeLabel.setText("");
+        billFinalAmountLabel.setText("");
         billStatusLabel.setText("");
         payBtn.setDisable(true);
         loadBillBtn.setDisable(false);
@@ -247,9 +255,21 @@ public class CheckoutPayController {
         return null;
     }
 
-    private String extractBillAmount(Object bill) {
+    private String extractBillAmountBefore(Object bill) {
         if (bill == null) return "";
-        for (String m : List.of("getTotalAmount", "getTotalPrice", "getAmount", "getTotal")) {
+        for (String m : List.of("getAmountBeforeDiscount", "getAmount", "getTotal")) {
+            try {
+                Method method = bill.getClass().getMethod(m);
+                Object val = method.invoke(bill);
+                return String.valueOf(val);
+            } catch (Exception ignored) {}
+        }
+        return bill.toString(); // fallback
+    }
+    
+    private String extractBillFinalAmount(Object bill) {
+        if (bill == null) return "";
+        for (String m : List.of("getFinalAmount", "getAmount", "getTotal")) {
             try {
                 Method method = bill.getClass().getMethod(m);
                 Object val = method.invoke(bill);

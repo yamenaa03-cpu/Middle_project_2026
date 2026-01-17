@@ -50,7 +50,8 @@
                 <Label style="-fx-font-weight: bold;" text="Bill" />
                 <VBox spacing="6" style="-fx-padding: 10; -fx-border-color: #ddd; -fx-border-radius: 10; -fx-background-radius: 10;">
                     <HBox spacing="8"><Label text="Bill ID:" /><Label fx:id="billIdLabel" /></HBox>
-                    <HBox spacing="8"><Label text="Amount:" /><Label fx:id="billAmountLabel" /></HBox>
+                    <HBox spacing="8"><Label text="Amount:" /><Label fx:id="billAmountBeforeLabel" /></HBox>
+                    <HBox spacing="8"><Label text="Amount:" /><Label fx:id="billFinalAmountLabel" /></HBox>
                     <Label fx:id="billStatusLabel" style="-fx-text-fill: #444;" text="" />
                 </VBox>
 

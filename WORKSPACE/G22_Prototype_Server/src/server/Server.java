@@ -25,11 +25,13 @@ import common.dto.UserAccount.CustomerLookupResult;
 import common.entity.Bill;
 import common.entity.Customer;
 import common.entity.Reservation;
+import common.entity.Table;
 import common.enums.UserAccountOperation;
 import common.enums.EmployeeRole;
 import common.enums.LoggedInStatus;
 import common.enums.ReservationOperation;
 import common.enums.ReservationStatus;
+import common.enums.RestaurantManagementOperation;
 import dbController.DBController;
 import ocsf.server.AbstractServer;
 import ocsf.server.ConnectionToClient;
@@ -349,7 +351,7 @@ public class Server extends AbstractServer {
 				Integer effectiveCustomerId = null;
 				boolean isOnBehalf = false;
 
-				if (isEmployeeLoggedIn && resReq.getTargetCustomerId() > 0) {
+				if (isEmployeeLoggedIn && resReq.getTargetCustomerId() != null) {
 					// Employee acting on behalf of customer
 					effectiveCustomerId = resReq.getTargetCustomerId();
 					isOnBehalf = true;
@@ -618,7 +620,10 @@ public class Server extends AbstractServer {
 				RestaurantManagementRequest mgrReq = (RestaurantManagementRequest) msg;
 				RestaurantManagementResponse mgrResp;
 
-				if (!isEmployeeLoggedIn) {
+				boolean isReadOnly = mgrReq.getOperation() == RestaurantManagementOperation.GET_OPENING_HOURS
+						|| mgrReq.getOperation() == RestaurantManagementOperation.GET_DATE_OVERRIDES;
+
+				if (!isEmployeeLoggedIn && !isReadOnly) {
 					mgrResp = RestaurantManagementResponse.fail("Not authorized. Employee login required.",
 							mgrReq.getOperation());
 					client.sendToClient(mgrResp);
@@ -626,6 +631,7 @@ public class Server extends AbstractServer {
 				}
 
 				switch (mgrReq.getOperation()) {
+
 				// Table operations
 				case GET_ALL_TABLES:
 					mgrResp = RestaurantManagementResponse.tablesLoaded(restaurantManagementController.getAllTables());
@@ -669,8 +675,14 @@ public class Server extends AbstractServer {
 
 				// Hours operations
 				case GET_OPENING_HOURS:
+
+					System.out.println(mgrReq.getOperation() + " before response");
+
 					mgrResp = RestaurantManagementResponse
 							.hoursLoaded(restaurantManagementController.getOpeningHours());
+
+					System.out.println(mgrReq.getOperation() + " after response");
+
 					break;
 
 				case UPDATE_OPENING_HOURS:
@@ -732,6 +744,8 @@ public class Server extends AbstractServer {
 				default:
 					mgrResp = RestaurantManagementResponse.fail("Unknown operation.", mgrReq.getOperation());
 				}
+				System.out.println("res sending " + mgrReq.getOperation());
+				System.out.println(mgrResp.getMessage() + mgrResp.getOperation());
 				client.sendToClient(mgrResp);
 				return;
 			}
@@ -792,7 +806,9 @@ public class Server extends AbstractServer {
 
 		reservationController = new ReservationController(db);
 		userAccountController = new UserAccountController(db);
+		restaurantManagementController = new RestaurantManagementController(db);
 		notificationController = new NotificationController(ui, db);
+
 		reportController = new controllers.ReportController(db);
 
 		noShowScheduler = Executors.newSingleThreadScheduledExecutor();

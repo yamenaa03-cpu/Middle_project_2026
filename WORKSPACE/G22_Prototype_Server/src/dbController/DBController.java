@@ -72,6 +72,17 @@ public class DBController {
 		}
 	}
 
+	private int toDbDay(DayOfWeek day) {
+		// Java: MON=1..SUN=7 -> DB(MySQL): SUN=1..SAT=7
+		return (day.getValue() % 7) + 1;
+	}
+
+	private DayOfWeek fromDbDay(int dbDay) {
+		// DB(MySQL): SUN=1..SAT=7 -> Java: MON=1..SUN=7
+		int javaVal = (dbDay == 1) ? 7 : (dbDay - 1);
+		return DayOfWeek.of(javaVal);
+	}
+
 	public List<Reservation> getActiveReservations() throws SQLException {
 		List<Reservation> result = new ArrayList<>();// array list to insert the Reservations in it
 
@@ -1341,14 +1352,12 @@ public class DBController {
 
 	public List<Table> getAllTables() throws SQLException {
 		List<Table> tables = new ArrayList<>();
-		String sql = "SELECT table_number, capacity FROM restaurant_table ORDER BY table_number";
-
+		String sql = "SELECT table_id, capacity FROM restaurant_table ORDER BY table_id";
 		try (Connection conn = getConnection();
 				PreparedStatement ps = conn.prepareStatement(sql);
 				ResultSet rs = ps.executeQuery()) {
-
 			while (rs.next()) {
-				tables.add(new Table(rs.getInt("table_number"), rs.getInt("capacity")));
+				tables.add(new Table(rs.getInt("table_id"), rs.getInt("capacity")));
 			}
 		}
 		return tables;
@@ -1373,7 +1382,7 @@ public class DBController {
 	}
 
 	public boolean updateTableCapacity(int tableNumber, int newcapacity) throws SQLException {
-		String sql = "UPDATE restaurant_table SET capacity = ? WHERE table_number = ?";
+		String sql = "UPDATE restaurant_table SET capacity = ? WHERE table_id = ?";
 
 		try (Connection conn = getConnection(); PreparedStatement ps = conn.prepareStatement(sql)) {
 
@@ -1384,7 +1393,7 @@ public class DBController {
 	}
 
 	public boolean deleteTable(int tableNumber) throws SQLException {
-		String sql = "DELETE FROM restaurant_table WHERE table_number = ?";
+		String sql = "DELETE FROM restaurant_table WHERE table_id = ?";
 
 		try (Connection conn = getConnection(); PreparedStatement ps = conn.prepareStatement(sql)) {
 
@@ -1405,7 +1414,7 @@ public class DBController {
 
 			while (rs.next()) {
 				int dayNum = rs.getInt("day_of_week");
-				DayOfWeek day = DayOfWeek.of(dayNum == 0 ? 7 : dayNum);
+				DayOfWeek day = fromDbDay(dayNum);
 				LocalTime openTime = rs.getTime("open_time") != null ? rs.getTime("open_time").toLocalTime() : null;
 				LocalTime closeTime = rs.getTime("close_time") != null ? rs.getTime("close_time").toLocalTime() : null;
 				boolean closed = rs.getBoolean("is_closed");
@@ -1914,7 +1923,7 @@ public class DBController {
 		String sql = """
 				        SELECT reservation_id FROM reservation
 				        WHERE status IN ('ACTIVE', 'NOTIFIED')
-				        AND table_id = (SELECT table_id FROM restaurant_table WHERE table_number = ?)
+				        AND table_id = (SELECT table_id FROM restaurant_table WHERE table_id = ?)
 				""";
 		List<Integer> ids = new ArrayList<>();
 		try (Connection conn = getConnection(); PreparedStatement ps = conn.prepareStatement(sql)) {
@@ -1932,7 +1941,7 @@ public class DBController {
 		String sql = """
 				        SELECT reservation_id FROM reservation
 				        WHERE status IN ('ACTIVE', 'NOTIFIED')
-				        AND table_id = (SELECT table_id FROM restaurant_table WHERE table_number = ?)
+				        AND table_id = (SELECT table_id FROM restaurant_table WHERE table_id = ?)
 				        AND number_of_guests > ?
 				""";
 		List<Integer> ids = new ArrayList<>();
@@ -1949,7 +1958,7 @@ public class DBController {
 	}
 
 	public int getTableCapacity(int tableNumber) throws SQLException {
-		String sql = "SELECT capacity FROM restaurant_table WHERE table_number = ?";
+		String sql = "SELECT capacity FROM restaurant_table WHERE table_id = ?";
 		try (Connection conn = getConnection(); PreparedStatement ps = conn.prepareStatement(sql)) {
 			ps.setInt(1, tableNumber);
 			try (ResultSet rs = ps.executeQuery()) {

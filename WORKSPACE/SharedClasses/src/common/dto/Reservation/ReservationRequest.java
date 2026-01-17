@@ -28,6 +28,8 @@ public class ReservationRequest implements Serializable {
 
 	private int billId;
 
+	boolean isOnBehalf = false;
+
 	// Guest identification fields (for CREATE_GUEST_RESERVATION / JOIN_WAITLIST,
 	// etc.)
 	private String fullName;
@@ -202,6 +204,7 @@ public class ReservationRequest implements Serializable {
 		req.targetCustomerId = targetCustomerId;
 		req.reservationDateTime = dateTime;
 		req.numberOfGuests = guests;
+		req.isOnBehalf = true;
 		return req;
 	}
 
@@ -210,6 +213,7 @@ public class ReservationRequest implements Serializable {
 		req.operation = ReservationOperation.JOIN_WAITLIST;
 		req.targetCustomerId = targetCustomerId;
 		req.numberOfGuests = guests;
+		req.isOnBehalf = true;
 		return req;
 	}
 
@@ -217,6 +221,7 @@ public class ReservationRequest implements Serializable {
 		ReservationRequest req = new ReservationRequest();
 		req.operation = ReservationOperation.GET_CUSTOMER_RESERVATIONS_FOR_CANCELLATION;
 		req.targetCustomerId = targetCustomerId;
+		req.isOnBehalf = true;
 		return req;
 	}
 
@@ -225,6 +230,7 @@ public class ReservationRequest implements Serializable {
 		req.operation = ReservationOperation.CANCEL_RESERVATION;
 		req.targetCustomerId = targetCustomerId;
 		req.reservationId = reservationId;
+		req.isOnBehalf = true;
 		return req;
 	}
 
@@ -232,6 +238,7 @@ public class ReservationRequest implements Serializable {
 		ReservationRequest req = new ReservationRequest();
 		req.operation = ReservationOperation.GET_CUSTOMER_RESERVATIONS_FOR_RECEIVING;
 		req.targetCustomerId = targetCustomerId;
+		req.isOnBehalf = true;
 		return req;
 	}
 
@@ -240,6 +247,7 @@ public class ReservationRequest implements Serializable {
 		req.operation = ReservationOperation.RECEIVE_TABLE;
 		req.targetCustomerId = targetCustomerId;
 		req.reservationId = reservationId;
+		req.isOnBehalf = true;
 		return req;
 	}
 
@@ -247,6 +255,7 @@ public class ReservationRequest implements Serializable {
 		ReservationRequest req = new ReservationRequest();
 		req.operation = ReservationOperation.GET_CUSTOMER_RESERVATIONS_FOR_CHECKOUT;
 		req.targetCustomerId = targetCustomerId;
+		req.isOnBehalf = true;
 		return req;
 	}
 
@@ -255,6 +264,7 @@ public class ReservationRequest implements Serializable {
 		req.operation = ReservationOperation.GET_BILL_FOR_PAYING;
 		req.targetCustomerId = targetCustomerId;
 		req.reservationId = reservationId;
+		req.isOnBehalf = true;
 		return req;
 	}
 
@@ -263,6 +273,7 @@ public class ReservationRequest implements Serializable {
 		req.operation = ReservationOperation.PAY_BILL;
 		req.targetCustomerId = targetCustomerId;
 		req.billId = billId;
+		req.isOnBehalf = true;
 		return req;
 	}
 

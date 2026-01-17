@@ -89,6 +89,8 @@ public class CheckoutGuestController {
             ctrl.setClient(client);
             ctrl.setMainController(mainController);
             ctrl.setReservations(reservations); // guest arrives with 1 reservation
+            
+            mainController.setActiveCheckoutPayController(ctrl);
 
             // switch scene in same popup window
             Stage stage = (Stage) continueBtn.getScene().getWindow();

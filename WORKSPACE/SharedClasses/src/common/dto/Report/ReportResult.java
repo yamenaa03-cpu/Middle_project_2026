@@ -2,6 +2,11 @@ package common.dto.Report;
 
 import java.util.List;
 
+/**
+ * ReportResult represents the processed result of a report request
+ * inside the application layer.
+ * Only one type of report entries will be populated at a time.
+ */
 public class ReportResult {
 	private final boolean success;
 	private final String message;

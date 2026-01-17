@@ -2,6 +2,12 @@ package common.dto.Report;
 
 import java.io.Serializable;
 
+/**
+ * SubscriberReportEntry represents a single row in a subscriber-based report.
+ * Each entry contains aggregated reservation statistics for a specific customer
+ * within a given reporting period.
+ * This class is used as a Data Transfer Object (DTO) between the server and client.
+ */
 public class SubscriberReportEntry implements Serializable {
 	private static final long serialVersionUID = 1L;
 

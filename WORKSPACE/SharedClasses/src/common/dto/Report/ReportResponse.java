@@ -6,6 +6,12 @@ import java.util.List;
 import common.enums.ReportOperation;
 import common.enums.ReservationOperation;
 
+/**
+ * ReportResponse is a Data Transfer Object (DTO) used to return
+ * report results from the server to the client.
+ * Depending on the report operation, only one of the report
+ * entry lists will be populated.
+ */
 public class ReportResponse implements Serializable {
 	private static final long serialVersionUID = 1L;
 
@@ -15,7 +21,15 @@ public class ReportResponse implements Serializable {
 
 	private final List<TimeReportEntry> timeReportEntries;
 	private final List<SubscriberReportEntry> subscriberReportEntries;
-
+    /**
+     * Private constructor used by factory methods.
+     *
+     * @param success                 indicates whether the request succeeded
+     * @param message                 descriptive result message
+     * @param operation               report operation type
+     * @param timeReportEntries       list of time report entries (nullable)
+     * @param subscriberReportEntries list of subscriber report entries (nullable)
+     */
 	private ReportResponse(boolean success, String message, ReportOperation operation,
 			List<TimeReportEntry> timeReportEntries, List<SubscriberReportEntry> subscriberReportEntries) {
 		this.success = success;

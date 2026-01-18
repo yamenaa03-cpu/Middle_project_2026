@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.control.Button?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.layout.BorderPane?>
+<?import javafx.scene.layout.HBox?>
+<?import javafx.scene.layout.VBox?>
+<?import javafx.scene.text.Font?>
+
+<BorderPane prefHeight="800" prefWidth="600" style="-fx-background-color: #111111;" xmlns="http://javafx.com/javafx/21" xmlns:fx="http://javafx.com/fxml/1" fx:controller="clientGUI.BistroKioskController">
+
+    <!-- ===== TOP TITLE + SIGN IN ===== -->
+    <top>
+        <BorderPane style="-fx-padding: 25 25 0 25;">
+
+            <!-- Sign In button (upper-left) -->
+            <left>
+                <Button fx:id="signInButton" mnemonicParsing="false" onAction="#onSignIn" prefHeight="69.0" prefWidth="116.0" style="-fx-background-color: transparent;                                -fx-border-color: white;                                -fx-border-width: 2;                                -fx-border-radius: 999;                                -fx-background-radius: 999;                                -fx-font-size: 24px;                                -fx-text-fill: white;" text="👤">
+               <font>
+                  <Font size="7.0" />
+               </font></Button>
+            </left>
+
+            <!-- Center Title -->
+            <center>
+                <HBox alignment="CENTER" style="-fx-padding: 15 0 15 0;">
+                    <Label prefHeight="83.0" prefWidth="323.0" style="-fx-text-fill: white; -fx-font-size: 56px; -fx-font-family: 'Didot'; -fx-font-weight: bold;" text="𝔹𝕀𝕊𝕋ℝ𝕆" textAlignment="CENTER" />
+                </HBox>
+            </center>
+
+        </BorderPane>
+    </top>
+
+    <!-- ===== MAIN BUTTONS ===== -->
+    <center>
+        <VBox alignment="CENTER" spacing="35">
+
+            <Button fx:id="receiveTableButton" onAction="#onReceiveTable" prefHeight="90" prefWidth="394.0" style="-fx-background-radius: 200; -fx-background-color: #FFFDD0; -fx-text-fill: black; -fx-font-size: 26px; -fx-font-weight: bold;" text="Receive Table" />
+
+            <Button fx:id="waitingListButton" onAction="#onJoinWaitingList" prefHeight="90" prefWidth="395.0" style="-fx-background-radius: 200; -fx-background-color: #ffffff; -fx-text-fill: black; -fx-font-size: 26px; -fx-font-weight: bold;" text="Join Wait List" />
+
+            <Button fx:id="paymentButton" onAction="#onPayment" prefHeight="90" prefWidth="400.0" style="-fx-background-radius: 200; -fx-background-color: #FFFDD0; -fx-text-fill: black; -fx-font-size: 26px; -fx-font-weight: bold;" text="Checkout" />
+
+            <Button fx:id="cancelReservationButton" onAction="#onCancelReservation" prefHeight="90" prefWidth="396.0" style="-fx-background-radius: 200; -fx-background-color: #ffffff; -fx-text-fill: black; -fx-font-size: 26px; -fx-font-weight: bold;" text="Cancel Reservation/Waiting" />
+         <Button fx:id="logoutbtn" mnemonicParsing="false" onAction="#OnLogOut" prefHeight="48.0" prefWidth="213.0" styleClass="emp-btn-ghost" stylesheets="@bistro.css" text="LogOut" textFill="WHITE" />
+
+        </VBox>
+    </center>
+
+    <!-- ===== FOOTER ===== -->
+    <bottom>
+        <HBox alignment="CENTER" style="-fx-padding: 25;">
+            <Label style="-fx-text-fill: gray; -fx-font-size: 30px;" text="WELCOME" />
+        </HBox>
+    </bottom>
+
+</BorderPane>

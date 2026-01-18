@@ -1,0 +1,114 @@
+.root {
+    -fx-font-family: "Segoe UI";
+    -fx-background-color: #0f1217;
+}
+
+.topbar {
+    -fx-background-color: #141a22;
+    -fx-border-color: #222b38;
+    -fx-border-width: 0 0 1 0;
+}
+
+.sidebar {
+    -fx-background-color: #121722;
+    -fx-border-color: #222b38;
+    -fx-border-width: 0 1 0 0;
+    -fx-min-width: 240;
+}
+
+.content {
+    -fx-background-color: #0f1217;
+    -fx-padding: 22;
+}
+
+.title {
+    -fx-font-size: 18px;
+    -fx-font-weight: 700;
+    -fx-text-fill: #e9eef7;
+}
+
+.sidebar-title {
+    -fx-text-fill: #aab6c8;
+    -fx-font-size: 12px;
+    -fx-font-weight: 700;
+    -fx-padding: 0 0 6 0;
+}
+
+.muted {
+    -fx-text-fill: #7d8aa1;
+}
+
+.pill {
+    -fx-text-fill: #cfe3ff;
+    -fx-background-color: #1c2431;
+    -fx-background-radius: 999;
+    -fx-padding: 6 10 6 10;
+    -fx-border-color: #2a3547;
+    -fx-border-radius: 999;
+}
+
+.h1 {
+    -fx-text-fill: #e9eef7;
+    -fx-font-size: 28px;
+    -fx-font-weight: 800;
+}
+
+.p {
+    -fx-text-fill: #b8c3d8;
+    -fx-font-size: 14px;
+}
+
+.welcome {
+    -fx-background-color: #141a22;
+    -fx-background-radius: 16;
+    -fx-padding: 18;
+    -fx-border-color: #222b38;
+    -fx-border-radius: 16;
+}
+
+.button {
+    -fx-cursor: hand;
+}
+
+.btn-nav {
+    -fx-background-color: transparent;
+    -fx-text-fill: #d7e2f6;
+    -fx-alignment: CENTER_LEFT;
+    -fx-padding: 10 12;
+    -fx-background-radius: 12;
+    -fx-border-radius: 12;
+    -fx-border-color: #222b38;
+}
+
+.btn-nav:hover {
+    -fx-background-color: #192231;
+}
+
+.btn-primary {
+    -fx-background-color: #3b82f6;
+    -fx-text-fill: white;
+    -fx-font-weight: 700;
+    -fx-padding: 10 12;
+    -fx-background-radius: 12;
+}
+
+.btn-primary:hover { -fx-opacity: 0.92; }
+
+.btn-soft {
+    -fx-background-color: #1c2431;
+    -fx-text-fill: #d7e2f6;
+    -fx-font-weight: 700;
+    -fx-padding: 10 12;
+    -fx-background-radius: 12;
+    -fx-border-color: #2a3547;
+    -fx-border-radius: 12;
+}
+
+.btn-ghost {
+    -fx-background-color: transparent;
+    -fx-text-fill: #d7e2f6;
+    -fx-padding: 8 10;
+    -fx-background-radius: 10;
+    -fx-border-color: #2a3547;
+    -fx-border-radius: 10;
+}

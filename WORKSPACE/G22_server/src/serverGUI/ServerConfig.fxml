@@ -1,0 +1,87 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.Button?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.control.TableColumn?>
+<?import javafx.scene.control.TableView?>
+<?import javafx.scene.control.TextField?>
+<?import javafx.scene.layout.BorderPane?>
+<?import javafx.scene.layout.ColumnConstraints?>
+<?import javafx.scene.layout.GridPane?>
+<?import javafx.scene.layout.HBox?>
+<?import javafx.scene.layout.RowConstraints?>
+<?import javafx.scene.layout.VBox?>
+
+<BorderPane stylesheets="@server.css" xmlns="http://javafx.com/javafx/21" xmlns:fx="http://javafx.com/fxml/1" fx:controller="serverGUI.ServerFrameController">
+
+    <top>
+        <VBox alignment="CENTER" spacing="15">
+            <Label styleClass="title-label" text="Server Control Panel" />
+
+            <GridPane hgap="10" vgap="10">
+                <columnConstraints>
+                    <ColumnConstraints halignment="RIGHT" />
+                    <ColumnConstraints halignment="LEFT" />
+                </columnConstraints>
+
+                <children>
+                    <!-- Row 0 -->
+                    <Label text="Port:" />
+                    <TextField fx:id="portField" text="5555" />
+
+                    <!-- Row 1 -->
+                    <Label text="DB Name:" GridPane.rowIndex="1" />
+                    <TextField fx:id="dbNameField" text="bistrodb" GridPane.rowIndex="1" />
+
+                    <!-- Row 2 -->
+                    <Label text="DB User:" GridPane.rowIndex="2" />
+                    <TextField fx:id="dbUserField" text="root" GridPane.rowIndex="2" />
+
+                    <!-- Row 3 (Password but as TextField instead of PasswordField) -->
+                    <Label text="DB Password:" GridPane.rowIndex="3" />
+                    <TextField fx:id="dbPasswordField" text="Yabuahmad_782003" GridPane.rowIndex="3" />
+                </children>
+            <rowConstraints>
+               <RowConstraints />
+               <RowConstraints />
+               <RowConstraints />
+               <RowConstraints />
+            </rowConstraints>
+            </GridPane>
+
+            <HBox alignment="CENTER" spacing="15">
+                <Button onAction="#onStartServer" styleClass="green-btn" text="Start Server" />
+                <Button onAction="#onStopServer" styleClass="red-btn" text="Stop Server" />
+            </HBox>
+
+            <Label text="Server Status:" />
+            <Label fx:id="serverStatusLabel" text="STOPPED" />
+
+            <Label text="Database Status:" />
+            <Label fx:id="dbStatusLabel" text="NOT CONNECTED" />
+
+        </VBox>
+    </top>
+
+    <center>
+        <VBox spacing="10">
+            <padding>
+                <Insets bottom="10" left="10" right="10" top="10" />
+            </padding>
+         <Label fx:id="logLabel" />
+
+            <Label text="Connected Clients:" />
+
+           <TableView fx:id="clientTable" xmlns:fx="http://javafx.com/fxml/1">
+                <columns>
+                    <TableColumn fx:id="idColumn" text="ID" />
+                    <TableColumn fx:id="hostColumn" text="Host" />
+                    <TableColumn fx:id="ipColumn" text="IP" />
+                    <TableColumn fx:id="statusColumn" text="Status" />
+                </columns>
+            </TableView>
+        </VBox>
+    </center>
+
+</BorderPane>

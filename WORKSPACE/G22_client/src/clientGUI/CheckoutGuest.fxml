@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.control.Button?>
+<?import javafx.scene.control.Hyperlink?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.control.Separator?>
+<?import javafx.scene.control.TextField?>
+<?import javafx.scene.layout.BorderPane?>
+<?import javafx.scene.layout.HBox?>
+<?import javafx.scene.layout.VBox?>
+
+<BorderPane prefHeight="340" prefWidth="520" style="-fx-background-color: white;" xmlns="http://javafx.com/javafx/21" xmlns:fx="http://javafx.com/fxml/1" fx:controller="clientGUI.CheckoutGuestController">
+
+    <top>
+        <VBox spacing="6" style="-fx-padding: 18 18 10 18;">
+            <Label prefHeight="46.0" prefWidth="504.0" style="-fx-font-size: 20; -fx-font-weight: bold;" text="                                   Checkout " />
+            <Label style="-fx-text-fill: #444;" text="Enter your confirmation code to CheckOut." />
+            <Separator />
+        </VBox>
+    </top>
+
+    <center>
+        <VBox alignment="CENTER" spacing="12" style="-fx-padding: 10 24 10 24;">
+             <Label prefHeight="17.0" prefWidth="112.0" text="Confirmation Code:" />
+            <HBox alignment="CENTER" spacing="10">
+                <TextField fx:id="codeField" prefHeight="41.0" prefWidth="441.0" promptText="XXXXXX" style="-fx-background-color: #f7f7f7; -fx-background-radius: 14; -fx-border-color: #dedede; -fx-border-radius: 14; -fx-border-width: 1; -fx-padding: 0 14 0 14; -fx-font-size: 14px;" />
+            </HBox>
+         <Hyperlink fx:id="ForgotCode" onAction="#onForgotCode" styleClass="topButton" stylesheets="@bistro.css" text="Forgot your code?" textFill="#0f0f0f" />
+
+            <Label fx:id="statusLabel" style="-fx-text-fill: #b00020;" text="" wrapText="true" />
+
+            <HBox alignment="CENTER" spacing="10">
+                <Button fx:id="continueBtn" onAction="#onContinue" prefHeight="36.0" prefWidth="127.0" style="-fx-background-color: #5a3a3a; -fx-background-radius: 14; -fx-text-fill: white; -fx-font-size: 13px; -fx-font-weight: 800;" text="Continue" />
+                <Button onAction="#onBackToMenu" prefWidth="120" styleClass="topButton" stylesheets="@bistro.css" text="Back" />
+            </HBox>
+        </VBox>
+    </center>
+
+</BorderPane>
